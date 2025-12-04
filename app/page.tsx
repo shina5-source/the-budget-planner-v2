@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { Header, BottomNav, Sidebar } from '@/components';
-import { ChevronLeft, ChevronRight, TrendingUp, Home as HomeIcon, Mail, PiggyBank, Sun, Target, PieChart, CheckSquare, Sparkles, Pencil, X, Check, Plus, Trash2, Edit3, ShoppingCart, Utensils, Fuel, ShoppingBag, Film, Heart, Gift, Plane, Coffee, Smartphone, Car, Zap, GraduationCap, Home, Palmtree, ShoppingBasket, Gem, Baby, PartyPopper, Wallet, Calendar, Database, Info, ChevronDown, ChevronUp, Building, Upload, RefreshCw, FileText, User, Lightbulb, Settings } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Home as HomeIcon, Mail, PiggyBank, Sun, Target, PieChart, CheckSquare, Sparkles, Pencil, X, Check, Plus, Trash2, Edit3, ShoppingCart, Utensils, Fuel, ShoppingBag, Film, Heart, Gift, Plane, Coffee, Smartphone, Car, Zap, GraduationCap, Home, Palmtree, ShoppingBasket, Gem, Baby, PartyPopper, Wallet, Calendar, Database, Info, ChevronDown, ChevronUp, Building, Upload, RefreshCw, FileText, User, Lightbulb, Settings, LogOut } from 'lucide-react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 import TransactionsPage from './transactions/page';
 import BudgetPage from './budget/page';
 import MemoPage from './memo/page';
 import PlusPage from './plus/page';
 import PrevisionnelPage from './previsionnel/page';
 import EpargnesPage from './epargnes/page';
+import StatistiquesPage from './statistiques/page';
+import { ThemeProvider } from '../contexts/theme-context';
 
 interface Transaction {
   id: number;
@@ -337,6 +340,7 @@ function CreditsDettesPage() {
     </div>
   );
 }
+
 function EnveloppesPage() {
   const [enveloppes, setEnveloppes] = useState<Enveloppe[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -694,6 +698,7 @@ function ObjectifsPage() {
     </div>
   );
 }
+
 function ParametresPage() {
   const { parametres, saveParametres } = useParametres();
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -845,6 +850,7 @@ function ParametresPage() {
           <button onClick={exportData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-medium"><Upload className="w-5 h-5" />Exporter les données</button>
           <label className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#722F37]/50 border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl font-medium cursor-pointer"><RefreshCw className="w-5 h-5" />Importer des données<input type="file" accept=".json" onChange={importData} className="hidden" /></label>
           <button onClick={resetAllData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl font-medium"><Trash2 className="w-5 h-5" />Réinitialiser toutes les données</button>
+          <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/auth'; }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#722F37] border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl font-medium"><LogOut className="w-5 h-5" />Se déconnecter</button>
         </div>
       </div>
 
@@ -882,6 +888,43 @@ function ParametresPage() {
 export default function HomePage() {
   const [currentPage, setCurrentPage] = useState('accueil');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Vérifier l'authentification au chargement
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = '/auth';
+      } else {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+      }
+    };
+    checkAuth();
+
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        window.location.href = '/auth';
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Écran de chargement
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #E8C4C4 0%, #DBADB0 30%, #CFA0A5 50%, #DBADB0 70%, #E8C4C4 100%)' }}>
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#722F37] font-medium">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
@@ -900,19 +943,22 @@ export default function HomePage() {
       case 'enveloppes': return <EnveloppesPage />;
       case 'objectifs': return <ObjectifsPage />;
       case 'parametres': return <ParametresPage />;
+      case 'statistiques': return <StatistiquesPage />;
       case 'plus': return <PlusPage onNavigate={handleNavigate} />;
       default: return <AccueilPage onNavigate={handleNavigate} />;
     }
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #E8C4C4 0%, #DBADB0 30%, #CFA0A5 50%, #DBADB0 70%, #E8C4C4 100%)' }}>
-      <Header onMenuClick={() => setSidebarOpen(true)} />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPage={currentPage} onNavigate={handleNavigate} />
-      <main className="px-4 pt-20 pb-24 max-w-md mx-auto">
-        {renderPage()}
-      </main>
-      <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
-    </div>
+    <ThemeProvider>
+      <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #E8C4C4 0%, #DBADB0 30%, #CFA0A5 50%, #DBADB0 70%, #E8C4C4 100%)' }}>
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPage={currentPage} onNavigate={handleNavigate} />
+        <main className="px-4 pt-20 pb-24 max-w-md mx-auto">
+          {renderPage()}
+        </main>
+        <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
+      </div>
+    </ThemeProvider>
   );
 }

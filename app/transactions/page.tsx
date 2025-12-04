@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, X, Check, ChevronDown, ChevronUp, Trash2, Edit3, Lightbulb, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, X, Check, ChevronDown, ChevronUp, Trash2, Edit3, Lightbulb, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import RecurringTransactions from '../../components/RecurringTransactions';
+import { processRecurringTransactions } from '../../lib/recurring-transactions';
 
 interface Transaction {
   id: number;
@@ -26,6 +28,7 @@ interface ParametresData {
   categoriesFactures: string[];
   categoriesDepenses: string[];
   categoriesEpargnes: string[];
+  comptesBancaires: { id: number; nom: string }[];
 }
 
 const defaultParametres: ParametresData = {
@@ -33,7 +36,12 @@ const defaultParametres: ParametresData = {
   categoriesRevenus: ['Salaire Foundevor', 'Revenus Secondaires', 'Allocations Familiales', 'Aides Sociales', 'Sécurité Sociale', 'Remboursement', 'Aide Financière', 'Aide Familiale', 'Prêt & Crédit Reçu', 'Dépôt Espèces', 'Ventes', 'Autres Revenus'],
   categoriesFactures: ['Loyer', 'Électricité', 'Eau', 'Assainissement', 'Assurance Habitation', 'Assurance Auto/Moto', 'Assurance Mobile', 'Assurance Chute Européen', 'Abonnement Internet', 'Abonnement Mobile Dhc', 'Abonnement Mobile Moi', 'Abonnement Mobile Kayu', 'Abonnement Mobile Timothy', 'Abonnement Mobile Kim', 'Abonnement Salle de Sport', 'Abonnement Streaming', 'Abonnement Transport Commun', 'Abonnement Autres', 'Cotisation Syndicale Sud', 'Emprunt Bourse Titi', 'Crédit Carrefour Banque', 'Crédit La Banque Postale', 'Crédit la Banque Postale Permis', 'Crédit Floa Bank', 'Crédit Cofidis', 'Crédit Cetelem', 'Crédit Floa Bank 4x', 'Crédit Paiement en 4x', 'Chèque Reporté Carrefour & Autres', 'Impôts/Trésor Public'],
   categoriesDepenses: ['Courses', 'Courses Asiatique', 'Restaurant', 'Fast Food & Plat à Emporter', 'Cafés/Bar & Boulangerie/Patisserie', 'Essence ou Carburant', 'Péage & Parking', 'Entretien Auto/Moto', 'Tabac/Cigarettes', 'Achat CB', 'Achat Google', 'Achat CB Carrefour Banque', 'Aide Familiale', 'Remboursement Famille & Tiers', 'Retrait', 'Cinéma', 'Sorties & Vacances & Voyages', 'Shopping', 'Shopping Enfant', 'Soins Personnel', 'Livres & Manga', 'Ameublement & Déco & Électroménager', 'Consultations Médicales', 'Pharmacie/Médicaments', 'Cadeaux (Anniversaire, Fêtes etc...)', 'Frais Bancaires', 'Frais Imprévus', 'Amendes', 'Autres Dépenses'],
-  categoriesEpargnes: ['Livret A', 'Livret A Kim', 'Tirelire', 'Espèces', 'Anniversaire Coy', 'Anniversaire Kayu', 'Anniversaire Titi', 'Anniversaire Kim', 'Anniversaire Negro', 'Anniversaire Acat', 'Anniversaire La Naine', 'Anniversaire Noy', 'Voyages', 'Noël', 'Fonds d\'Urgence', 'CCP La Banque Postale', 'CCP BoursoBank']
+  categoriesEpargnes: ['Livret A', 'Livret A Kim', 'Tirelire', 'Espèces', 'Anniversaire Coy', 'Anniversaire Kayu', 'Anniversaire Titi', 'Anniversaire Kim', 'Anniversaire Negro', 'Anniversaire Acat', 'Anniversaire La Naine', 'Anniversaire Noy', 'Voyages', 'Noël', 'Fonds d\'Urgence', 'CCP La Banque Postale', 'CCP BoursoBank'],
+  comptesBancaires: [
+    { id: 1, nom: 'CCP La Banque Postale' },
+    { id: 2, nom: 'CCP BoursoBank' },
+    { id: 3, nom: 'Livret A La Banque Postale' },
+  ]
 };
 
 const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -44,7 +52,6 @@ const types = ['Revenus', 'Factures', 'Dépenses', 'Épargnes', 'Reprise d\'épa
 
 const moyensPaiement = ['Prélèvement', 'Paiement CB', 'Virement', 'Chèque', 'Espèces', 'Paiement en ligne', 'Paiement mobile'];
 
-// Liste complète des comptes pour Depuis/Vers avec Externe en premier
 const comptesOptions = [
   'Externe',
   'CCP La Banque Postale',
@@ -77,11 +84,14 @@ const sectionTitleStyle = "text-sm font-semibold text-[#D4AF37]";
 const inputStyle = "w-full bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm text-[#D4AF37] placeholder-[#D4AF37]/50 focus:outline-none focus:border-[#D4AF37]";
 const selectStyle = "w-full bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm text-[#D4AF37] focus:outline-none focus:border-[#D4AF37]";
 
-// STYLE CONSEILS - Vert menthe
+// STYLE CONSEILS
 const conseilCardStyle = "bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50";
 const conseilTitleStyle = "text-xs font-semibold text-[#7DD3A8]";
 const conseilTextStyle = "text-[10px] text-[#7DD3A8]";
 const conseilIconStyle = "w-4 h-4 text-[#7DD3A8]";
+
+// PAGINATION
+const ITEMS_PER_PAGE = 50;
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -91,6 +101,10 @@ export default function TransactionsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
+  const [showRecurring, setShowRecurring] = useState(false);
+  
+  // PAGINATION STATE
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   
   // Filtres
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,19 +131,32 @@ export default function TransactionsPage() {
     dateDebut: ''
   });
 
-  useEffect(() => {
+  const loadTransactions = () => {
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
+  };
+
+  useEffect(() => {
+    loadTransactions();
     const savedParametres = localStorage.getItem('budget-parametres');
     if (savedParametres) setParametres({ ...defaultParametres, ...JSON.parse(savedParametres) });
+    
+    const created = processRecurringTransactions();
+    if (created.length > 0) {
+      loadTransactions();
+    }
   }, []);
+
+  // Réinitialiser la pagination quand on change de mois ou de filtres
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [selectedMonth, selectedYear, searchQuery, filterType, filterCategorie, filterDepuis, filterVers, filterMoyenPaiement]);
 
   const saveTransactions = (newTransactions: Transaction[]) => {
     setTransactions(newTransactions);
     localStorage.setItem('budget-transactions', JSON.stringify(newTransactions));
   };
 
-  // Catégories selon le type
   const getCategoriesForType = (type: string) => {
     switch (type) {
       case 'Revenus': return parametres.categoriesRevenus;
@@ -144,7 +171,6 @@ export default function TransactionsPage() {
     }
   };
 
-  // Toutes les catégories pour le filtre
   const getAllCategories = () => {
     const all = [
       ...parametres.categoriesRevenus,
@@ -174,7 +200,12 @@ export default function TransactionsPage() {
     return true;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  // Calculs
+  // PAGINATION: Transactions à afficher
+  const displayedTransactions = filteredTransactions.slice(0, displayCount);
+  const hasMore = displayCount < filteredTransactions.length;
+  const remainingCount = filteredTransactions.length - displayCount;
+
+  // Calculs (sur TOUTES les transactions filtrées, pas seulement celles affichées)
   const totalRevenus = filteredTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const totalDepenses = filteredTransactions.filter(t => ['Factures', 'Dépenses'].includes(t.type)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const totalEpargnes = filteredTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -284,6 +315,11 @@ export default function TransactionsPage() {
     }
   };
 
+  // Fonction pour charger plus de transactions
+  const loadMore = () => {
+    setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+  };
+
   return (
     <div className="pb-4">
       <div className="text-center mb-4">
@@ -365,7 +401,6 @@ export default function TransactionsPage() {
           />
         </div>
 
-        {/* Toggle filtres avancés */}
         <button
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center gap-2 text-xs text-[#D4AF37]/70 hover:text-[#D4AF37]"
@@ -377,7 +412,6 @@ export default function TransactionsPage() {
           )}
         </button>
 
-        {/* Filtres avancés */}
         {showFilters && (
           <div className="mt-4 space-y-3">
             <div>
@@ -434,22 +468,39 @@ export default function TransactionsPage() {
         )}
       </div>
 
-      {/* Bouton ajouter */}
-      <button
-        onClick={() => { resetForm(); setShowForm(true); }}
-        className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-medium text-sm"
-      >
-        <Plus className="w-4 h-4" />
-        Nouvelle transaction
-      </button>
+      {/* Boutons d'action */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => { resetForm(); setShowForm(true); }}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-medium text-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Nouvelle transaction
+        </button>
+        <button
+          onClick={() => setShowRecurring(true)}
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-500/80 text-white rounded-xl font-medium text-sm"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Récurrentes
+        </button>
+      </div>
 
       {/* Historique */}
       <div className={cardStyle + " mb-4"}>
-        <h3 className={sectionTitleStyle + " mb-3"}>Historique</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className={sectionTitleStyle}>Historique</h3>
+          {/* Compteur de pagination */}
+          {filteredTransactions.length > 0 && (
+            <span className={smallTextStyle}>
+              {displayedTransactions.length} sur {filteredTransactions.length}
+            </span>
+          )}
+        </div>
         
-        {filteredTransactions.length > 0 ? (
+        {displayedTransactions.length > 0 ? (
           <div className="space-y-2">
-            {filteredTransactions.map((t) => (
+            {displayedTransactions.map((t) => (
               <div key={t.id} className="p-3 bg-[#722F37]/40 rounded-xl border border-[#D4AF37]/20">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1 min-w-0">
@@ -457,6 +508,9 @@ export default function TransactionsPage() {
                       <p className={valueStyle + " truncate"}>{t.categorie}</p>
                       {t.isCredit && (
                         <span className="px-1.5 py-0.5 bg-purple-500/30 text-purple-300 rounded text-[9px]">Crédit</span>
+                      )}
+                      {t.memo?.includes('🔄') && (
+                        <span className="px-1.5 py-0.5 bg-indigo-500/30 text-indigo-300 rounded text-[9px]">Auto</span>
                       )}
                     </div>
                     <p className={smallTextStyle}>{t.date} • {t.type}{t.moyenPaiement ? ` • ${t.moyenPaiement}` : ''}</p>
@@ -479,6 +533,16 @@ export default function TransactionsPage() {
                 </div>
               </div>
             ))}
+
+            {/* Bouton Voir plus */}
+            {hasMore && (
+              <button
+                onClick={loadMore}
+                className="w-full py-3 mt-3 border-2 border-dashed border-[#D4AF37]/50 rounded-xl text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors"
+              >
+                Voir plus ({remainingCount} restante{remainingCount > 1 ? 's' : ''})
+              </button>
+            )}
           </div>
         ) : (
           <p className={pageSubtitleStyle + " text-center py-8"}>Aucune transaction trouvée</p>
@@ -515,8 +579,8 @@ export default function TransactionsPage() {
 
       {/* Modal formulaire */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md max-h-[90vh] overflow-y-auto border border-[#D4AF37]/40">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16 overflow-y-auto">
+          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
               <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1">
@@ -607,7 +671,6 @@ export default function TransactionsPage() {
                 </select>
               </div>
 
-              {/* Checkbox crédit */}
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -619,7 +682,6 @@ export default function TransactionsPage() {
                 <label htmlFor="isCredit" className={labelStyle + " mb-0"}>C'est un crédit</label>
               </div>
 
-              {/* Champs crédit */}
               {formData.isCredit && (
                 <div className="space-y-3 p-3 bg-[#722F37]/30 rounded-xl border border-[#D4AF37]/30">
                   <p className={smallTextStyle + " text-center"}>Informations du crédit</p>
@@ -698,6 +760,17 @@ export default function TransactionsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Transactions Récurrentes */}
+      <RecurringTransactions
+        isOpen={showRecurring}
+        onClose={() => setShowRecurring(false)}
+        categoriesRevenus={parametres.categoriesRevenus}
+        categoriesFactures={parametres.categoriesFactures}
+        categoriesDepenses={parametres.categoriesDepenses}
+        comptes={parametres.comptesBancaires}
+        onTransactionCreated={loadTransactions}
+      />
     </div>
   );
 }

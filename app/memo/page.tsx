@@ -32,6 +32,9 @@ const months = [
 
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
+// PAGINATION
+const ITEMS_PER_PAGE = 50;
+
 export default function MemoPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [memoData, setMemoData] = useState<MemoData>({});
@@ -41,10 +44,18 @@ export default function MemoPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
 
+  // PAGINATION STATE - Un compteur par mois
+  const [displayCounts, setDisplayCounts] = useState<{ [key: string]: number }>({});
+
   useEffect(() => {
     const saved = localStorage.getItem('budget-memo');
     if (saved) setMemoData(JSON.parse(saved));
   }, []);
+
+  // Réinitialiser la pagination quand on change d'année
+  useEffect(() => {
+    setDisplayCounts({});
+  }, [selectedYear]);
 
   const saveMemoData = (newData: MemoData) => {
     setMemoData(newData);
@@ -52,6 +63,17 @@ export default function MemoPage() {
   };
 
   const getMonthKey = (monthNum: string) => `${selectedYear}-${monthNum}`;
+
+  const getDisplayCount = (monthNum: string) => {
+    return displayCounts[monthNum] || ITEMS_PER_PAGE;
+  };
+
+  const loadMoreForMonth = (monthNum: string) => {
+    setDisplayCounts(prev => ({
+      ...prev,
+      [monthNum]: (prev[monthNum] || ITEMS_PER_PAGE) + ITEMS_PER_PAGE
+    }));
+  };
 
   const openAddForm = (monthNum: string) => {
     setSelectedMonth(monthNum);
@@ -167,7 +189,7 @@ export default function MemoPage() {
         <p className={pageSubtitleStyle}>Calendrier annuel des dépenses prévues</p>
       </div>
 
-      {/* Sélecteur d'année - UN SEUL menu déroulant */}
+      {/* Sélecteur d'année */}
       <div className={cardStyle + " mb-4 p-4"}>
         <div className="flex items-center justify-between mb-4">
           <button onClick={prevYear} className="p-1"><ChevronLeft className="w-5 h-5 text-[#D4AF37]" /></button>
@@ -241,6 +263,12 @@ export default function MemoPage() {
           const isExpanded = expandedMonth === month.num;
           const checkedCount = items.filter(i => i.checked).length;
 
+          // PAGINATION pour ce mois
+          const displayCount = getDisplayCount(month.num);
+          const displayedItems = items.slice(0, displayCount);
+          const hasMore = displayCount < items.length;
+          const remainingCount = items.length - displayCount;
+
           return (
             <div key={month.id} className={cardStyle}>
               {/* Header du mois */}
@@ -273,8 +301,8 @@ export default function MemoPage() {
                         <div className="w-14"></div>
                       </div>
 
-                      {/* Items */}
-                      {items.map((item) => (
+                      {/* Items avec pagination */}
+                      {displayedItems.map((item) => (
                         <div key={item.id} className="flex items-center bg-[#722F37]/40 rounded-xl px-2 py-2 border border-[#D4AF37]/20">
                           <button onClick={() => toggleCheck(month.num, item.id)} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${item.checked ? 'bg-[#D4AF37] border-[#D4AF37]' : 'border-[#D4AF37]/50 bg-transparent'}`}>
                             {item.checked && <Check className="w-3 h-3 text-[#722F37]" />}
@@ -292,10 +320,23 @@ export default function MemoPage() {
                         </div>
                       ))}
 
+                      {/* Bouton Voir plus */}
+                      {hasMore && (
+                        <button
+                          onClick={() => loadMoreForMonth(month.num)}
+                          className="w-full py-3 mt-2 border-2 border-dashed border-[#D4AF37]/50 rounded-xl text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors"
+                        >
+                          Voir plus ({remainingCount} restant{remainingCount > 1 ? 's' : ''})
+                        </button>
+                      )}
+
                       {/* Résumé du mois */}
                       {items.length > 0 && (
                         <div className="pt-2 mt-2 border-t border-[#D4AF37]/20 flex justify-between items-center">
-                          <span className={smallTextStyle}>{checkedCount}/{items.length} complété(s)</span>
+                          <span className={smallTextStyle}>
+                            {checkedCount}/{items.length} complété(s)
+                            {items.length > ITEMS_PER_PAGE && ` • ${displayedItems.length} sur ${items.length} affichés`}
+                          </span>
                           <span className={valueStyle + " font-semibold"}>Total: {total.toFixed(2)} €</span>
                         </div>
                       )}

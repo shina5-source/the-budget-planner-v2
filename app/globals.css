@@ -24,3 +24,225 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* ============================================
+   SYSTÈME DE THÈME - VARIABLES CSS
+   ============================================ */
+
+:root {
+  --color-primary: #a78bfa;
+  --color-primary-light: #c4b5fd;
+  --color-secondary: #f472b6;
+  --color-secondary-light: #f9a8d4;
+  --color-accent: #818cf8;
+  --color-gradient-from: #a78bfa;
+  --color-gradient-to: #f472b6;
+  --color-bg-gradient-from: #faf5ff;
+  --color-bg-gradient-to: #fdf2f8;
+}
+
+/* ============================================
+   CLASSES UTILITAIRES THÉMATIQUES
+   ============================================ */
+
+/* Backgrounds */
+.bg-theme-primary {
+  background-color: var(--color-primary);
+}
+
+.bg-theme-primary-light {
+  background-color: var(--color-primary-light);
+}
+
+.bg-theme-secondary {
+  background-color: var(--color-secondary);
+}
+
+/* Dégradés */
+.bg-theme-gradient {
+  background: linear-gradient(135deg, var(--color-gradient-from), var(--color-gradient-to));
+}
+
+.bg-theme-gradient-horizontal {
+  background: linear-gradient(90deg, var(--color-gradient-from), var(--color-gradient-to));
+}
+
+.bg-theme-page {
+  background: linear-gradient(135deg, var(--color-bg-gradient-from), var(--color-bg-gradient-to));
+}
+
+/* Texte */
+.text-theme-primary {
+  color: var(--color-primary);
+}
+
+.text-theme-secondary {
+  color: var(--color-secondary);
+}
+
+.text-theme-gradient {
+  background: linear-gradient(135deg, var(--color-gradient-from), var(--color-gradient-to));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Bordures */
+.border-theme-primary {
+  border-color: var(--color-primary);
+}
+
+.border-theme-primary-light {
+  border-color: var(--color-primary-light);
+}
+
+/* ============================================
+   COMPOSANTS THÉMATIQUES
+   ============================================ */
+
+/* Bouton principal */
+.btn-theme-primary {
+  background: linear-gradient(135deg, var(--color-gradient-from), var(--color-gradient-to));
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-theme-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Bouton secondaire */
+.btn-theme-secondary {
+  background-color: white;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary-light);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-theme-secondary:hover {
+  background-color: var(--color-bg-gradient-from);
+  border-color: var(--color-primary);
+}
+
+/* Carte */
+.card-theme {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card-theme-highlight {
+  background: linear-gradient(135deg, var(--color-bg-gradient-from), var(--color-bg-gradient-to));
+  border-radius: 1rem;
+  border: 1px solid var(--color-primary-light);
+}
+
+/* Badge */
+.badge-theme {
+  background: linear-gradient(135deg, var(--color-gradient-from), var(--color-gradient-to));
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Progress bar */
+.progress-theme {
+  background-color: var(--color-bg-gradient-from);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-theme-fill {
+  background: linear-gradient(90deg, var(--color-gradient-from), var(--color-gradient-to));
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}/* Mode Sombre */
+.dark-mode {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1a1a2e;
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0a0;
+}
+
+.dark-mode body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%) !important;
+}
+
+.dark-mode .bg-\[\#5C1E2A\],
+.dark-mode .bg-\[\#722F37\],
+.dark-mode .bg-\[\#8B4557\] {
+  background-color: #1a1a2e !important;
+}
+
+.dark-mode .bg-\[\#722F37\]\/30,
+.dark-mode .bg-\[\#722F37\]\/40,
+.dark-mode .bg-\[\#722F37\]\/50 {
+  background-color: rgba(26, 26, 46, 0.8) !important;
+}
+
+.dark-mode .border-\[\#D4AF37\]\/40,
+.dark-mode .border-\[\#D4AF37\]\/30,
+.dark-mode .border-\[\#D4AF37\]\/20 {
+  border-color: rgba(212, 175, 55, 0.3) !important;
+}
+
+.dark-mode .text-\[\#D4AF37\] {
+  color: #f0d78c !important;
+}
+
+.dark-mode .text-\[\#D4AF37\]\/70,
+.dark-mode .text-\[\#D4AF37\]\/60,
+.dark-mode .text-\[\#D4AF37\]\/50 {
+  color: rgba(240, 215, 140, 0.7) !important;
+}
+
+/* Header en mode sombre */
+.dark-mode header {
+  background-color: #0f0f1a !important;
+}
+
+/* Bottom Nav en mode sombre */
+.dark-mode nav {
+  background-color: #0f0f1a !important;
+}
+
+/* Cards en mode sombre */
+.dark-mode .backdrop-blur-sm {
+  background-color: rgba(26, 26, 46, 0.9) !important;
+}
+
+/* Inputs en mode sombre */
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background-color: rgba(15, 15, 26, 0.8) !important;
+  border-color: rgba(212, 175, 55, 0.3) !important;
+  color: #f0d78c !important;
+}
+
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: rgba(240, 215, 140, 0.5) !important;
+}
+
+/* Sidebar en mode sombre */
+.dark-mode .fixed.left-0.top-0 {
+  background-color: #0f0f1a !important;
+}
+
+/* Transitions douces */
+body, header, nav, input, select, textarea {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

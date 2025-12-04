@@ -26,6 +26,9 @@ const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
 type TabType = 'resume' | 'mensuel' | 'objectifs' | 'historique';
 
+// PAGINATION
+const ITEMS_PER_PAGE = 50;
+
 export default function EpargnesPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -34,6 +37,9 @@ export default function EpargnesPage() {
   const [activeTab, setActiveTab] = useState<TabType>('resume');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+
+  // PAGINATION STATE
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
 
   const [formData, setFormData] = useState({
     nom: '',
@@ -50,6 +56,11 @@ export default function EpargnesPage() {
     const savedObjectifs = localStorage.getItem('budget-objectifs-epargne');
     if (savedObjectifs) setObjectifs(JSON.parse(savedObjectifs));
   }, []);
+
+  // Réinitialiser la pagination quand on change de mois
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [selectedMonth, selectedYear]);
 
   const saveObjectifs = (newObjectifs: ObjectifEpargne[]) => {
     setObjectifs(newObjectifs);
@@ -125,6 +136,11 @@ export default function EpargnesPage() {
   };
 
   const handleDelete = (id: number) => saveObjectifs(objectifs.filter(o => o.id !== id));
+
+  // Fonction pour charger plus
+  const loadMore = () => {
+    setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+  };
 
   // STYLES UNIFORMISÉS
   const cardStyle = "bg-[#722F37]/30 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#D4AF37]/40";
@@ -345,17 +361,33 @@ export default function EpargnesPage() {
   );
 
   const renderHistorique = () => {
-    const epargnesTransactions = filteredTransactions.filter(t => t.type === 'Épargnes' || t.type === 'Reprise d\'épargne');
+    const epargnesTransactions = filteredTransactions
+      .filter(t => t.type === 'Épargnes' || t.type === 'Reprise d\'épargne')
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    // PAGINATION
+    const displayedTransactions = epargnesTransactions.slice(0, displayCount);
+    const hasMore = displayCount < epargnesTransactions.length;
+    const remainingCount = epargnesTransactions.length - displayCount;
 
     return (
       <div className="space-y-4">
         <div className={cardStyle}>
-          <h4 className={cardTitleStyle + " font-semibold mb-3"}>Mouvements - {monthsFull[selectedMonth]} {selectedYear}</h4>
-          {epargnesTransactions.length === 0 ? (
+          <div className="flex items-center justify-between mb-3">
+            <h4 className={cardTitleStyle + " font-semibold"}>Mouvements - {monthsFull[selectedMonth]} {selectedYear}</h4>
+            {/* Compteur de pagination */}
+            {epargnesTransactions.length > 0 && (
+              <span className={smallTextStyle}>
+                {displayedTransactions.length} sur {epargnesTransactions.length}
+              </span>
+            )}
+          </div>
+
+          {displayedTransactions.length === 0 ? (
             <p className={pageSubtitleStyle + " text-center py-8"}>Aucun mouvement ce mois</p>
           ) : (
             <div className="space-y-2">
-              {epargnesTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((t, i) => (
+              {displayedTransactions.map((t, i) => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-[#D4AF37]/10">
                   <div>
                     <p className="text-sm font-medium text-[#D4AF37]">{t.categorie}</p>
@@ -364,6 +396,16 @@ export default function EpargnesPage() {
                   <p className="text-sm font-semibold text-[#D4AF37]">{t.type === 'Épargnes' ? '+' : '-'}{parseFloat(t.montant).toFixed(2)} €</p>
                 </div>
               ))}
+
+              {/* Bouton Voir plus */}
+              {hasMore && (
+                <button
+                  onClick={loadMore}
+                  className="w-full py-3 mt-3 border-2 border-dashed border-[#D4AF37]/50 rounded-xl text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors"
+                >
+                  Voir plus ({remainingCount} restant{remainingCount > 1 ? 's' : ''})
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -399,7 +441,7 @@ export default function EpargnesPage() {
         <p className={pageSubtitleStyle}>Suivi de votre épargne</p>
       </div>
 
-      {/* Sélecteur de mois - UN SEUL menu déroulant pour l'année */}
+      {/* Sélecteur de mois */}
       <div className={cardStyle + " mb-4"}>
         <div className="flex items-center justify-between mb-4">
           <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5 text-[#D4AF37]" /></button>

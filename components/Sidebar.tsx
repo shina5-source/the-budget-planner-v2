@@ -1,7 +1,8 @@
 "use client";
 
-import { X, Home, CreditCard, Calendar, DollarSign, PiggyBank, Building2, FileText, Mail, Settings } from 'lucide-react';
+import { X, Home, CreditCard, Calendar, DollarSign, PiggyBank, Building2, FileText, Mail, Settings, BarChart3, LogOut } from 'lucide-react';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const menuItems = [
   { id: 'credits-dettes', icon: Building2, label: 'Crédits & Dettes' },
   { id: 'memo', icon: FileText, label: 'Mémo' },
   { id: 'enveloppes', icon: Mail, label: 'Enveloppes' },
+  { id: 'statistiques', icon: BarChart3, label: 'Statistiques' },
   { id: 'parametres', icon: Settings, label: 'Paramètres' },
 ];
 
@@ -81,9 +83,19 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
         </nav>
 
         {/* Footer */}
-        <div className="absolute bottom-4 left-0 right-0 px-4">
+        <div className="absolute bottom-4 left-0 right-0 px-4 space-y-3">
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = '/auth';
+            }}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#722F37] border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl text-sm font-medium"
+          >
+            <LogOut className="w-4 h-4" />
+            Se déconnecter
+          </button>
           <div className="text-center">
-            <p className="text-[10px] text-[#D4AF37]/50">Créé avec ❤️</p>
+            <p className="text-[10px] text-[#D4AF37]/50">Créé avec ❤️ Shina5</p>
           </div>
         </div>
       </div>
