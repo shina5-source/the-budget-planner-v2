@@ -233,7 +233,7 @@ export default function StatistiquesPage() {
                   outerRadius={70}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                  label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
                   labelLine={false}
                 >
                   {repartitionData.map((entry, index) => (
@@ -360,7 +360,7 @@ export default function StatistiquesPage() {
                     cy="50%"
                     outerRadius={70}
                     dataKey="value"
-                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                    label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
                     labelLine={false}
                   >
                     {data.map((entry, index) => (
