@@ -1408,7 +1408,7 @@ function ParametresPage() {
           <button onClick={exportData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-medium"><Upload className="w-5 h-5" />Exporter les données</button>
           <label className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#722F37]/50 border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl font-medium cursor-pointer"><RefreshCw className="w-5 h-5" />Importer des données<input type="file" accept=".json" onChange={importData} className="hidden" /></label>
           <button onClick={resetAllData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl font-medium"><Trash2 className="w-5 h-5" />Réinitialiser toutes les données</button>
-          <button onClick={async () => { await supabase.auth.signOut(); window.location.href = '/auth'; }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#722F37] border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl font-medium"><LogOut className="w-5 h-5" />Se déconnecter</button>
+          <button onClick={async () => { document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; await supabase.auth.signOut(); window.location.href = '/auth'; }} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#722F37] border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl font-medium"><LogOut className="w-5 h-5" />Se déconnecter</button>
         </div>
       </div>
 

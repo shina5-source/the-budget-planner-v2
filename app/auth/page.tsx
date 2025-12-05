@@ -14,9 +14,19 @@ export default function AuthPage() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // Vérifier le mode sombre depuis localStorage
     const darkMode = localStorage.getItem('darkMode') === 'true';
     setIsDark(darkMode);
+
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Créer un cookie pour le middleware
+        document.cookie = `auth-session=true; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 jours
+        window.location.href = '/';
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleGoogleLogin = async () => {
@@ -51,7 +61,6 @@ export default function AuthPage() {
         if (error) throw error;
         setMessage('Un email de réinitialisation a été envoyé !');
       } else if (mode === 'register') {
-        // Vérifier le code d'invitation
         const { data: codeData, error: codeError } = await supabase
           .from('invitation_codes')
           .select('*')
@@ -66,7 +75,6 @@ export default function AuthPage() {
           throw new Error('Ce code d\'invitation a déjà été utilisé');
         }
 
-        // Créer le compte
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -74,7 +82,6 @@ export default function AuthPage() {
 
         if (signUpError) throw signUpError;
 
-        // Marquer le code comme utilisé
         await supabase
           .from('invitation_codes')
           .update({ 
@@ -86,13 +93,18 @@ export default function AuthPage() {
 
         setMessage('Compte créé ! Vérifiez votre email pour confirmer.');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) throw error;
-        window.location.href = '/';
+        
+        // Créer un cookie pour le middleware
+        if (data.session) {
+          document.cookie = `auth-session=true; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 jours
+          window.location.href = '/';
+        }
       }
     } catch (err: any) {
       setError(err.message);
@@ -104,7 +116,6 @@ export default function AuthPage() {
   // Composant Logo S5 Monogramme Luxe avec S calligraphique
   const LogoS5Luxe = () => (
     <div className="w-28 h-28 mx-auto mb-4 relative">
-      {/* Halo lumineux externe */}
       <div 
         className="absolute -inset-2 rounded-full"
         style={{
@@ -113,16 +124,13 @@ export default function AuthPage() {
         }}
       ></div>
       
-      {/* Cercle extérieur avec bordure dorée */}
       <div className="absolute inset-0 rounded-full border-2 border-[#D4AF37]"
         style={{
           boxShadow: '0 0 15px rgba(212, 175, 55, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.2)'
         }}
       ></div>
       
-      {/* Cercle intérieur avec fond */}
       <div className="absolute inset-1 rounded-full bg-gradient-to-br from-[#722F37] via-[#8B3A42] to-[#5a252c] shadow-lg overflow-hidden">
-        {/* Effet brillant plus prononcé */}
         <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent"></div>
         <div 
           className="absolute inset-0"
@@ -132,17 +140,13 @@ export default function AuthPage() {
         ></div>
       </div>
       
-      {/* SVG avec ornements et S5 calligraphique */}
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
-        {/* Définitions pour les effets */}
         <defs>
-          {/* Gradient doré */}
           <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#F5E6A3"/>
             <stop offset="50%" stopColor="#D4AF37"/>
             <stop offset="100%" stopColor="#AA8C2C"/>
           </linearGradient>
-          {/* Glow effect */}
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
             <feMerge>
@@ -150,41 +154,35 @@ export default function AuthPage() {
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
-          {/* Shadow */}
           <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0.5" dy="0.5" stdDeviation="0.5" floodColor="#000" floodOpacity="0.3"/>
           </filter>
         </defs>
         
-        {/* Ornement haut */}
         <g stroke="url(#goldGradient)" strokeWidth="1.5" fill="none" strokeLinecap="round">
           <path d="M50 10 L50 5"/>
           <path d="M44 8 Q50 3 56 8"/>
           <circle cx="50" cy="3" r="1.5" fill="url(#goldGradient)"/>
         </g>
         
-        {/* Ornement bas */}
         <g stroke="url(#goldGradient)" strokeWidth="1.5" fill="none" strokeLinecap="round">
           <path d="M50 90 L50 95"/>
           <path d="M44 92 Q50 97 56 92"/>
           <circle cx="50" cy="97" r="1.5" fill="url(#goldGradient)"/>
         </g>
         
-        {/* Ornement gauche */}
         <g stroke="url(#goldGradient)" strokeWidth="1.5" fill="none" strokeLinecap="round">
           <path d="M10 50 L5 50"/>
           <path d="M8 44 Q3 50 8 56"/>
           <circle cx="3" cy="50" r="1.5" fill="url(#goldGradient)"/>
         </g>
         
-        {/* Ornement droit */}
         <g stroke="url(#goldGradient)" strokeWidth="1.5" fill="none" strokeLinecap="round">
           <path d="M90 50 L95 50"/>
           <path d="M92 44 Q97 50 92 56"/>
           <circle cx="97" cy="50" r="1.5" fill="url(#goldGradient)"/>
         </g>
         
-        {/* Petits diamants aux coins - plus brillants */}
         <g filter="url(#glow)">
           <path d="M20 20 L24 16 L28 20 L24 24 Z" fill="url(#goldGradient)"/>
           <path d="M72 20 L76 16 L80 20 L76 24 Z" fill="url(#goldGradient)"/>
@@ -192,10 +190,8 @@ export default function AuthPage() {
           <path d="M72 80 L76 76 L80 80 L76 84 Z" fill="url(#goldGradient)"/>
         </g>
         
-        {/* Cercle décoratif intérieur */}
         <circle cx="50" cy="50" r="38" stroke="url(#goldGradient)" strokeWidth="0.5" fill="none" opacity="0.5"/>
         
-        {/* S5 en texte élégant serif */}
         <g filter="url(#glow)">
           <text
             x="50"
@@ -213,7 +209,6 @@ export default function AuthPage() {
         </g>
       </svg>
       
-      {/* Effet de brillance animé plus prononcé */}
       <div 
         className="absolute inset-1 rounded-full overflow-hidden pointer-events-none"
         style={{
@@ -230,7 +225,6 @@ export default function AuthPage() {
         : 'bg-gradient-to-br from-[#F8E8E0] to-[#E8D4C4]'
     }`}>
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <LogoS5Luxe />
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-[#722F37]'}`}>
@@ -241,13 +235,11 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* Card */}
         <div className={`rounded-2xl p-6 shadow-xl border transition-colors ${
           isDark 
             ? 'bg-[#1e1e2f] border-[#D4AF37]/20' 
             : 'bg-white/80 backdrop-blur-sm border-[#722F37]/20'
         }`}>
-          {/* Tabs - seulement si pas en mode forgot */}
           {mode !== 'forgot' && (
             <div className={`flex mb-6 rounded-xl p-1 ${
               isDark ? 'bg-[#2a2a3e]' : 'bg-[#F8E8E0]'
@@ -275,7 +267,6 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Bouton Google */}
           {mode !== 'forgot' && (
             <>
               <button
@@ -304,7 +295,6 @@ export default function AuthPage() {
             </>
           )}
 
-          {/* Messages */}
           {error && (
             <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-500 text-sm">
               {error}
@@ -316,7 +306,6 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Formulaire */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'forgot' && (
               <div className="text-center mb-4">
@@ -396,7 +385,6 @@ export default function AuthPage() {
             </button>
           </form>
 
-          {/* Liens bas de page */}
           {mode === 'login' && (
             <button
               onClick={() => setMode('forgot')}
@@ -416,7 +404,6 @@ export default function AuthPage() {
           )}
         </div>
 
-        {/* Footer */}
         <p className={`text-center text-sm mt-6 ${isDark ? 'text-gray-500' : 'text-[#722F37]/50'}`}>
           Créé avec ❤️ par Shina5
         </p>

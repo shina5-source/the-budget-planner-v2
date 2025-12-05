@@ -2,35 +2,28 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  // Vérifier si un cookie de session Supabase existe
-  const allCookies = req.cookies.getAll();
-  const hasSupabaseCookie = allCookies.some(cookie => 
-    cookie.name.includes('supabase') || 
-    cookie.name.includes('sb-')
-  );
+  const { pathname } = req.nextUrl;
 
-  const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
-
-  // Si pas de cookie Supabase et pas sur la page auth, rediriger vers /auth
-  if (!hasSupabaseCookie && !isAuthPage) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/auth';
-    return NextResponse.redirect(redirectUrl);
+  // Routes publiques - toujours accessibles
+  const publicPaths = ['/auth', '/_next', '/favicon.ico', '/icons', '/manifest.json', '/logo-shina5.png', '/api'];
+  
+  if (publicPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next();
   }
 
-  // Si connecté et sur la page auth, rediriger vers l'accueil
-  if (hasSupabaseCookie && isAuthPage) {
-    const redirectUrl = req.nextUrl.clone();
-    redirectUrl.pathname = '/';
-    return NextResponse.redirect(redirectUrl);
+  // Vérifier notre cookie personnalisé
+  const authSession = req.cookies.get('auth-session');
+
+  // Si pas de cookie auth-session, rediriger vers /auth
+  if (!authSession) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/auth';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
 
-// Protéger toutes les pages sauf les fichiers statiques
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|logo-shina5.png).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
