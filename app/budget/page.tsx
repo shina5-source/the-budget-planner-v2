@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, Home as HomeIcon, Mail, PiggyBank, FileText, RefreshCw, PieChart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, TrendingUp, Home as HomeIcon, Mail, PiggyBank, FileText, RefreshCw, PieChart } from 'lucide-react';
 
 interface Transaction {
   id: number;
@@ -16,17 +16,24 @@ const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
 type TabType = 'vue' | 'revenus' | 'correctifs' | 'epargne' | 'bilan';
+type BilanAccordionType = 'revenus' | 'factures' | 'depenses' | 'epargnes' | null;
 
 export default function BudgetPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('vue');
+  const [bilanAccordion, setBilanAccordion] = useState<BilanAccordionType>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('budget-transactions');
     if (saved) setTransactions(JSON.parse(saved));
   }, []);
+
+  // Réinitialiser l'accordéon quand on change de mois
+  useEffect(() => {
+    setBilanAccordion(null);
+  }, [selectedMonth, selectedYear]);
 
   const getMonthKey = () => {
     const month = (selectedMonth + 1).toString().padStart(2, '0');
@@ -224,128 +231,150 @@ export default function BudgetPage() {
     </div>
   );
 
-  const renderBilan = () => (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center border border-[#D4AF37]/50">
-          <FileText className="w-5 h-5 text-[#D4AF37]" />
-        </div>
-        <div>
-          <h3 className={sectionTitleStyle}>Bilan mensuel</h3>
-          <p className={smallTextStyle}>{monthsFull[selectedMonth]} {selectedYear}</p>
-        </div>
-      </div>
+  const renderBilan = () => {
+    // Composant Accordéon réutilisable
+    const AccordionSection = ({ 
+      title, 
+      icon: Icon, 
+      transactions: sectionTransactions, 
+      total, 
+      isExpense = true,
+      sectionKey
+    }: { 
+      title: string; 
+      icon: any; 
+      transactions: Transaction[]; 
+      total: number; 
+      isExpense?: boolean;
+      sectionKey: BilanAccordionType;
+    }) => {
+      const isOpen = bilanAccordion === sectionKey;
+      const prefix = isExpense ? '-' : '+';
+      const count = sectionTransactions.length;
 
-      <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="w-4 h-4 text-[#D4AF37]" />
-          <span className="text-sm font-medium text-[#D4AF37]">Revenus mensuels</span>
-        </div>
-        {revenusTransactions.length === 0 ? (
-          <p className={smallTextStyle}>Aucun revenu ce mois</p>
-        ) : (
-          <div className="space-y-2">
-            {revenusTransactions.map((t, i) => (
-              <div key={i} className="flex justify-between">
-                <span className={labelStyle}>{t.categorie}</span>
-                <span className={valueStyle}>+ {parseFloat(t.montant).toFixed(2)} €</span>
+      return (
+        <div className={cardStyle + " overflow-hidden p-0"}>
+          <button 
+            onClick={() => setBilanAccordion(isOpen ? null : sectionKey)}
+            className="w-full flex items-center justify-between p-4 hover:bg-[#D4AF37]/5 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-[#D4AF37]/20 rounded-lg flex items-center justify-center border border-[#D4AF37]/50">
+                <Icon className="w-4 h-4 text-[#D4AF37]" />
               </div>
-            ))}
-          </div>
-        )}
-        <div className="border-t border-[#D4AF37]/20 mt-3 pt-3 flex justify-between">
-          <span className={labelStyle}>Revenus totaux</span>
-          <span className={valueStyle}>{totalRevenus.toFixed(2)} €</span>
-        </div>
-      </div>
-
-      <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <HomeIcon className="w-4 h-4 text-[#D4AF37]" />
-          <span className="text-sm font-medium text-[#D4AF37]">Dépenses fixes</span>
-        </div>
-        {facturesTransactions.length === 0 ? (
-          <p className={smallTextStyle}>Aucune dépense fixe ce mois</p>
-        ) : (
-          <div className="space-y-2">
-            {facturesTransactions.map((t, i) => (
-              <div key={i} className="flex justify-between">
-                <span className={labelStyle}>{t.categorie}</span>
-                <span className={valueStyle}>- {parseFloat(t.montant).toFixed(2)} €</span>
+              <div className="text-left">
+                <span className="text-sm font-medium text-[#D4AF37]">{title}</span>
+                <span className={smallTextStyle + " block"}>{count} élément{count > 1 ? 's' : ''}</span>
               </div>
-            ))}
-          </div>
-        )}
-        <div className="border-t border-[#D4AF37]/20 mt-3 pt-3 flex justify-between">
-          <span className={labelStyle}>Total</span>
-          <span className={valueStyle}>- {totalFactures.toFixed(2)} €</span>
-        </div>
-      </div>
-
-      <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <Mail className="w-4 h-4 text-[#D4AF37]" />
-          <span className="text-sm font-medium text-[#D4AF37]">Dépenses variables</span>
-        </div>
-        {depensesTransactions.length === 0 ? (
-          <p className={smallTextStyle + " text-center py-2"}>Aucune dépense variable</p>
-        ) : (
-          <div className="space-y-2">
-            {depensesTransactions.map((t, i) => (
-              <div key={i} className="flex justify-between">
-                <span className={labelStyle}>{t.categorie}</span>
-                <span className={valueStyle}>- {parseFloat(t.montant).toFixed(2)} €</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-semibold ${isExpense ? 'text-red-400' : 'text-green-400'}`}>
+                {prefix} {total.toFixed(2)} €
+              </span>
+              {isOpen ? (
+                <ChevronUp className="w-5 h-5 text-[#D4AF37]" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-[#D4AF37]" />
+              )}
+            </div>
+          </button>
+          
+          {isOpen && (
+            <div className="border-t border-[#D4AF37]/20">
+              {sectionTransactions.length === 0 ? (
+                <p className={smallTextStyle + " text-center py-4"}>Aucun élément ce mois</p>
+              ) : (
+                <div className="divide-y divide-[#D4AF37]/10">
+                  {sectionTransactions.map((t, i) => (
+                    <div key={i} className="flex justify-between items-center px-4 py-2">
+                      <span className={labelStyle}>{t.categorie}</span>
+                      <span className={valueStyle}>{prefix} {parseFloat(t.montant).toFixed(2)} €</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="bg-[#722F37]/50 px-4 py-3 flex justify-between items-center border-t border-[#D4AF37]/30">
+                <span className="text-sm font-medium text-[#D4AF37]">Total</span>
+                <span className="text-sm font-bold text-[#D4AF37]">{prefix} {total.toFixed(2)} €</span>
               </div>
-            ))}
-          </div>
-        )}
-        <div className="border-t border-[#D4AF37]/20 mt-3 pt-3 flex justify-between">
-          <span className="text-sm font-medium text-[#D4AF37]">Total</span>
-          <span className={valueStyle}>- {totalDepenses.toFixed(2)} €</span>
+            </div>
+          )}
         </div>
-      </div>
+      );
+    };
 
-      <div className={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <PiggyBank className="w-4 h-4 text-[#D4AF37]" />
-          <span className="text-sm font-medium text-[#D4AF37]">Épargnes</span>
-        </div>
-        {epargnesTransactions.length === 0 ? (
-          <p className={smallTextStyle}>Aucune épargne ce mois</p>
-        ) : (
-          <div className="space-y-2">
-            {epargnesTransactions.map((t, i) => (
-              <div key={i} className="flex justify-between">
-                <span className={labelStyle}>{t.categorie}</span>
-                <span className={valueStyle}>{parseFloat(t.montant).toFixed(2)} €</span>
-              </div>
-            ))}
+    return (
+      <div className="space-y-3">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center border border-[#D4AF37]/50">
+            <FileText className="w-5 h-5 text-[#D4AF37]" />
           </div>
-        )}
-        <div className="border-t border-[#D4AF37]/20 mt-3 pt-3 flex justify-between">
-          <span className={labelStyle}>Total</span>
-          <span className={valueStyle}>{totalEpargnes.toFixed(2)} €</span>
+          <div>
+            <h3 className={sectionTitleStyle}>Bilan mensuel</h3>
+            <p className={smallTextStyle}>{monthsFull[selectedMonth]} {selectedYear}</p>
+          </div>
         </div>
-      </div>
 
-      <div className={cardStyle + " text-center"}>
-        <p className={pageSubtitleStyle + " mb-1"}>Solde du mois</p>
-        <p className="text-3xl font-semibold text-[#D4AF37]">{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</p>
-        <div className="bg-[#D4AF37]/10 rounded-xl p-3 mt-4 inline-flex items-center gap-2 border border-[#D4AF37]/30">
-          <PiggyBank className="w-4 h-4 text-[#D4AF37]" />
-          <span className={labelStyle}>Taux d'épargne</span>
+        {/* Sections Accordéon */}
+        <AccordionSection 
+          title="Revenus mensuels" 
+          icon={TrendingUp} 
+          transactions={revenusTransactions} 
+          total={totalRevenus} 
+          isExpense={false}
+          sectionKey="revenus"
+        />
+
+        <AccordionSection 
+          title="Dépenses fixes" 
+          icon={HomeIcon} 
+          transactions={facturesTransactions} 
+          total={totalFactures} 
+          isExpense={true}
+          sectionKey="factures"
+        />
+
+        <AccordionSection 
+          title="Dépenses variables" 
+          icon={Mail} 
+          transactions={depensesTransactions} 
+          total={totalDepenses} 
+          isExpense={true}
+          sectionKey="depenses"
+        />
+
+        <AccordionSection 
+          title="Épargnes" 
+          icon={PiggyBank} 
+          transactions={epargnesTransactions} 
+          total={totalEpargnes} 
+          isExpense={true}
+          sectionKey="epargnes"
+        />
+
+        {/* Solde final */}
+        <div className={cardStyle + " text-center"}>
+          <p className={pageSubtitleStyle + " mb-1"}>Solde du mois</p>
+          <p className={`text-3xl font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {solde >= 0 ? '+' : ''}{solde.toFixed(2)} €
+          </p>
+          <div className="bg-[#D4AF37]/10 rounded-xl p-3 mt-4 inline-flex items-center gap-2 border border-[#D4AF37]/30">
+            <PiggyBank className="w-4 h-4 text-[#D4AF37]" />
+            <span className={labelStyle}>Taux d'épargne</span>
+          </div>
+          <p className="text-2xl font-semibold mt-2 text-[#D4AF37]">{tauxEpargne} %</p>
+          {solde > 0 ? (
+            <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 inline-block">✨ Excellent ! Solde positif de {solde.toFixed(2)} €</p>
+          ) : solde < 0 ? (
+            <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 inline-block">⚠️ Attention ! Solde négatif de {Math.abs(solde).toFixed(2)} €</p>
+          ) : (
+            <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 inline-block">➖ Solde à l'équilibre : 0.00 €</p>
+          )}
         </div>
-        <p className="text-2xl font-semibold mt-2 text-[#D4AF37]">{tauxEpargne} %</p>
-        {solde > 0 ? (
-          <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 inline-block">✨ Excellent ! Solde positif de {solde.toFixed(2)} €</p>
-        ) : solde < 0 ? (
-          <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 inline-block">⚠️ Attention ! Solde négatif de {Math.abs(solde).toFixed(2)} €</p>
-        ) : (
-          <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 inline-block">➖ Solde à l'équilibre : 0.00 €</p>
-        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const tabs: { id: TabType; label: string }[] = [
     { id: 'vue', label: 'Vue' },

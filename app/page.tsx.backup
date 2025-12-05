@@ -12,7 +12,6 @@ import PlusPage from './plus/page';
 import PrevisionnelPage from './previsionnel/page';
 import EpargnesPage from './epargnes/page';
 import StatistiquesPage from './statistiques/page';
-import CreditsDettesPageFull from './credits-dettes/page';
 import { ThemeProvider } from '../contexts/theme-context';
 
 interface Transaction {
@@ -49,15 +48,6 @@ interface Objectif {
   icone: string;
   dateEcheance?: string;
   priorite: 'haute' | 'moyenne' | 'basse';
-  type: 'court' | 'long';
-  recurrence?: {
-    actif: boolean;
-    frequence: 'mensuel' | 'bimensuel' | 'hebdomadaire';
-    montant: number;
-    jourDuMois?: number;
-    jourSemaine?: number;
-    derniereExecution?: string;
-  };
 }
 
 interface CompteBancaire {
@@ -89,7 +79,7 @@ const defaultParametres: ParametresData = {
   categoriesRevenus: ['Salaire Foundevor', 'Revenus Secondaires', 'Allocations Familiales', 'Aides Sociales', 'Sécurité Sociale', 'Remboursement', 'Aide Financière', 'Aide Familiale', 'Prêt & Crédit Reçu', 'Dépôt Espèces', 'Ventes', 'Autres Revenus'],
   categoriesFactures: ['Loyer', 'Électricité', 'Eau', 'Assainissement', 'Assurance Habitation', 'Assurance Auto/Moto', 'Assurance Mobile', 'Assurance Chute Européen', 'Abonnement Internet', 'Abonnement Mobile Dhc', 'Abonnement Mobile Moi', 'Abonnement Mobile Kayu', 'Abonnement Mobile Timothy', 'Abonnement Mobile Kim', 'Abonnement Salle de Sport', 'Abonnement Streaming', 'Abonnement Transport Commun', 'Abonnement Autres', 'Cotisation Syndicale Sud', 'Emprunt Bourse Titi', 'Crédit Carrefour Banque', 'Crédit La Banque Postale', 'Crédit la Banque Postale Permis', 'Crédit Floa Bank', 'Crédit Cofidis', 'Crédit Cetelem', 'Crédit Floa Bank 4x', 'Crédit Paiement en 4x', 'Chèque Reporté Carrefour & Autres', 'Impôts/Trésor Public'],
   categoriesDepenses: ['Courses', 'Courses Asiatique', 'Restaurant', 'Fast Food & Plat à Emporter', 'Cafés/Bar & Boulangerie/Patisserie', 'Essence ou Carburant', 'Péage & Parking', 'Entretien Auto/Moto', 'Tabac/Cigarettes', 'Achat CB', 'Achat Google', 'Achat CB Carrefour Banque', 'Aide Familiale', 'Remboursement Famille & Tiers', 'Retrait', 'Cinéma', 'Sorties & Vacances & Voyages', 'Shopping', 'Shopping Enfant', 'Soins Personnel', 'Livres & Manga', 'Ameublement & Déco & Électroménager', 'Consultations Médicales', 'Pharmacie/Médicaments', 'Cadeaux (Anniversaire, Fêtes etc...)', 'Frais Bancaires', 'Frais Imprévus', 'Amendes', 'Autres Dépenses'],
-  categoriesEpargnes: ['Livret A', 'Livret A Kim', 'Tirelire', 'Espèces', 'Anniversaire Coy', 'Anniversaire Kayu', 'Anniversaire Titi', 'Anniversaire Kim', 'Anniversaire Negro', 'Anniversaire Acat', 'Anniversaire La Naine', 'Anniversaire Noy', 'Voyages', 'Noël', "Fonds d'Urgence", 'CCP La Banque Postale', 'CCP BoursoBank'],
+  categoriesEpargnes: ['Livret A', 'Livret A Kim', 'Tirelire', 'Espèces', 'Anniversaire Coy', 'Anniversaire Kayu', 'Anniversaire Titi', 'Anniversaire Kim', 'Anniversaire Negro', 'Anniversaire Acat', 'Anniversaire La Naine', 'Anniversaire Noy', 'Voyages', 'Noël', 'Fonds d\'Urgence', 'CCP La Banque Postale', 'CCP BoursoBank'],
   comptesBancaires: [
     { id: 1, nom: 'CCP La Banque Postale', soldeDepart: 0, isEpargne: false },
     { id: 2, nom: 'CCP BoursoBank', soldeDepart: 48, isEpargne: false },
@@ -231,6 +221,120 @@ function AccueilPage({ onNavigate }: { onNavigate: (page: string) => void }) {
           {soldeReel < 0 && (<p className={conseilTextStyle}>⚠️ Attention ! Solde négatif de {Math.abs(soldeReel).toFixed(2)} {parametres.devise}</p>)}
           {soldeReel > 0 && totalEpargnes > 0 && (<p className={conseilTextStyle}>✅ Bravo ! Vous gérez bien votre budget ce mois</p>)}
           {filteredTransactions.length === 0 && (<p className={conseilTextStyle}>📊 Aucune transaction ce mois. Commencez à enregistrer !</p>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CreditsDettesPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [revenusMensuels, setRevenusMensuels] = useState(0);
+  const { parametres } = useParametres();
+
+  useEffect(() => {
+    const saved = localStorage.getItem('budget-transactions');
+    if (saved) {
+      const allTransactions = JSON.parse(saved);
+      setTransactions(allTransactions);
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const revenus = allTransactions.filter((t: Transaction) => t.type === 'Revenus' && t.date?.startsWith(currentMonth)).reduce((sum: number, t: Transaction) => sum + parseFloat(t.montant || '0'), 0);
+      setRevenusMensuels(revenus);
+    }
+  }, []);
+
+  const credits = transactions.filter((t: Transaction) => t.isCredit === true);
+  const totalMensualites = credits.reduce((sum, t: Transaction) => sum + parseFloat(t.montant || '0'), 0);
+
+  const getRemboursements = (credit: Transaction) => {
+    if (!credit.dateDebut || !credit.dureeMois) return { totalRembourse: 0, resteADu: parseFloat(credit.capitalTotal || '0'), progression: 0, moisEcoules: 0, totalADu: parseFloat(credit.capitalTotal || '0'), interetsTotal: 0 };
+    const dateDebut = new Date(credit.dateDebut);
+    const now = new Date();
+    const moisEcoules = Math.max(0, (now.getFullYear() - dateDebut.getFullYear()) * 12 + (now.getMonth() - dateDebut.getMonth()));
+    const mensualite = parseFloat(credit.montant || '0');
+    const capital = parseFloat(credit.capitalTotal || '0');
+    const taux = parseFloat(credit.tauxInteret || '0');
+    const duree = parseInt(credit.dureeMois || '0');
+    const interetsTotal = capital * (taux / 100) * (duree / 12);
+    const totalADu = capital + interetsTotal;
+    const totalRembourse = Math.min(moisEcoules * mensualite, totalADu);
+    const resteADu = Math.max(0, totalADu - totalRembourse);
+    const progression = totalADu > 0 ? (totalRembourse / totalADu) * 100 : 0;
+    return { totalRembourse, resteADu, progression, moisEcoules, totalADu, interetsTotal };
+  };
+
+  const totalEndettement = credits.reduce((sum, credit) => sum + getRemboursements(credit).resteADu, 0);
+  const tauxEndettement = revenusMensuels > 0 ? (totalMensualites / revenusMensuels) * 100 : 0;
+  const cumulAnnuel = totalMensualites * 12;
+  const getProgressColor = (percent: number) => { if (percent >= 75) return 'bg-green-500'; if (percent >= 50) return 'bg-[#D4AF37]'; if (percent >= 25) return 'bg-orange-500'; return 'bg-red-500'; };
+
+  return (
+    <div className="pb-4">
+      <div className="text-center mb-4"><h1 className={pageTitleStyle}>Crédits & Dettes</h1><p className={pageSubtitleStyle}>Suivi de remboursement</p></div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className={cardStyle + " text-center"}><p className={smallTextStyle + " uppercase tracking-wide"}>Endettement Total</p><p className={amountMediumStyle + " mt-1"}>{totalEndettement.toFixed(2)} {parametres.devise}</p><p className={smallTextStyle}>de dettes restant dues</p></div>
+        <div className={cardStyle + " text-center"}><p className={smallTextStyle + " uppercase tracking-wide"}>Taux d'Endettement</p><div className="relative w-16 h-16 mx-auto mt-2"><svg className="w-16 h-16 transform -rotate-90"><circle cx="32" cy="32" r="28" stroke="#D4AF37" strokeOpacity="0.2" strokeWidth="6" fill="none" /><circle cx="32" cy="32" r="28" stroke="#D4AF37" strokeWidth="6" fill="none" strokeDasharray={`${Math.min(tauxEndettement, 100) * 1.76} 176`} strokeLinecap="round" /></svg><div className="absolute inset-0 flex items-center justify-center"><span className={valueStyle + " text-lg font-bold"}>{Math.round(tauxEndettement)}%</span></div></div><p className={smallTextStyle + " mt-1"}>sur un plafond de 35%</p></div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className={cardStyle + " text-center p-3"}><p className={smallTextStyle}>Mensualité totale</p><p className={amountMediumStyle}>{totalMensualites.toFixed(2)} {parametres.devise}</p></div>
+        <div className={cardStyle + " text-center p-3"}><p className={smallTextStyle}>Cumul annuel</p><p className={amountMediumStyle}>{cumulAnnuel.toFixed(2)} {parametres.devise}</p></div>
+      </div>
+
+      {credits.length > 0 && (
+        <div className={cardStyle + " mb-4"}>
+          <h3 className={sectionTitleStyle + " mb-3 text-center uppercase tracking-wide"}>Progression du Remboursement</h3>
+          <div className="space-y-3">
+            {credits.map((credit: Transaction) => {
+              const { progression, totalRembourse } = getRemboursements(credit);
+              return (<div key={credit.id} className="flex items-center gap-2"><p className={smallTextStyle + " w-28 truncate"}>{credit.categorie}</p><div className="flex-1 h-4 bg-[#722F37]/50 rounded-full overflow-hidden border border-[#D4AF37]/20"><div className={`h-full ${getProgressColor(progression)} transition-all duration-500`} style={{ width: `${Math.min(progression, 100)}%` }} /></div><p className={smallTextStyle + " w-20 text-right"}>{totalRembourse.toFixed(0)} {parametres.devise}</p></div>);
+            })}
+          </div>
+        </div>
+      )}
+
+      {credits.length > 0 ? (
+        <div className={cardStyle + " mb-4"}>
+          <h3 className={sectionTitleStyle + " mb-3 text-center uppercase tracking-wide"}>Détail des Crédits</h3>
+          <div className="space-y-3">
+            {credits.map((credit: Transaction) => {
+              const { totalRembourse, resteADu, progression, totalADu, interetsTotal } = getRemboursements(credit);
+              return (
+                <div key={credit.id} className="p-3 bg-[#722F37]/40 rounded-xl border border-[#D4AF37]/20">
+                  <div className="flex items-center justify-between mb-2"><p className={sectionTitleStyle}>{credit.categorie}</p><span className={`text-xs px-2 py-0.5 rounded-full ${getProgressColor(progression)} text-white`}>{Math.round(progression)}%</span></div>
+                  <div className="h-2 bg-[#722F37]/50 rounded-full overflow-hidden mb-3 border border-[#D4AF37]/20"><div className={`h-full ${getProgressColor(progression)} transition-all duration-500`} style={{ width: `${Math.min(progression, 100)}%` }} /></div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div><p className={smallTextStyle}>Capital</p><p className={valueStyle}>{parseFloat(credit.capitalTotal || '0').toFixed(2)} {parametres.devise}</p></div>
+                    <div><p className={smallTextStyle}>Intérêts</p><p className={valueStyle}>{(interetsTotal || 0).toFixed(2)} {parametres.devise}</p></div>
+                    <div><p className={smallTextStyle}>Durée</p><p className={valueStyle}>{credit.dureeMois || '-'} mois</p></div>
+                    <div><p className={smallTextStyle}>Taux</p><p className={valueStyle}>{credit.tauxInteret || '0'}%</p></div>
+                    <div><p className={smallTextStyle}>Total dû</p><p className={valueStyle}>{(totalADu || 0).toFixed(2)} {parametres.devise}</p></div>
+                    <div><p className={smallTextStyle}>Mensualité</p><p className={valueStyle}>{parseFloat(credit.montant || '0').toFixed(2)} {parametres.devise}</p></div>
+                  </div>
+                  <div className="border-t border-[#D4AF37]/20 my-2" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center"><p className={smallTextStyle}>Remboursé</p><p className={valueStyle + " font-semibold"}>{totalRembourse.toFixed(2)} {parametres.devise}</p></div>
+                    <div className="text-center"><p className={smallTextStyle}>Reste dû</p><p className={valueStyle + " font-semibold"}>{resteADu.toFixed(2)} {parametres.devise}</p></div>
+                    <div className="text-center"><p className={smallTextStyle}>Progression</p><p className={valueStyle + " font-semibold"}>{Math.round(progression)}%</p></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className={cardStyle + " text-center py-8 mb-4"}><p className={pageSubtitleStyle + " mb-2"}>Aucun crédit enregistré</p><p className={smallTextStyle}>Pour ajouter un crédit, allez dans Transactions,<br />créez une transaction et cochez "C'est un crédit"</p></div>
+      )}
+
+      <div className={conseilCardStyle}>
+        <div className="flex items-center gap-2 mb-3"><Lightbulb className={conseilIconStyle} /><h4 className={conseilTitleStyle}>💡 Conseils</h4></div>
+        <div className="space-y-2">
+          {tauxEndettement > 35 && (<p className={conseilTextStyle}>⚠️ Attention ! Votre taux d'endettement dépasse 35%</p>)}
+          {tauxEndettement > 0 && tauxEndettement <= 35 && (<p className={conseilTextStyle}>✅ Votre taux d'endettement est dans la norme ({Math.round(tauxEndettement)}%)</p>)}
+          {credits.length === 0 && (<p className={conseilTextStyle}>📝 Aucun crédit enregistré. Ajoutez-les dans Transactions</p>)}
+          {credits.some(c => getRemboursements(c).progression >= 100) && (<p className={conseilTextStyle}>🎉 Félicitations ! Vous avez terminé au moins un crédit</p>)}
         </div>
       </div>
     </div>
@@ -421,23 +525,9 @@ function ObjectifsPage() {
   const [showVersementModal, setShowVersementModal] = useState(false);
   const [selectedObjectifId, setSelectedObjectifId] = useState<number | null>(null);
   const [versementMontant, setVersementMontant] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'tous' | 'court' | 'long'>('tous');
   const { parametres } = useParametres();
 
-  const [formData, setFormData] = useState({
-    nom: '',
-    montantCible: '',
-    montantActuel: '',
-    couleur: 'rose-pale',
-    icone: 'palmtree',
-    dateEcheance: '',
-    priorite: 'moyenne' as 'haute' | 'moyenne' | 'basse',
-    type: 'court' as 'court' | 'long',
-    recurrenceActif: false,
-    recurrenceFrequence: 'mensuel' as 'mensuel' | 'bimensuel' | 'hebdomadaire',
-    recurrenceMontant: '',
-    recurrenceJour: '1'
-  });
+  const [formData, setFormData] = useState({ nom: '', montantCible: '', montantActuel: '', couleur: 'rose-pale', icone: 'palmtree', dateEcheance: '', priorite: 'moyenne' as 'haute' | 'moyenne' | 'basse' });
 
   const couleursDisponibles = [
     { id: 'rose-pale', nom: 'Rose pâle', bg: 'bg-[#F8E8E8]', border: 'border-[#E8B4B8]', text: 'text-[#8B4557]', progress: 'bg-[#E8B4B8]' },
@@ -465,354 +555,62 @@ function ObjectifsPage() {
     { id: 'shopping', nom: 'Shopping', icon: ShoppingBasket },
   ];
 
-  const joursSemaine = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-
   useEffect(() => {
     const savedObjectifs = localStorage.getItem('budget-objectifs');
-    if (savedObjectifs) {
-      const parsed = JSON.parse(savedObjectifs);
-      // Migration : ajouter le type si absent
-      const migrated = parsed.map((o: any) => ({
-        ...o,
-        type: o.type || 'court',
-        recurrence: o.recurrence || undefined
-      }));
-      setObjectifs(migrated);
-    }
+    if (savedObjectifs) setObjectifs(JSON.parse(savedObjectifs));
   }, []);
 
-  // Traitement des récurrences
-  useEffect(() => {
-    processRecurrences();
-  }, [objectifs]);
-
-  const processRecurrences = () => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    let hasChanges = false;
-    
-    const updatedObjectifs = objectifs.map(obj => {
-      if (!obj.recurrence?.actif || !obj.recurrence.montant) return obj;
-      
-      const rec = obj.recurrence;
-      const lastExec = rec.derniereExecution ? new Date(rec.derniereExecution) : null;
-      
-      let shouldExecute = false;
-      
-      if (rec.frequence === 'mensuel' || rec.frequence === 'bimensuel') {
-        const jourCible = rec.jourDuMois || 1;
-        if (today.getDate() === jourCible) {
-          if (!lastExec || lastExec.getMonth() !== today.getMonth() || lastExec.getFullYear() !== today.getFullYear()) {
-            shouldExecute = true;
-          }
-        }
-        // Pour bimensuel, vérifier aussi le 15
-        if (rec.frequence === 'bimensuel' && today.getDate() === 15) {
-          if (!lastExec || (lastExec.getDate() !== 15 && lastExec.getMonth() === today.getMonth())) {
-            shouldExecute = true;
-          }
-        }
-      } else if (rec.frequence === 'hebdomadaire') {
-        const jourCible = rec.jourSemaine || 1;
-        if (today.getDay() === jourCible) {
-          if (!lastExec || (today.getTime() - lastExec.getTime()) >= 6 * 24 * 60 * 60 * 1000) {
-            shouldExecute = true;
-          }
-        }
-      }
-      
-      if (shouldExecute) {
-        hasChanges = true;
-        
-        // Créer une transaction d'épargne
-        const transactions = JSON.parse(localStorage.getItem('budget-transactions') || '[]');
-        const newTransaction = {
-          id: Date.now() + Math.random(),
-          date: todayStr,
-          montant: rec.montant.toString(),
-          type: 'Épargnes',
-          categorie: obj.nom,
-          memo: `Versement automatique - ${obj.nom}`
-        };
-        transactions.push(newTransaction);
-        localStorage.setItem('budget-transactions', JSON.stringify(transactions));
-        
-        // Mettre à jour l'objectif
-        return {
-          ...obj,
-          montantActuel: obj.montantActuel + rec.montant,
-          recurrence: {
-            ...rec,
-            derniereExecution: todayStr
-          }
-        };
-      }
-      
-      return obj;
-    });
-    
-    if (hasChanges) {
-      saveObjectifs(updatedObjectifs);
-    }
-  };
-
-  const saveObjectifs = (newObjectifs: Objectif[]) => {
-    setObjectifs(newObjectifs);
-    localStorage.setItem('budget-objectifs', JSON.stringify(newObjectifs));
-  };
-
+  const saveObjectifs = (newObjectifs: Objectif[]) => { setObjectifs(newObjectifs); localStorage.setItem('budget-objectifs', JSON.stringify(newObjectifs)); };
   const getCouleur = (couleurId: string) => couleursDisponibles.find(c => c.id === couleurId) || couleursDisponibles[0];
   const getIcone = (iconeId: string) => iconesDisponibles.find(i => i.id === iconeId) || iconesDisponibles[0];
-
-  const resetForm = () => {
-    setFormData({
-      nom: '',
-      montantCible: '',
-      montantActuel: '',
-      couleur: 'rose-pale',
-      icone: 'palmtree',
-      dateEcheance: '',
-      priorite: 'moyenne',
-      type: 'court',
-      recurrenceActif: false,
-      recurrenceFrequence: 'mensuel',
-      recurrenceMontant: '',
-      recurrenceJour: '1'
-    });
-  };
+  const resetForm = () => { setFormData({ nom: '', montantCible: '', montantActuel: '', couleur: 'rose-pale', icone: 'palmtree', dateEcheance: '', priorite: 'moyenne' }); };
 
   const handleSubmit = () => {
     if (!formData.nom || !formData.montantCible) return;
-    
-    const recurrence = formData.recurrenceActif ? {
-      actif: true,
-      frequence: formData.recurrenceFrequence,
-      montant: parseFloat(formData.recurrenceMontant) || 0,
-      jourDuMois: formData.recurrenceFrequence !== 'hebdomadaire' ? parseInt(formData.recurrenceJour) : undefined,
-      jourSemaine: formData.recurrenceFrequence === 'hebdomadaire' ? parseInt(formData.recurrenceJour) : undefined,
-      derniereExecution: undefined
-    } : undefined;
-
     if (editingId !== null) {
-      const updated = objectifs.map(o => o.id === editingId ? {
-        ...o,
-        nom: formData.nom,
-        montantCible: parseFloat(formData.montantCible),
-        montantActuel: parseFloat(formData.montantActuel || '0'),
-        couleur: formData.couleur,
-        icone: formData.icone,
-        dateEcheance: formData.dateEcheance || undefined,
-        priorite: formData.priorite,
-        type: formData.type,
-        recurrence
-      } : o);
+      const updated = objectifs.map(o => o.id === editingId ? { ...formData, id: editingId, montantCible: parseFloat(formData.montantCible), montantActuel: parseFloat(formData.montantActuel || '0') } : o);
       saveObjectifs(updated);
       setEditingId(null);
     } else {
-      const newObjectif: Objectif = {
-        id: Date.now(),
-        nom: formData.nom,
-        montantCible: parseFloat(formData.montantCible),
-        montantActuel: parseFloat(formData.montantActuel || '0'),
-        couleur: formData.couleur,
-        icone: formData.icone,
-        dateEcheance: formData.dateEcheance || undefined,
-        priorite: formData.priorite,
-        type: formData.type,
-        recurrence
-      };
+      const newObjectif: Objectif = { ...formData, id: Date.now(), montantCible: parseFloat(formData.montantCible), montantActuel: parseFloat(formData.montantActuel || '0') };
       saveObjectifs([...objectifs, newObjectif]);
     }
     resetForm();
     setShowForm(false);
   };
 
-  const handleEdit = (objectif: Objectif) => {
-    setFormData({
-      nom: objectif.nom,
-      montantCible: objectif.montantCible.toString(),
-      montantActuel: objectif.montantActuel.toString(),
-      couleur: objectif.couleur,
-      icone: objectif.icone,
-      dateEcheance: objectif.dateEcheance || '',
-      priorite: objectif.priorite,
-      type: objectif.type || 'court',
-      recurrenceActif: objectif.recurrence?.actif || false,
-      recurrenceFrequence: objectif.recurrence?.frequence || 'mensuel',
-      recurrenceMontant: objectif.recurrence?.montant?.toString() || '',
-      recurrenceJour: (objectif.recurrence?.jourDuMois || objectif.recurrence?.jourSemaine || 1).toString()
-    });
-    setEditingId(objectif.id);
-    setShowForm(true);
-  };
-
+  const handleEdit = (objectif: Objectif) => { setFormData({ nom: objectif.nom, montantCible: objectif.montantCible.toString(), montantActuel: objectif.montantActuel.toString(), couleur: objectif.couleur, icone: objectif.icone, dateEcheance: objectif.dateEcheance || '', priorite: objectif.priorite }); setEditingId(objectif.id); setShowForm(true); };
   const handleDelete = (id: number) => saveObjectifs(objectifs.filter(o => o.id !== id));
+  const handleVersement = () => { if (!versementMontant || !selectedObjectifId) return; const updated = objectifs.map(o => o.id === selectedObjectifId ? { ...o, montantActuel: o.montantActuel + parseFloat(versementMontant) } : o); saveObjectifs(updated); setVersementMontant(''); setShowVersementModal(false); setSelectedObjectifId(null); };
+  const openVersementModal = (id: number) => { setSelectedObjectifId(id); setVersementMontant(''); setShowVersementModal(true); };
+  const getMoisRestants = (dateEcheance: string) => { if (!dateEcheance) return null; const now = new Date(); const echeance = new Date(dateEcheance); return Math.max(0, (echeance.getFullYear() - now.getFullYear()) * 12 + (echeance.getMonth() - now.getMonth())); };
+  const getSuggestionMensuelle = (objectif: Objectif) => { const moisRestants = getMoisRestants(objectif.dateEcheance || ''); if (!moisRestants || moisRestants === 0) return null; const resteAEpargner = objectif.montantCible - objectif.montantActuel; if (resteAEpargner <= 0) return null; return Math.ceil(resteAEpargner / moisRestants); };
+  const formatDate = (dateStr: string) => { if (!dateStr) return ''; return new Date(dateStr).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); };
 
-  const handleVersement = () => {
-    if (!versementMontant || !selectedObjectifId) return;
-    const montant = parseFloat(versementMontant);
-    
-    // Mettre à jour l'objectif
-    const updated = objectifs.map(o => o.id === selectedObjectifId ? { ...o, montantActuel: o.montantActuel + montant } : o);
-    saveObjectifs(updated);
-    
-    // Créer une transaction d'épargne
-    const objectif = objectifs.find(o => o.id === selectedObjectifId);
-    if (objectif) {
-      const transactions = JSON.parse(localStorage.getItem('budget-transactions') || '[]');
-      const newTransaction = {
-        id: Date.now(),
-        date: new Date().toISOString().split('T')[0],
-        montant: montant.toString(),
-        type: 'Épargnes',
-        categorie: objectif.nom,
-        memo: `Versement manuel - ${objectif.nom}`
-      };
-      transactions.push(newTransaction);
-      localStorage.setItem('budget-transactions', JSON.stringify(transactions));
-    }
-    
-    setVersementMontant('');
-    setShowVersementModal(false);
-    setSelectedObjectifId(null);
-  };
-
-  const openVersementModal = (id: number) => {
-    setSelectedObjectifId(id);
-    setVersementMontant('');
-    setShowVersementModal(true);
-  };
-
-  const toggleRecurrence = (id: number) => {
-    const updated = objectifs.map(o => {
-      if (o.id === id && o.recurrence) {
-        return { ...o, recurrence: { ...o.recurrence, actif: !o.recurrence.actif } };
-      }
-      return o;
-    });
-    saveObjectifs(updated);
-  };
-
-  const getMoisRestants = (dateEcheance: string) => {
-    if (!dateEcheance) return null;
-    const now = new Date();
-    const echeance = new Date(dateEcheance);
-    return Math.max(0, (echeance.getFullYear() - now.getFullYear()) * 12 + (echeance.getMonth() - now.getMonth()));
-  };
-
-  const getSuggestionMensuelle = (objectif: Objectif) => {
-    const moisRestants = getMoisRestants(objectif.dateEcheance || '');
-    if (!moisRestants || moisRestants === 0) return null;
-    const resteAEpargner = objectif.montantCible - objectif.montantActuel;
-    if (resteAEpargner <= 0) return null;
-    return Math.ceil(resteAEpargner / moisRestants);
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-  };
-
-  const getRecurrenceLabel = (rec: Objectif['recurrence']) => {
-    if (!rec) return '';
-    let label = '';
-    if (rec.frequence === 'mensuel') {
-      label = `${rec.montant}${parametres.devise}/mois le ${rec.jourDuMois}`;
-    } else if (rec.frequence === 'bimensuel') {
-      label = `${rec.montant}${parametres.devise} 2x/mois`;
-    } else if (rec.frequence === 'hebdomadaire') {
-      label = `${rec.montant}${parametres.devise}/sem. (${joursSemaine[rec.jourSemaine || 0]})`;
-    }
-    return label;
-  };
-
-  // Filtrer les objectifs
-  const filteredObjectifs = objectifs.filter(o => {
-    if (activeFilter === 'tous') return true;
-    return o.type === activeFilter;
-  });
-
-  // Stats
   const totalObjectifs = objectifs.reduce((sum, o) => sum + o.montantCible, 0);
   const totalEpargne = objectifs.reduce((sum, o) => sum + o.montantActuel, 0);
   const progressionGlobale = totalObjectifs > 0 ? (totalEpargne / totalObjectifs) * 100 : 0;
-  const objectifsCourtTerme = objectifs.filter(o => o.type === 'court').length;
-  const objectifsLongTerme = objectifs.filter(o => o.type === 'long').length;
-  const objectifsAvecRecurrence = objectifs.filter(o => o.recurrence?.actif).length;
 
-  const inputStyle = "w-full bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm text-[#D4AF37] placeholder-[#D4AF37]/50 focus:outline-none focus:border-[#D4AF37]";
-  const labelStyle = "text-xs font-medium text-[#D4AF37] mb-1 block";
+  const inputStyle = inputStyleGlobal;
+  const labelStyle = labelStyleGlobal;
 
   return (
     <div className="pb-4">
-      <div className="text-center mb-4">
-        <h1 className={pageTitleStyle}>Objectifs</h1>
-        <p className={pageSubtitleStyle}>Vos objectifs financiers</p>
-      </div>
+      <div className="text-center mb-4"><h1 className={pageTitleStyle}>Objectifs</h1><p className={pageSubtitleStyle}>Vos objectifs financiers</p></div>
 
-      {/* Stats globales */}
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className={cardStyle + " text-center p-3"}>
-          <p className={smallTextStyle}>Total objectifs</p>
-          <p className={valueStyle + " font-semibold"}>{totalObjectifs.toFixed(0)}{parametres.devise}</p>
-        </div>
-        <div className={cardStyle + " text-center p-3"}>
-          <p className={smallTextStyle}>Épargné</p>
-          <p className={valueStyle + " font-semibold"}>{totalEpargne.toFixed(0)}{parametres.devise}</p>
-        </div>
-        <div className={cardStyle + " text-center p-3"}>
-          <p className={smallTextStyle}>Progression</p>
-          <p className={valueStyle + " font-semibold"}>{Math.round(progressionGlobale)}%</p>
-        </div>
+        <div className={cardStyle + " text-center p-3"}><p className={smallTextStyle}>Total objectifs</p><p className={valueStyle + " font-semibold"}>{totalObjectifs.toFixed(0)}{parametres.devise}</p></div>
+        <div className={cardStyle + " text-center p-3"}><p className={smallTextStyle}>Épargné</p><p className={valueStyle + " font-semibold"}>{totalEpargne.toFixed(0)}{parametres.devise}</p></div>
+        <div className={cardStyle + " text-center p-3"}><p className={smallTextStyle}>Progression</p><p className={valueStyle + " font-semibold"}>{Math.round(progressionGlobale)}%</p></div>
       </div>
 
-      {/* Progression globale */}
-      {objectifs.length > 0 && (
-        <div className={cardStyle + " mb-4"}>
-          <p className={smallTextStyle + " mb-2 text-center"}>Progression globale</p>
-          <div className="h-3 bg-[#722F37]/50 rounded-full overflow-hidden border border-[#D4AF37]/20">
-            <div className="h-full bg-[#D4AF37] transition-all duration-500" style={{ width: `${Math.min(progressionGlobale, 100)}%` }} />
-          </div>
-          <div className="flex justify-center gap-4 mt-2">
-            <span className={smallTextStyle}>🎯 Court terme: {objectifsCourtTerme}</span>
-            <span className={smallTextStyle}>🏔️ Long terme: {objectifsLongTerme}</span>
-            <span className={smallTextStyle}>🔄 Récurrents: {objectifsAvecRecurrence}</span>
-          </div>
-        </div>
-      )}
+      {objectifs.length > 0 && (<div className={cardStyle + " mb-4"}><p className={smallTextStyle + " mb-2 text-center"}>Progression globale</p><div className="h-3 bg-[#722F37]/50 rounded-full overflow-hidden border border-[#D4AF37]/20"><div className="h-full bg-[#D4AF37] transition-all duration-500" style={{ width: `${Math.min(progressionGlobale, 100)}%` }} /></div></div>)}
 
-      {/* Filtres */}
-      <div className="flex gap-2 mb-4">
-        {(['tous', 'court', 'long'] as const).map((filter) => (
-          <button
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-colors border ${
-              activeFilter === filter
-                ? 'bg-[#D4AF37] text-[#722F37] border-[#D4AF37]'
-                : 'bg-[#722F37]/30 text-[#D4AF37] border-[#D4AF37]/40 hover:bg-[#D4AF37]/20'
-            }`}
-          >
-            {filter === 'tous' ? '📋 Tous' : filter === 'court' ? '🎯 Court terme' : '🏔️ Long terme'}
-            <span className="ml-1">
-              ({filter === 'tous' ? objectifs.length : filter === 'court' ? objectifsCourtTerme : objectifsLongTerme})
-            </span>
-          </button>
-        ))}
-      </div>
+      <button onClick={() => { resetForm(); setShowForm(true); }} className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-medium text-sm"><Plus className="w-4 h-4" />Nouvel objectif</button>
 
-      {/* Bouton ajouter */}
-      <button
-        onClick={() => { resetForm(); setShowForm(true); }}
-        className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-medium text-sm"
-      >
-        <Plus className="w-4 h-4" />Nouvel objectif
-      </button>
-
-      {/* Liste des objectifs */}
-      {filteredObjectifs.length > 0 ? (
+      {objectifs.length > 0 ? (
         <div className="space-y-3 mb-4">
-          {filteredObjectifs.map((objectif) => {
+          {objectifs.map((objectif) => {
             const couleur = getCouleur(objectif.couleur);
             const icone = getIcone(objectif.icone);
             const IconComponent = icone.icon;
@@ -825,429 +623,74 @@ function ObjectifsPage() {
 
             return (
               <div key={objectif.id} className={`${couleur.bg} rounded-2xl p-4 shadow-sm border ${couleur.border}`}>
-                {/* Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${couleur.bg} border ${couleur.border}`}>
-                      <IconComponent className={`w-5 h-5 ${couleur.text}`} />
-                    </div>
-                    <div>
-                      <p className={`text-sm font-semibold ${couleur.text}`}>{objectif.nom}</p>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                          objectif.priorite === 'haute' ? 'bg-red-200 text-red-700' :
-                          objectif.priorite === 'moyenne' ? 'bg-orange-200 text-orange-700' :
-                          'bg-green-200 text-green-700'
-                        }`}>
-                          {objectif.priorite === 'haute' ? '🔴 Haute' : objectif.priorite === 'moyenne' ? '🟠 Moyenne' : '🟢 Basse'}
-                        </span>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${
-                          objectif.type === 'court' ? 'bg-blue-200 text-blue-700' : 'bg-purple-200 text-purple-700'
-                        }`}>
-                          {objectif.type === 'court' ? '🎯 Court' : '🏔️ Long'}
-                        </span>
-                      </div>
-                    </div>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${couleur.bg} border ${couleur.border}`}><IconComponent className={`w-5 h-5 ${couleur.text}`} /></div>
+                    <div><p className={`text-sm font-semibold ${couleur.text}`}>{objectif.nom}</p><span className={`text-[9px] px-1.5 py-0.5 rounded-full ${objectif.priorite === 'haute' ? 'bg-red-200 text-red-700' : objectif.priorite === 'moyenne' ? 'bg-orange-200 text-orange-700' : 'bg-green-200 text-green-700'}`}>{objectif.priorite === 'haute' ? '🔴 Haute' : objectif.priorite === 'moyenne' ? '🟠 Moyenne' : '🟢 Basse'}</span></div>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openVersementModal(objectif.id)} className="p-1.5 hover:bg-white/30 rounded-lg">
-                      <Plus className={`w-4 h-4 ${couleur.text}`} />
-                    </button>
-                    <button onClick={() => handleEdit(objectif)} className="p-1.5 hover:bg-white/30 rounded-lg">
-                      <Edit3 className={`w-4 h-4 ${couleur.text}`} />
-                    </button>
-                    <button onClick={() => handleDelete(objectif.id)} className="p-1.5 hover:bg-white/30 rounded-lg">
-                      <Trash2 className={`w-4 h-4 ${couleur.text}`} />
-                    </button>
+                    <button onClick={() => openVersementModal(objectif.id)} className="p-1.5 hover:bg-white/30 rounded-lg"><Plus className={`w-4 h-4 ${couleur.text}`} /></button>
+                    <button onClick={() => handleEdit(objectif)} className="p-1.5 hover:bg-white/30 rounded-lg"><Edit3 className={`w-4 h-4 ${couleur.text}`} /></button>
+                    <button onClick={() => handleDelete(objectif.id)} className="p-1.5 hover:bg-white/30 rounded-lg"><Trash2 className={`w-4 h-4 ${couleur.text}`} /></button>
                   </div>
                 </div>
-
-                {/* Barre de progression */}
-                <div className="h-3 bg-white/50 rounded-full overflow-hidden mb-2">
-                  <div
-                    className={`h-full transition-all duration-500 ${isComplete ? 'bg-green-500' : couleur.progress}`}
-                    style={{ width: `${Math.min(pourcentage, 100)}%` }}
-                  />
-                </div>
-
-                {/* Stats */}
+                <div className="h-3 bg-white/50 rounded-full overflow-hidden mb-2"><div className={`h-full transition-all duration-500 ${isComplete ? 'bg-green-500' : couleur.progress}`} style={{ width: `${Math.min(pourcentage, 100)}%` }} /></div>
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex gap-4">
-                    <div>
-                      <p className={`text-[10px] ${couleur.text} opacity-60`}>Objectif</p>
-                      <p className={`text-xs font-medium ${couleur.text}`}>{objectif.montantCible.toFixed(0)}{parametres.devise}</p>
-                    </div>
-                    <div>
-                      <p className={`text-[10px] ${couleur.text} opacity-60`}>Épargné</p>
-                      <p className={`text-xs font-medium ${couleur.text}`}>{objectif.montantActuel.toFixed(0)}{parametres.devise}</p>
-                    </div>
-                    <div>
-                      <p className={`text-[10px] ${couleur.text} opacity-60`}>Reste</p>
-                      <p className={`text-xs font-medium ${reste > 0 ? couleur.text : 'text-green-600'}`}>
-                        {reste > 0 ? reste.toFixed(0) + parametres.devise : '✓'}
-                      </p>
-                    </div>
+                    <div><p className={`text-[10px] ${couleur.text} opacity-60`}>Objectif</p><p className={`text-xs font-medium ${couleur.text}`}>{objectif.montantCible.toFixed(0)}{parametres.devise}</p></div>
+                    <div><p className={`text-[10px] ${couleur.text} opacity-60`}>Épargné</p><p className={`text-xs font-medium ${couleur.text}`}>{objectif.montantActuel.toFixed(0)}{parametres.devise}</p></div>
+                    <div><p className={`text-[10px] ${couleur.text} opacity-60`}>Reste</p><p className={`text-xs font-medium ${reste > 0 ? couleur.text : 'text-green-600'}`}>{reste > 0 ? reste.toFixed(0) + parametres.devise : '✓'}</p></div>
                   </div>
-                  <div className={`px-2 py-1 rounded-full text-[10px] font-medium ${
-                    isComplete ? 'bg-green-500 text-white' :
-                    isAlmostComplete ? 'bg-[#D4AF37] text-[#722F37]' :
-                    'bg-white/50 ' + couleur.text
-                  }`}>
-                    {isComplete ? '🎉 Atteint !' : `${Math.round(pourcentage)}%`}
-                  </div>
+                  <div className={`px-2 py-1 rounded-full text-[10px] font-medium ${isComplete ? 'bg-green-500 text-white' : isAlmostComplete ? 'bg-[#D4AF37] text-[#722F37]' : 'bg-white/50 ' + couleur.text}`}>{isComplete ? '🎉 Atteint !' : `${Math.round(pourcentage)}%`}</div>
                 </div>
-
-                {/* Infos supplémentaires */}
                 <div className={`pt-2 border-t ${couleur.border} border-opacity-30 space-y-1`}>
-                  {objectif.dateEcheance && (
-                    <p className={`text-[10px] ${couleur.text} opacity-70`}>
-                      📅 Échéance : {formatDate(objectif.dateEcheance)} ({moisRestants} mois)
-                    </p>
-                  )}
-                  {suggestion && !isComplete && (
-                    <p className={`text-[10px] ${couleur.text} opacity-70`}>
-                      💡 Épargnez {suggestion}{parametres.devise}/mois pour atteindre votre objectif
-                    </p>
-                  )}
-                  {objectif.recurrence && (
-                    <div className="flex items-center justify-between">
-                      <p className={`text-[10px] ${couleur.text} opacity-70`}>
-                        🔄 Récurrence : {getRecurrenceLabel(objectif.recurrence)}
-                      </p>
-                      <button
-                        onClick={() => toggleRecurrence(objectif.id)}
-                        className={`w-8 h-4 rounded-full transition-colors ${
-                          objectif.recurrence.actif ? 'bg-green-500' : 'bg-gray-400'
-                        }`}
-                      >
-                        <div className={`w-3 h-3 rounded-full bg-white shadow transition-transform ${
-                          objectif.recurrence.actif ? 'translate-x-4' : 'translate-x-0.5'
-                        }`} />
-                      </button>
-                    </div>
-                  )}
-                  {isComplete && (
-                    <p className="text-[10px] text-green-600 font-medium">✅ Félicitations ! Objectif atteint !</p>
-                  )}
+                  {objectif.dateEcheance && <p className={`text-[10px] ${couleur.text} opacity-70`}>📅 Échéance : {formatDate(objectif.dateEcheance)} ({moisRestants} mois)</p>}
+                  {suggestion && !isComplete && <p className={`text-[10px] ${couleur.text} opacity-70`}>💡 Épargnez {suggestion}{parametres.devise}/mois pour atteindre votre objectif</p>}
+                  {isComplete && <p className="text-[10px] text-green-600 font-medium">✅ Félicitations ! Objectif atteint !</p>}
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <div className={cardStyle + " text-center py-8 mb-4"}>
-          <Target className="w-12 h-12 text-[#D4AF37]/30 mx-auto mb-3" />
-          <p className={pageSubtitleStyle + " mb-2"}>
-            {activeFilter === 'tous' ? 'Aucun objectif' : `Aucun objectif ${activeFilter === 'court' ? 'court terme' : 'long terme'}`}
-          </p>
-          <p className={smallTextStyle}>Créez votre premier objectif</p>
-        </div>
+        <div className={cardStyle + " text-center py-8 mb-4"}><Target className="w-12 h-12 text-[#D4AF37]/30 mx-auto mb-3" /><p className={pageSubtitleStyle + " mb-2"}>Aucun objectif</p><p className={smallTextStyle}>Créez votre premier objectif</p></div>
       )}
 
-      {/* Conseils */}
       <div className={conseilCardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className={conseilIconStyle} />
-          <h4 className={conseilTitleStyle}>💡 Conseils</h4>
-        </div>
+        <div className="flex items-center gap-2 mb-3"><Lightbulb className={conseilIconStyle} /><h4 className={conseilTitleStyle}>💡 Conseils</h4></div>
         <div className="space-y-2">
-          {objectifs.length === 0 && (
-            <p className={conseilTextStyle}>📝 Créez des objectifs pour mieux épargner</p>
-          )}
-          {objectifs.some(o => (o.montantActuel / o.montantCible) * 100 >= 100) && (
-            <p className={conseilTextStyle}>🎉 Félicitations ! Vous avez atteint au moins un objectif</p>
-          )}
-          {objectifs.filter(o => o.priorite === 'haute' && (o.montantActuel / o.montantCible) * 100 < 50).length > 0 && (
-            <p className={conseilTextStyle}>🔴 Vos objectifs prioritaires ont besoin d'attention</p>
-          )}
-          {progressionGlobale > 0 && progressionGlobale < 100 && (
-            <p className={conseilTextStyle}>💪 Continuez ! Vous êtes à {Math.round(progressionGlobale)}% de vos objectifs</p>
-          )}
-          {objectifsAvecRecurrence > 0 && (
-            <p className={conseilTextStyle}>🔄 {objectifsAvecRecurrence} objectif(s) avec versement automatique actif</p>
-          )}
-          {objectifs.length > 0 && objectifsAvecRecurrence === 0 && (
-            <p className={conseilTextStyle}>💡 Activez les récurrences pour épargner automatiquement</p>
-          )}
+          {objectifs.length === 0 && (<p className={conseilTextStyle}>📝 Créez des objectifs pour mieux épargner</p>)}
+          {objectifs.some(o => (o.montantActuel / o.montantCible) * 100 >= 100) && (<p className={conseilTextStyle}>🎉 Félicitations ! Vous avez atteint au moins un objectif</p>)}
+          {objectifs.filter(o => o.priorite === 'haute' && (o.montantActuel / o.montantCible) * 100 < 50).length > 0 && (<p className={conseilTextStyle}>🔴 Vos objectifs prioritaires ont besoin d'attention</p>)}
+          {progressionGlobale > 0 && progressionGlobale < 100 && (<p className={conseilTextStyle}>💪 Continuez ! Vous êtes à {Math.round(progressionGlobale)}% de vos objectifs</p>)}
         </div>
       </div>
 
-      {/* Modal formulaire */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md max-h-[90vh] overflow-y-auto border border-[#D4AF37]/40">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvel'} objectif</h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1">
-                <X className="w-5 h-5 text-[#D4AF37]" />
-              </button>
-            </div>
-
+          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md max-h-[85vh] overflow-y-auto border border-[#D4AF37]/40">
+            <div className="flex items-center justify-between mb-4"><h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvel'} objectif</h2><button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5 text-[#D4AF37]" /></button></div>
             <div className="space-y-4">
-              {/* Nom */}
-              <div>
-                <label className={labelStyle}>Nom de l'objectif</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Voyage Japon, iPhone..."
-                  value={formData.nom}
-                  onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                  className={inputStyle}
-                />
-              </div>
-
-              {/* Montants */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelStyle}>Montant à atteindre ({parametres.devise})</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={formData.montantCible}
-                    onChange={(e) => setFormData({ ...formData, montantCible: e.target.value })}
-                    className={inputStyle}
-                  />
-                </div>
-                <div>
-                  <label className={labelStyle}>Déjà épargné ({parametres.devise})</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    value={formData.montantActuel}
-                    onChange={(e) => setFormData({ ...formData, montantActuel: e.target.value })}
-                    className={inputStyle}
-                  />
-                </div>
-              </div>
-
-              {/* Date d'échéance */}
-              <div>
-                <label className={labelStyle}>Date d'échéance (optionnel)</label>
-                <input
-                  type="date"
-                  value={formData.dateEcheance}
-                  onChange={(e) => setFormData({ ...formData, dateEcheance: e.target.value })}
-                  className={inputStyle}
-                />
-              </div>
-
-              {/* Type : Court terme / Long terme */}
-              <div>
-                <label className={labelStyle}>Type d'objectif</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['court', 'long'] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setFormData({ ...formData, type: t })}
-                      className={`py-2 rounded-xl text-xs font-medium border ${
-                        formData.type === t
-                          ? 'bg-[#D4AF37] border-[#D4AF37] text-[#722F37]'
-                          : 'bg-[#722F37]/50 border-[#D4AF37]/50 text-[#D4AF37]'
-                      }`}
-                    >
-                      {t === 'court' ? '🎯 Court terme' : '🏔️ Long terme'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Priorité */}
-              <div>
-                <label className={labelStyle}>Priorité</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['haute', 'moyenne', 'basse'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setFormData({ ...formData, priorite: p })}
-                      className={`py-2 rounded-xl text-xs font-medium border ${
-                        formData.priorite === p
-                          ? 'bg-[#D4AF37] border-[#D4AF37] text-[#722F37]'
-                          : 'bg-[#722F37]/50 border-[#D4AF37]/50 text-[#D4AF37]'
-                      }`}
-                    >
-                      {p === 'haute' ? '🔴 Haute' : p === 'moyenne' ? '🟠 Moyenne' : '🟢 Basse'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Couleur */}
-              <div>
-                <label className={labelStyle}>Couleur</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {couleursDisponibles.map((couleur) => (
-                    <button
-                      key={couleur.id}
-                      onClick={() => setFormData({ ...formData, couleur: couleur.id })}
-                      className={`h-10 rounded-xl border-2 ${
-                        formData.couleur === couleur.id ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]' : couleur.border
-                      }`}
-                    >
-                      <div className={`w-full h-full rounded-lg ${couleur.bg}`} />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Icône */}
-              <div>
-                <label className={labelStyle}>Icône</label>
-                <div className="grid grid-cols-6 gap-2">
-                  {iconesDisponibles.map((icone) => {
-                    const IconComp = icone.icon;
-                    return (
-                      <button
-                        key={icone.id}
-                        onClick={() => setFormData({ ...formData, icone: icone.id })}
-                        className={`h-10 rounded-xl flex items-center justify-center border ${
-                          formData.icone === icone.id
-                            ? 'bg-[#D4AF37] border-[#D4AF37] text-[#722F37]'
-                            : 'bg-[#722F37]/50 border-[#D4AF37]/50 text-[#D4AF37]'
-                        }`}
-                      >
-                        <IconComp className="w-5 h-5" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Récurrence */}
-              <div className={`p-3 rounded-xl border ${formData.recurrenceActif ? 'border-[#D4AF37] bg-[#D4AF37]/10' : 'border-[#D4AF37]/30 bg-[#722F37]/30'}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <label className={labelStyle + " mb-0 flex items-center gap-2"}>
-                    <RefreshCw className="w-4 h-4" />
-                    Versement récurrent
-                  </label>
-                  <button
-                    onClick={() => setFormData({ ...formData, recurrenceActif: !formData.recurrenceActif })}
-                    className={`w-12 h-6 rounded-full transition-colors ${
-                      formData.recurrenceActif ? 'bg-green-500' : 'bg-[#722F37]/50'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                      formData.recurrenceActif ? 'translate-x-6' : 'translate-x-0.5'
-                    }`} />
-                  </button>
-                </div>
-
-                {formData.recurrenceActif && (
-                  <div className="space-y-3">
-                    {/* Fréquence */}
-                    <div>
-                      <label className={smallTextStyle + " block mb-1"}>Fréquence</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(['mensuel', 'bimensuel', 'hebdomadaire'] as const).map((f) => (
-                          <button
-                            key={f}
-                            onClick={() => setFormData({ ...formData, recurrenceFrequence: f, recurrenceJour: f === 'hebdomadaire' ? '1' : '1' })}
-                            className={`py-1.5 rounded-lg text-[10px] font-medium border ${
-                              formData.recurrenceFrequence === f
-                                ? 'bg-[#D4AF37] border-[#D4AF37] text-[#722F37]'
-                                : 'bg-[#722F37]/50 border-[#D4AF37]/50 text-[#D4AF37]'
-                            }`}
-                          >
-                            {f === 'mensuel' ? 'Mensuel' : f === 'bimensuel' ? '2x/mois' : 'Hebdo'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Montant et jour */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className={smallTextStyle + " block mb-1"}>Montant ({parametres.devise})</label>
-                        <input
-                          type="number"
-                          placeholder="0"
-                          value={formData.recurrenceMontant}
-                          onChange={(e) => setFormData({ ...formData, recurrenceMontant: e.target.value })}
-                          className={inputStyle + " text-xs"}
-                        />
-                      </div>
-                      <div>
-                        <label className={smallTextStyle + " block mb-1"}>
-                          {formData.recurrenceFrequence === 'hebdomadaire' ? 'Jour de la semaine' : 'Jour du mois'}
-                        </label>
-                        <select
-                          value={formData.recurrenceJour}
-                          onChange={(e) => setFormData({ ...formData, recurrenceJour: e.target.value })}
-                          className={inputStyle + " text-xs"}
-                        >
-                          {formData.recurrenceFrequence === 'hebdomadaire' ? (
-                            joursSemaine.map((jour, i) => (
-                              <option key={i} value={i}>{jour}</option>
-                            ))
-                          ) : (
-                            Array.from({ length: 31 }, (_, i) => (
-                              <option key={i + 1} value={i + 1}>{i + 1}</option>
-                            ))
-                          )}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Boutons */}
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"
-                >
-                  <Check className="w-5 h-5" />
-                  {editingId ? 'Modifier' : 'Créer'}
-                </button>
-              </div>
+              <div><label className={labelStyle}>Nom de l'objectif</label><input type="text" placeholder="Ex: Voyage Japon, iPhone..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className={inputStyle} /></div>
+              <div><label className={labelStyle}>Montant à atteindre ({parametres.devise})</label><input type="number" placeholder="0" value={formData.montantCible} onChange={(e) => setFormData({ ...formData, montantCible: e.target.value })} className={inputStyle} /></div>
+              <div><label className={labelStyle}>Montant déjà épargné ({parametres.devise})</label><input type="number" placeholder="0" value={formData.montantActuel} onChange={(e) => setFormData({ ...formData, montantActuel: e.target.value })} className={inputStyle} /></div>
+              <div><label className={labelStyle}>Date d'échéance (optionnel)</label><input type="date" value={formData.dateEcheance} onChange={(e) => setFormData({ ...formData, dateEcheance: e.target.value })} className={inputStyle} /></div>
+              <div><label className={labelStyle}>Priorité</label><div className="grid grid-cols-3 gap-2">{(['haute', 'moyenne', 'basse'] as const).map((p) => (<button key={p} onClick={() => setFormData({ ...formData, priorite: p })} className={`py-2 rounded-xl text-xs font-medium border ${formData.priorite === p ? 'bg-[#D4AF37] border-[#D4AF37] text-[#722F37]' : 'bg-[#722F37]/50 border-[#D4AF37]/50 text-[#D4AF37]'}`}>{p === 'haute' ? '🔴 Haute' : p === 'moyenne' ? '🟠 Moyenne' : '🟢 Basse'}</button>))}</div></div>
+              <div><label className={labelStyle}>Couleur</label><div className="grid grid-cols-4 gap-2">{couleursDisponibles.map((couleur) => (<button key={couleur.id} onClick={() => setFormData({ ...formData, couleur: couleur.id })} className={`h-10 rounded-xl border-2 ${formData.couleur === couleur.id ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]' : couleur.border}`}><div className={`w-full h-full rounded-lg ${couleur.bg}`} /></button>))}</div></div>
+              <div><label className={labelStyle}>Icône</label><div className="grid grid-cols-6 gap-2">{iconesDisponibles.map((icone) => { const IconComp = icone.icon; return (<button key={icone.id} onClick={() => setFormData({ ...formData, icone: icone.id })} className={`h-10 rounded-xl flex items-center justify-center border ${formData.icone === icone.id ? 'bg-[#D4AF37] border-[#D4AF37] text-[#722F37]' : 'bg-[#722F37]/50 border-[#D4AF37]/50 text-[#D4AF37]'}`}><IconComp className="w-5 h-5" /></button>); })}</div></div>
+              <div className="flex gap-3 pt-2"><button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium">Annuler</button><button onClick={handleSubmit} className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"><Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Créer'}</button></div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal versement */}
       {showVersementModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-sm border border-[#D4AF37]/40">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={pageTitleStyle}>Ajouter un versement</h2>
-              <button onClick={() => setShowVersementModal(false)} className="p-1">
-                <X className="w-5 h-5 text-[#D4AF37]" />
-              </button>
-            </div>
+            <div className="flex items-center justify-between mb-4"><h2 className={pageTitleStyle}>Ajouter un versement</h2><button onClick={() => setShowVersementModal(false)} className="p-1"><X className="w-5 h-5 text-[#D4AF37]" /></button></div>
             <div className="space-y-4">
-              <div>
-                <label className={labelStyle}>Montant du versement ({parametres.devise})</label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={versementMontant}
-                  onChange={(e) => setVersementMontant(e.target.value)}
-                  className={inputStyle}
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowVersementModal(false)}
-                  className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleVersement}
-                  className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"
-                >
-                  <Plus className="w-5 h-5" />
-                  Ajouter
-                </button>
-              </div>
+              <div><label className={labelStyle}>Montant du versement ({parametres.devise})</label><input type="number" placeholder="0" value={versementMontant} onChange={(e) => setVersementMontant(e.target.value)} className={inputStyle} autoFocus /></div>
+              <div className="flex gap-3"><button onClick={() => setShowVersementModal(false)} className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium">Annuler</button><button onClick={handleVersement} className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"><Plus className="w-5 h-5" />Ajouter</button></div>
             </div>
           </div>
         </div>
@@ -1320,7 +763,7 @@ function ParametresPage() {
         if (data.memo) localStorage.setItem('budget-memo', JSON.stringify(data.memo));
         if (data.userName) localStorage.setItem('budget-user-name', data.userName);
         alert('Données importées avec succès ! Rechargez la page pour voir les changements.');
-      } catch (error) { alert("Erreur lors de l'importation du fichier."); }
+      } catch (error) { alert('Erreur lors de l\'importation du fichier.'); }
     };
     reader.readAsText(file);
   };
@@ -1448,6 +891,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Vérifier l'authentification au chargement
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1460,6 +904,7 @@ export default function HomePage() {
     };
     checkAuth();
 
+    // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         window.location.href = '/auth';
@@ -1469,6 +914,7 @@ export default function HomePage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Écran de chargement
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(180deg, #E8C4C4 0%, #DBADB0 30%, #CFA0A5 50%, #DBADB0 70%, #E8C4C4 100%)' }}>
@@ -1492,7 +938,7 @@ export default function HomePage() {
       case 'budget': return <BudgetPage />;
       case 'previsionnel': return <PrevisionnelPage />;
       case 'epargnes': return <EpargnesPage />;
-      case 'credits-dettes': return <CreditsDettesPageFull />;
+      case 'credits-dettes': return <CreditsDettesPage />;
       case 'memo': return <MemoPage />;
       case 'enveloppes': return <EnveloppesPage />;
       case 'objectifs': return <ObjectifsPage />;

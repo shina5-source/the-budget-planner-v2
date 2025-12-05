@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PiggyBank, Calculator, Target, Lightbulb, Plus, Trash2, Edit3, Check, X, Home as HomeIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PiggyBank, Calculator, Target, Lightbulb, Plus, Trash2, Edit3, Check, X, Home as HomeIcon, ShoppingBag } from 'lucide-react';
 
 interface Transaction {
   id: number;
@@ -44,7 +44,7 @@ const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', '
 const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
-type TabType = 'vue' | 'revenus' | 'factures' | 'epargne' | 'analyse';
+type TabType = 'vue' | 'revenus' | 'factures' | 'depenses' | 'epargne' | 'analyse';
 
 // STYLES UNIFORMISÉS
 const cardStyle = "bg-[#722F37]/30 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#D4AF37]/40";
@@ -353,7 +353,7 @@ export default function PrevisionnelPage() {
         <PrevisionCard title="Factures" prevu={totalFacturesPrev} reel={totalFacturesReel} icon={HomeIcon} />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <PrevisionCard title="Dépenses" prevu={totalDepensesPrev} reel={totalDepensesReel} icon={Calculator} />
+        <PrevisionCard title="Dépenses" prevu={totalDepensesPrev} reel={totalDepensesReel} icon={ShoppingBag} />
         <PrevisionCard title="Épargne" prevu={totalEpargnesPrev} reel={totalEpargnesReel} icon={PiggyBank} />
       </div>
       
@@ -395,6 +395,9 @@ export default function PrevisionnelPage() {
           {totalFacturesPrev === 0 && totalRevenusPrev > 0 && (
             <p className={conseilTextStyle}>📝 N'oubliez pas d'ajouter vos factures prévues</p>
           )}
+          {totalDepensesPrev === 0 && totalRevenusPrev > 0 && (
+            <p className={conseilTextStyle}>📝 Pensez à prévoir un budget pour vos dépenses variables</p>
+          )}
           {totalRevenusReel < totalRevenusPrev && totalRevenusPrev > 0 && (
             <p className={conseilTextStyle}>⚠️ Revenus inférieurs de {(totalRevenusPrev - totalRevenusReel).toFixed(2)} € au prévu</p>
           )}
@@ -429,6 +432,16 @@ export default function PrevisionnelPage() {
       items={previsions.factures} 
       icon={HomeIcon}
       typeTransaction="Factures"
+    />
+  );
+
+  const renderDepenses = () => (
+    <PrevisionSection 
+      title="Dépenses prévues" 
+      type="depenses" 
+      items={previsions.depenses} 
+      icon={ShoppingBag}
+      typeTransaction="Dépenses"
     />
   );
 
@@ -511,6 +524,7 @@ export default function PrevisionnelPage() {
     { id: 'vue', label: 'Vue' },
     { id: 'revenus', label: 'Revenus' },
     { id: 'factures', label: 'Factures' },
+    { id: 'depenses', label: 'Dépenses' },
     { id: 'epargne', label: 'Épargne' },
     { id: 'analyse', label: 'Analyse' },
   ];
@@ -577,6 +591,7 @@ export default function PrevisionnelPage() {
       {activeTab === 'vue' && renderVue()}
       {activeTab === 'revenus' && renderRevenus()}
       {activeTab === 'factures' && renderFactures()}
+      {activeTab === 'depenses' && renderDepenses()}
       {activeTab === 'epargne' && renderEpargne()}
       {activeTab === 'analyse' && renderAnalyse()}
 
