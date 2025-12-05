@@ -552,8 +552,8 @@ export default function ObjectifsPage() {
 
       {/* Modal formulaire */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md max-h-[90vh] overflow-y-auto border border-[#D4AF37]/40">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-20 mt-20">
             <div className="flex items-center justify-between mb-4">
               <h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvel'} objectif</h2>
               <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1">
@@ -688,7 +688,7 @@ export default function ObjectifsPage() {
 
       {/* Modal versement */}
       {showVersementModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-sm border border-[#D4AF37]/40">
             <div className="flex items-center justify-between mb-4">
               <h2 className={pageTitleStyle}>Ajouter un versement</h2>

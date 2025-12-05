@@ -150,6 +150,20 @@ export default function StatistiquesPage() {
   const conseilTextStyle = "text-[10px] text-[#7DD3A8]";
   const conseilIconStyle = "w-4 h-4 text-[#7DD3A8]";
 
+  // Style commun pour les Tooltips
+  const tooltipContentStyle = { 
+    fontSize: '10px', 
+    backgroundColor: 'rgba(114, 47, 55, 0.95)', 
+    border: '1px solid #D4AF37', 
+    borderRadius: '8px',
+    color: '#D4AF37'
+  };
+  const tooltipLabelStyle = { 
+    fontSize: '10px', 
+    fontWeight: 'bold', 
+    color: '#D4AF37' 
+  };
+
   // Rendu du résumé
   const renderResume = () => (
     <div className="space-y-4">
@@ -208,8 +222,8 @@ export default function StatistiquesPage() {
           <PieChart className="w-4 h-4" /> Répartition des sorties
         </h3>
         {repartitionData.length > 0 ? (
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%', height: 200 }}>
+            <ResponsiveContainer width="100%" height={200}>
               <RechartsPie>
                 <Pie
                   data={repartitionData}
@@ -226,7 +240,11 @@ export default function StatistiquesPage() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
+                <Tooltip 
+                  formatter={(value: number) => `${value.toFixed(2)} €`} 
+                  contentStyle={tooltipContentStyle} 
+                  labelStyle={tooltipLabelStyle} 
+                />
               </RechartsPie>
             </ResponsiveContainer>
           </div>
@@ -248,12 +266,16 @@ export default function StatistiquesPage() {
         <h3 className={sectionTitleStyle + " mb-3 flex items-center gap-2"}>
           <BarChart3 className="w-4 h-4" /> Bilan du budget
         </h3>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height: 200 }}>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={bilanData} layout="vertical">
               <XAxis type="number" tick={{ fill: '#D4AF37', fontSize: 10 }} />
               <YAxis dataKey="name" type="category" tick={{ fill: '#D4AF37', fontSize: 10 }} width={70} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
+              <Tooltip 
+                formatter={(value: number) => `${value.toFixed(2)} €`} 
+                contentStyle={tooltipContentStyle} 
+                labelStyle={tooltipLabelStyle}
+              />
               <Bar dataKey="montant" radius={[0, 4, 4, 0]}>
                 {bilanData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
@@ -329,8 +351,8 @@ export default function StatistiquesPage() {
         <div className={cardStyle}>
           <h3 className={sectionTitleStyle + " mb-3"}>Répartition</h3>
           {data.length > 0 ? (
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
+            <div style={{ width: '100%', height: 200 }}>
+              <ResponsiveContainer width="100%" height={200}>
                 <RechartsPie>
                   <Pie
                     data={data}
@@ -345,7 +367,11 @@ export default function StatistiquesPage() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
+                  <Tooltip 
+                    formatter={(value: number) => `${value.toFixed(2)} €`} 
+                    contentStyle={tooltipContentStyle} 
+                    labelStyle={tooltipLabelStyle} 
+                  />
                 </RechartsPie>
               </ResponsiveContainer>
             </div>
@@ -399,14 +425,18 @@ export default function StatistiquesPage() {
       {/* Courbe évolution */}
       <div className={cardStyle}>
         <h3 className={sectionTitleStyle + " mb-3"}>Évolution mensuelle {selectedYear}</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height: 250 }}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={evolutionData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#D4AF37" opacity={0.2} />
               <XAxis dataKey="name" tick={{ fill: '#D4AF37', fontSize: 10 }} />
               <YAxis tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
-              <Legend />
+              <Tooltip 
+                formatter={(value: number) => `${value.toFixed(2)} €`} 
+                contentStyle={tooltipContentStyle} 
+                labelStyle={tooltipLabelStyle} 
+              />
+              <Legend wrapperStyle={{ fontSize: '10px' }} />
               <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={2} dot={{ r: 3 }} name="Revenus" />
               <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={2} dot={{ r: 3 }} name="Factures" />
               <Line type="monotone" dataKey="depenses" stroke={COLORS_TYPE.depenses} strokeWidth={2} dot={{ r: 3 }} name="Dépenses" />
@@ -419,13 +449,17 @@ export default function StatistiquesPage() {
       {/* Courbe solde */}
       <div className={cardStyle}>
         <h3 className={sectionTitleStyle + " mb-3"}>Évolution du solde {selectedYear}</h3>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height: 200 }}>
+          <ResponsiveContainer width="100%" height={200}>
             <LineChart data={evolutionData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#D4AF37" opacity={0.2} />
               <XAxis dataKey="name" tick={{ fill: '#D4AF37', fontSize: 10 }} />
               <YAxis tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
+              <Tooltip 
+                formatter={(value: number) => `${value.toFixed(2)} €`} 
+                contentStyle={tooltipContentStyle} 
+                labelStyle={tooltipLabelStyle} 
+              />
               <Line type="monotone" dataKey="solde" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4 }} name="Solde" />
             </LineChart>
           </ResponsiveContainer>
@@ -435,14 +469,18 @@ export default function StatistiquesPage() {
       {/* Barres comparatives */}
       <div className={cardStyle}>
         <h3 className={sectionTitleStyle + " mb-3"}>Revenus vs Dépenses par mois</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height: 250 }}>
+          <ResponsiveContainer width="100%" height={250}>
             <BarChart data={evolutionData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#D4AF37" opacity={0.2} />
               <XAxis dataKey="name" tick={{ fill: '#D4AF37', fontSize: 10 }} />
               <YAxis tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
-              <Legend />
+              <Tooltip 
+                formatter={(value: number) => `${value.toFixed(2)} €`} 
+                contentStyle={tooltipContentStyle} 
+                labelStyle={tooltipLabelStyle} 
+              />
+              <Legend wrapperStyle={{ fontSize: '10px' }} />
               <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
               <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
               <Bar dataKey="depenses" fill={COLORS_TYPE.depenses} name="Dépenses" radius={[4, 4, 0, 0]} />
@@ -451,28 +489,28 @@ export default function StatistiquesPage() {
         </div>
       </div>
 
-      {/* Tableau récapitulatif */}
+      {/* Tableau récapitulatif - CENTRÉ */}
       <div className={cardStyle}>
         <h3 className={sectionTitleStyle + " mb-3"}>Récapitulatif annuel</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[#D4AF37]/30">
-                <th className="py-2 text-left text-[#D4AF37]">Mois</th>
-                <th className="py-2 text-right text-green-400">Revenus</th>
-                <th className="py-2 text-right text-red-400">Factures</th>
-                <th className="py-2 text-right text-orange-400">Dépenses</th>
-                <th className="py-2 text-right text-[#D4AF37]">Solde</th>
+                <th className="py-2 text-left text-[#D4AF37] w-12">Mois</th>
+                <th className="py-2 text-center text-green-400">Revenus</th>
+                <th className="py-2 text-center text-red-400">Factures</th>
+                <th className="py-2 text-center text-orange-400">Dépenses</th>
+                <th className="py-2 text-center text-[#D4AF37]">Solde</th>
               </tr>
             </thead>
             <tbody>
               {evolutionData.map((row, i) => (
                 <tr key={i} className="border-b border-[#D4AF37]/10">
                   <td className="py-2 text-[#D4AF37]">{row.name}</td>
-                  <td className="py-2 text-right text-green-400">{row.revenus > 0 ? row.revenus.toFixed(0) : '-'}</td>
-                  <td className="py-2 text-right text-red-400">{row.factures > 0 ? row.factures.toFixed(0) : '-'}</td>
-                  <td className="py-2 text-right text-orange-400">{row.depenses > 0 ? row.depenses.toFixed(0) : '-'}</td>
-                  <td className={`py-2 text-right font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <td className="py-2 text-center text-green-400">{row.revenus > 0 ? row.revenus.toFixed(0) : '-'}</td>
+                  <td className="py-2 text-center text-red-400">{row.factures > 0 ? row.factures.toFixed(0) : '-'}</td>
+                  <td className="py-2 text-center text-orange-400">{row.depenses > 0 ? row.depenses.toFixed(0) : '-'}</td>
+                  <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {row.solde !== 0 ? row.solde.toFixed(0) : '-'}
                   </td>
                 </tr>
@@ -481,16 +519,16 @@ export default function StatistiquesPage() {
             <tfoot>
               <tr className="bg-[#D4AF37]/10">
                 <td className="py-2 font-bold text-[#D4AF37]">Total</td>
-                <td className="py-2 text-right font-bold text-green-400">
+                <td className="py-2 text-center font-bold text-green-400">
                   {evolutionData.reduce((s, r) => s + r.revenus, 0).toFixed(0)}
                 </td>
-                <td className="py-2 text-right font-bold text-red-400">
+                <td className="py-2 text-center font-bold text-red-400">
                   {evolutionData.reduce((s, r) => s + r.factures, 0).toFixed(0)}
                 </td>
-                <td className="py-2 text-right font-bold text-orange-400">
+                <td className="py-2 text-center font-bold text-orange-400">
                   {evolutionData.reduce((s, r) => s + r.depenses, 0).toFixed(0)}
                 </td>
-                <td className="py-2 text-right font-bold text-[#D4AF37]">
+                <td className="py-2 text-center font-bold text-[#D4AF37]">
                   {evolutionData.reduce((s, r) => s + r.solde, 0).toFixed(0)}
                 </td>
               </tr>

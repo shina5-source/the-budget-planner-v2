@@ -13,6 +13,7 @@ import PrevisionnelPage from './previsionnel/page';
 import EpargnesPage from './epargnes/page';
 import StatistiquesPage from './statistiques/page';
 import CreditsDettesPageFull from './credits-dettes/page';
+import ObjectifsPageFull from './objectifs/page';
 import { ThemeProvider } from '../contexts/theme-context';
 
 interface Transaction {
@@ -169,7 +170,7 @@ function AccueilPage({ onNavigate }: { onNavigate: (page: string) => void }) {
     <div className="pb-4">
       <div className="text-center mb-2">
         <div className="w-24 h-24 mx-auto mb-2 rounded-2xl overflow-hidden shadow-lg border-2 border-[#D4AF37]/50">
-          <Image src="/logo-shina5.png" alt="Logo Shina5" width={96} height={96} className="w-full h-full object-cover" />
+         <Image src="/logo-shina5.png" alt="Logo Shina5" width={96} height={96} className="w-full h-full object-cover" priority />
         </div>
       </div>
 
@@ -396,8 +397,8 @@ function EnveloppesPage() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md max-h-[85vh] overflow-y-auto border border-[#D4AF37]/40">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-20 mt-20">
             <div className="flex items-center justify-between mb-4"><h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvelle'} enveloppe</h2><button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5 text-[#D4AF37]" /></button></div>
             <div className="space-y-4">
               <div><label className={labelStyle}>Nom de l'enveloppe</label><input type="text" placeholder="Ex: Courses, Restaurant..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className={inputStyle} /></div>
@@ -974,8 +975,8 @@ function ObjectifsPage() {
 
       {/* Modal formulaire */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md max-h-[90vh] overflow-y-auto border border-[#D4AF37]/40">
+       <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md my-8 border border-[#D4AF37]">
             <div className="flex items-center justify-between mb-4">
               <h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvel'} objectif</h2>
               <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1">
@@ -1495,7 +1496,7 @@ export default function HomePage() {
       case 'credits-dettes': return <CreditsDettesPageFull />;
       case 'memo': return <MemoPage />;
       case 'enveloppes': return <EnveloppesPage />;
-      case 'objectifs': return <ObjectifsPage />;
+      case 'objectifs': return <ObjectifsPageFull />;
       case 'parametres': return <ParametresPage />;
       case 'statistiques': return <StatistiquesPage />;
       case 'plus': return <PlusPage onNavigate={handleNavigate} />;

@@ -579,8 +579,8 @@ export default function TransactionsPage() {
 
       {/* Modal formulaire */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 pt-16 overflow-y-auto">
-          <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+         <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-20 mt-20">
             <div className="flex items-center justify-between mb-4">
               <h2 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
               <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1">
