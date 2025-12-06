@@ -1,24 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { Check, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/theme-context';
 import { getAllThemes, Theme, ThemeKey } from '../lib/themes';
 
-interface ThemeSelectorProps {
-  variant?: 'button' | 'inline';
+interface ThemeModalProps {
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
   const { theme, themeKey, setTheme, isDarkMode, toggleDarkMode } = useTheme();
   const allThemes = getAllThemes();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleSelectTheme = (key: ThemeKey) => {
     setTheme(key);
@@ -26,17 +20,20 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
 
   const pageTitleStyle = "text-lg font-medium text-[#D4AF37]";
 
-  const modalContent = (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[1000] p-4 overflow-y-auto">
-      <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-20 mt-20">
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-40 p-4 overflow-y-auto">
+      <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 my-20">
         <div className="flex items-center justify-between mb-4">
           <h2 className={pageTitleStyle}>Personnalisation</h2>
-          <button onClick={() => setIsOpen(false)} className="p-1">
+          <button onClick={onClose} className="p-1">
             <X className="w-5 h-5 text-[#D4AF37]" />
           </button>
         </div>
 
         <div className="space-y-4">
+          {/* Toggle Mode sombre */}
           <div 
             onClick={toggleDarkMode}
             className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
@@ -90,13 +87,13 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
 
           <div className="flex gap-3 pt-2">
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={onClose}
               className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium"
             >
               Annuler
             </button>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={onClose}
               className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"
             >
               <Check className="w-5 h-5" />
@@ -104,73 +101,6 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
             </button>
           </div>
         </div>
-      </div>
-    </div>
-  );
-
-  if (variant === 'button') {
-    return (
-      <>
-        <button
-          onClick={() => setIsOpen(true)}
-          className="p-2 rounded-lg hover:bg-[#D4AF37]/20 transition-all"
-          title="Changer le thème"
-        >
-          <span className="text-base">{theme.emoji}</span>
-        </button>
-
-        {isOpen && mounted && createPortal(modalContent, document.body)}
-      </>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div 
-        onClick={toggleDarkMode}
-        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-          isDarkMode 
-            ? 'bg-gray-900/50 border-[#D4AF37]' 
-            : 'bg-[#722F37]/30 border-[#D4AF37]/30 hover:border-[#D4AF37]/50'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-            isDarkMode ? 'bg-indigo-500/30' : 'bg-amber-500/30'
-          }`}>
-            {isDarkMode ? (
-              <Moon className="w-5 h-5 text-indigo-300" />
-            ) : (
-              <Sun className="w-5 h-5 text-amber-400" />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-[#D4AF37] text-sm">Mode sombre</p>
-            <p className="text-[10px] text-[#D4AF37]/60">
-              {isDarkMode ? 'Activé' : 'Désactivé'}
-            </p>
-          </div>
-        </div>
-        <div className={`w-12 h-7 rounded-full p-1 transition-colors ${
-          isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#722F37]/50'
-        }`}>
-          <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
-            isDarkMode ? 'translate-x-5' : 'translate-x-0'
-          }`} />
-        </div>
-      </div>
-
-      <p className="text-xs font-medium text-[#D4AF37]">Thèmes de couleurs</p>
-
-      <div className="grid grid-cols-2 gap-3">
-        {allThemes.map((t) => (
-          <ThemeCard
-            key={t.key}
-            theme={t}
-            isSelected={themeKey === t.key}
-            onSelect={() => handleSelectTheme(t.key)}
-          />
-        ))}
       </div>
     </div>
   );
@@ -217,4 +147,4 @@ function ThemeCard({ theme, isSelected, onSelect }: ThemeCardProps) {
   );
 }
 
-export default ThemeSelector;
+export default ThemeModal;

@@ -1,13 +1,16 @@
 "use client";
 
 import { Menu } from 'lucide-react';
-import { ThemeSelector } from './theme-selector';
+import { useTheme } from '../contexts/theme-context';
 
 interface HeaderProps {
   onMenuClick: () => void;
+  onThemeClick: () => void;
 }
 
-export default function Header({ onMenuClick }: HeaderProps) {
+export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
+  const { theme } = useTheme();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-[999] bg-[#5C1E2A]">
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
@@ -23,8 +26,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* Titre au centre */}
         <h1 className="text-sm font-medium text-[#D4AF37]">The Budget Planner</h1>
 
-        {/* Sélecteur de thème à droite - version compacte */}
-        <ThemeSelector variant="button" />
+        {/* Bouton thème à droite */}
+        <button
+          onClick={onThemeClick}
+          className="p-2 rounded-lg hover:bg-[#D4AF37]/20 transition-all"
+          title="Changer le thème"
+        >
+          <span className="text-base">{theme.emoji}</span>
+        </button>
       </div>
     </header>
   );

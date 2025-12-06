@@ -15,6 +15,7 @@ import StatistiquesPage from './statistiques/page';
 import CreditsDettesPageFull from './credits-dettes/page';
 import ObjectifsPageFull from './objectifs/page';
 import { ThemeProvider } from '../contexts/theme-context';
+import { ThemeModal } from '@/components/theme-modal';
 
 interface Transaction {
   id: number;
@@ -1448,6 +1449,7 @@ export default function HomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -1507,12 +1509,13 @@ export default function HomePage() {
   return (
     <ThemeProvider>
       <div className="min-h-screen" style={{ background: 'linear-gradient(180deg, #E8C4C4 0%, #DBADB0 30%, #CFA0A5 50%, #DBADB0 70%, #E8C4C4 100%)' }}>
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <Header onMenuClick={() => setSidebarOpen(true)} onThemeClick={() => setThemeModalOpen(true)} />
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPage={currentPage} onNavigate={handleNavigate} />
         <main className="px-4 pt-20 pb-24 max-w-md mx-auto">
           {renderPage()}
         </main>
         <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
+        <ThemeModal isOpen={themeModalOpen} onClose={() => setThemeModalOpen(false)} />
       </div>
     </ThemeProvider>
   );
