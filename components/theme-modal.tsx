@@ -18,17 +18,26 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
     setTheme(key);
   };
 
-  const pageTitleStyle = "text-lg font-medium text-[#D4AF37]";
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-40 p-4 overflow-y-auto">
-      <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 my-20">
+      <div 
+        className="rounded-2xl p-4 w-full max-w-md border my-20"
+        style={{ 
+          backgroundColor: theme.colors.secondaryLight,
+          borderColor: `${theme.colors.primary}40`
+        }}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className={pageTitleStyle}>Personnalisation</h2>
+          <h2 
+            className="text-lg font-medium"
+            style={{ color: theme.colors.primary }}
+          >
+            Personnalisation
+          </h2>
           <button onClick={onClose} className="p-1">
-            <X className="w-5 h-5 text-[#D4AF37]" />
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
@@ -36,11 +45,11 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
           {/* Toggle Mode sombre */}
           <div 
             onClick={toggleDarkMode}
-            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              isDarkMode 
-                ? 'bg-gray-900/50 border-[#D4AF37]' 
-                : 'bg-[#722F37]/30 border-[#D4AF37]/30 hover:border-[#D4AF37]/50'
-            }`}
+            className="flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all"
+            style={{
+              backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.5)' : `${theme.colors.secondary}30`,
+              borderColor: isDarkMode ? theme.colors.primary : `${theme.colors.primary}30`
+            }}
           >
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -53,48 +62,74 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
                 )}
               </div>
               <div>
-                <p className="font-medium text-[#D4AF37] text-sm">Mode sombre</p>
-                <p className="text-[10px] text-[#D4AF37]/60">
+                <p 
+                  className="font-medium text-sm"
+                  style={{ color: theme.colors.primary }}
+                >
+                  Mode sombre
+                </p>
+                <p 
+                  className="text-[10px]"
+                  style={{ color: `${theme.colors.primary}60` }}
+                >
                   {isDarkMode ? 'Activé' : 'Désactivé'}
                 </p>
               </div>
             </div>
-            <div className={`w-12 h-7 rounded-full p-1 transition-colors ${
-              isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#722F37]/50'
-            }`}>
+            <div 
+              className="w-12 h-7 rounded-full p-1 transition-colors"
+              style={{ backgroundColor: isDarkMode ? theme.colors.primary : `${theme.colors.secondary}50` }}
+            >
               <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
                 isDarkMode ? 'translate-x-5' : 'translate-x-0'
               }`} />
             </div>
           </div>
 
-          <p className="text-xs font-medium text-[#D4AF37]">Thèmes de couleurs</p>
+          <p 
+            className="text-xs font-medium"
+            style={{ color: theme.colors.primary }}
+          >
+            Thèmes de couleurs
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             {allThemes.map((t) => (
               <ThemeCard
                 key={t.key}
                 theme={t}
+                currentTheme={theme}
                 isSelected={themeKey === t.key}
                 onSelect={() => handleSelectTheme(t.key)}
               />
             ))}
           </div>
 
-          <p className="text-[10px] text-center text-[#D4AF37]/60">
+          <p 
+            className="text-[10px] text-center"
+            style={{ color: `${theme.colors.primary}60` }}
+          >
             Les préférences sont sauvegardées automatiquement 💾
           </p>
 
           <div className="flex gap-3 pt-2">
             <button
               onClick={onClose}
-              className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium"
+              className="flex-1 py-3 border rounded-xl font-medium"
+              style={{ 
+                borderColor: theme.colors.primary,
+                color: theme.colors.primary
+              }}
             >
               Annuler
             </button>
             <button
               onClick={onClose}
-              className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+              style={{ 
+                backgroundColor: theme.colors.primary,
+                color: theme.colors.secondary
+              }}
             >
               <Check className="w-5 h-5" />
               Valider
@@ -108,21 +143,24 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
 
 interface ThemeCardProps {
   theme: Theme;
+  currentTheme: Theme;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-function ThemeCard({ theme, isSelected, onSelect }: ThemeCardProps) {
+function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps) {
   return (
     <button
       onClick={onSelect}
       className={`relative rounded-xl overflow-hidden transition-all duration-200 p-3 ${
         isSelected
-          ? 'ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-[#8B4557] shadow-lg scale-[1.02]'
-          : 'hover:shadow-md hover:scale-[1.01] border border-[#D4AF37]/30'
+          ? 'shadow-lg scale-[1.02]'
+          : 'hover:shadow-md hover:scale-[1.01]'
       }`}
       style={{
         background: `linear-gradient(135deg, ${theme.colors.backgroundGradientFrom}, ${theme.colors.backgroundGradientTo})`,
+        border: isSelected ? `2px solid ${currentTheme.colors.primary}` : `1px solid ${currentTheme.colors.primary}30`,
+        boxShadow: isSelected ? `0 0 0 2px ${currentTheme.colors.secondaryLight}, 0 0 0 4px ${currentTheme.colors.primary}` : undefined
       }}
     >
       {isSelected && (

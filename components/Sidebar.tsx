@@ -3,6 +3,7 @@
 import { X, Home, CreditCard, Calendar, DollarSign, PiggyBank, Building2, FileText, Mail, Settings, BarChart3, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from '../contexts/theme-context';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,6 +26,8 @@ const menuItems = [
 ];
 
 export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: SidebarProps) {
+  const { theme } = useTheme();
+
   if (!isOpen) return null;
 
   return (
@@ -36,11 +39,20 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
       />
 
       {/* Sidebar */}
-      <div className="absolute top-0 left-0 h-full w-64 bg-[#5C1E2A] shadow-xl">
+      <div 
+        className="absolute top-0 left-0 h-full w-64 shadow-xl"
+        style={{ backgroundColor: theme.colors.secondary }}
+      >
         {/* Header avec Logo */}
-        <div className="p-4 flex items-center justify-between border-b border-[#D4AF37]/30">
+        <div 
+          className="p-4 flex items-center justify-between border-b"
+          style={{ borderColor: `${theme.colors.primary}30` }}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#D4AF37]/50 shadow-md">
+            <div 
+              className="w-10 h-10 rounded-xl overflow-hidden border shadow-md"
+              style={{ borderColor: `${theme.colors.primary}50` }}
+            >
               <Image 
                 src="/logo-shina5.png" 
                 alt="Logo" 
@@ -49,10 +61,15 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
                 className="w-full h-full object-cover"
               />
             </div>
-            <span className="text-[#D4AF37] font-semibold text-xs">The Budget Planner</span>
+            <span 
+              className="font-semibold text-xs"
+              style={{ color: theme.colors.primary }}
+            >
+              The Budget Planner
+            </span>
           </div>
           <button onClick={onClose} className="p-2" type="button">
-            <X className="w-5 h-5 text-[#D4AF37]" />
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
@@ -69,11 +86,12 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
                 onClick={() => {
                   onNavigate(item.id);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors ${
-                  isActive
-                    ? 'bg-[#D4AF37]/20 text-[#D4AF37] border border-[#D4AF37]/50'
-                    : 'text-[#D4AF37]/70 hover:bg-[#D4AF37]/10 border border-transparent'
-                }`}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors border"
+                style={{
+                  backgroundColor: isActive ? `${theme.colors.primary}20` : 'transparent',
+                  color: isActive ? theme.colors.primary : `${theme.colors.primary}B0`,
+                  borderColor: isActive ? `${theme.colors.primary}50` : 'transparent'
+                }}
               >
                 <Icon className="w-5 h-5" strokeWidth={1.5} />
                 <span className="text-sm font-medium">{item.label}</span>
@@ -89,13 +107,23 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
               await supabase.auth.signOut();
               window.location.href = '/auth';
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#722F37] border border-[#D4AF37]/50 text-[#D4AF37] rounded-xl text-sm font-medium"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border"
+            style={{
+              backgroundColor: theme.colors.secondaryLight,
+              borderColor: `${theme.colors.primary}50`,
+              color: theme.colors.primary
+            }}
           >
             <LogOut className="w-4 h-4" />
             Se déconnecter
           </button>
           <div className="text-center">
-            <p className="text-[10px] text-[#D4AF37]/50">Créé avec ❤️ Shina5</p>
+            <p 
+              className="text-[10px]"
+              style={{ color: `${theme.colors.primary}50` }}
+            >
+              Créé avec ❤️ Shina5
+            </p>
           </div>
         </div>
       </div>
