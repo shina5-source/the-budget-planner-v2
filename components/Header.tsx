@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from 'lucide-react';
+import { Menu, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../contexts/theme-context';
 
 interface HeaderProps {
@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
-  const { theme } = useTheme();
+  const { theme, toggleDarkMode, isDarkMode } = useTheme();
 
   return (
     <header 
@@ -34,19 +34,39 @@ export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
           The Budget Planner
         </h1>
 
-        {/* Bouton thème à droite */}
-        <button
-          onClick={onThemeClick}
-          className="p-2 rounded-lg transition-all"
-          style={{ 
-            backgroundColor: 'transparent',
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.primary}20`}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          title="Changer le thème"
-        >
-          <span className="text-base">{theme.emoji}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Bouton thème */}
+          <button
+            onClick={onThemeClick}
+            className="p-2 rounded-lg transition-all"
+            style={{ 
+              backgroundColor: 'transparent',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.primary}20`}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Changer le thème"
+          >
+            <span className="text-base">{theme.emoji}</span>
+          </button>
+
+          {/* Bouton Dark Mode */}
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-lg transition-all"
+            style={{ 
+              backgroundColor: 'transparent',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.primary}20`}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            title="Basculer le mode sombre"
+          >
+            {isDarkMode ? (
+              <Sun className="w-5 h-5" style={{ color: theme.colors.primary }} />
+            ) : (
+              <Moon className="w-5 h-5" style={{ color: theme.colors.primary }} />
+            )}
+          </button>
+        </div>
       </div>
     </header>
   );

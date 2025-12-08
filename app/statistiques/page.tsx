@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, PieChart, BarChart3, Wallet, CreditCard, PiggyBank, Receipt, Lightbulb } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, Lightbulb } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
+import { useTheme } from '../../contexts/theme-context';
 
 interface Transaction {
   id: number;
@@ -18,7 +19,7 @@ const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', '
 const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
-// Couleurs pour les graphiques
+// Couleurs pour les graphiques - PRÉSERVÉES (semantiques)
 const COLORS = ['#D4AF37', '#8B4557', '#7DD3A8', '#5C9EAD', '#E8A87C', '#C38D9E', '#41B3A3', '#E27D60', '#85DCB8', '#E8A87C'];
 const COLORS_TYPE = {
   revenus: '#4CAF50',
@@ -30,22 +31,36 @@ const COLORS_TYPE = {
 type TabType = 'resume' | 'revenus' | 'factures' | 'depenses' | 'epargnes' | 'evolution';
 
 export default function StatistiquesPage() {
+  const { theme } = useTheme();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [activeTab, setActiveTab] = useState<TabType>('resume');
+
+  // Dynamic styles
+  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
+  const textPrimary = { color: theme.colors.textPrimary };
+  const textSecondary = { color: theme.colors.textSecondary };
+  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+
+  // Tooltip style dynamique
+  const tooltipContentStyle = { 
+    fontSize: '10px', 
+    backgroundColor: theme.colors.cardBackground, 
+    border: `1px solid ${theme.colors.cardBorder}`, 
+    borderRadius: '8px',
+    color: theme.colors.textPrimary
+  };
+  const tooltipLabelStyle = { fontSize: '10px', fontWeight: 'bold', color: theme.colors.textPrimary };
 
   useEffect(() => {
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
   }, []);
 
-  // Filtrer par période
   const getFilteredTransactions = () => {
     return transactions.filter(t => {
-      if (selectedMonth === null) {
-        return t.date?.startsWith(`${selectedYear}`);
-      }
+      if (selectedMonth === null) return t.date?.startsWith(`${selectedYear}`);
       const monthKey = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
       return t.date?.startsWith(monthKey);
     });
@@ -53,7 +68,6 @@ export default function StatistiquesPage() {
 
   const filteredTransactions = getFilteredTransactions();
 
-  // Calculs principaux
   const totalRevenus = filteredTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const totalFactures = filteredTransactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const totalDepenses = filteredTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -62,26 +76,21 @@ export default function StatistiquesPage() {
   const solde = totalRevenus - totalSorties;
   const resteAVivre = totalRevenus - totalFactures - totalDepenses;
 
-  // Données par catégorie
   const getDataByCategorie = (type: string) => {
     const data: { [key: string]: number } = {};
     filteredTransactions.filter(t => t.type === type).forEach(t => {
       const cat = t.categorie || 'Autre';
       data[cat] = (data[cat] || 0) + parseFloat(t.montant || '0');
     });
-    return Object.entries(data)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
+    return Object.entries(data).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   };
 
-  // Données pour le camembert répartition
   const repartitionData = [
     { name: 'Factures', value: totalFactures, color: COLORS_TYPE.factures },
     { name: 'Dépenses', value: totalDepenses, color: COLORS_TYPE.depenses },
     { name: 'Épargnes', value: totalEpargnes, color: COLORS_TYPE.epargnes },
   ].filter(d => d.value > 0);
 
-  // Données pour le graphique barres bilan
   const bilanData = [
     { name: 'Revenus', montant: totalRevenus, fill: COLORS_TYPE.revenus },
     { name: 'Factures', montant: totalFactures, fill: COLORS_TYPE.factures },
@@ -89,353 +98,148 @@ export default function StatistiquesPage() {
     { name: 'Épargnes', montant: totalEpargnes, fill: COLORS_TYPE.epargnes },
   ];
 
-  // Données évolution mensuelle (année complète)
   const evolutionData = monthsShort.map((month, index) => {
     const monthKey = `${selectedYear}-${(index + 1).toString().padStart(2, '0')}`;
     const monthTransactions = transactions.filter(t => t.date?.startsWith(monthKey));
-    
     const revenus = monthTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     const factures = monthTransactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     const depenses = monthTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     const epargnes = monthTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
-    
-    return {
-      name: month,
-      revenus,
-      factures,
-      depenses,
-      epargnes,
-      solde: revenus - factures - depenses - epargnes
-    };
+    return { name: month, revenus, factures, depenses, epargnes, solde: revenus - factures - depenses - epargnes };
   });
 
-  // Top 5 catégories
   const top5Depenses = getDataByCategorie('Dépenses').slice(0, 5);
-  const top5Factures = getDataByCategorie('Factures').slice(0, 5);
 
-  // Navigation
-  const prevMonth = () => {
-    if (selectedMonth === null) {
-      setSelectedMonth(11);
-    } else if (selectedMonth === 0) {
-      setSelectedMonth(11);
-      setSelectedYear(selectedYear - 1);
-    } else {
-      setSelectedMonth(selectedMonth - 1);
-    }
-  };
+  const prevMonth = () => { if (selectedMonth === null) { setSelectedMonth(11); } else if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear(selectedYear - 1); } else { setSelectedMonth(selectedMonth - 1); } };
+  const nextMonth = () => { if (selectedMonth === null) { setSelectedMonth(0); } else if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear(selectedYear + 1); } else { setSelectedMonth(selectedMonth + 1); } };
 
-  const nextMonth = () => {
-    if (selectedMonth === null) {
-      setSelectedMonth(0);
-    } else if (selectedMonth === 11) {
-      setSelectedMonth(0);
-      setSelectedYear(selectedYear + 1);
-    } else {
-      setSelectedMonth(selectedMonth + 1);
-    }
-  };
-
-  // STYLES
-  const cardStyle = "bg-[#722F37]/30 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#D4AF37]/40";
-  const pageTitleStyle = "text-lg font-medium text-[#D4AF37]";
-  const pageSubtitleStyle = "text-xs text-[#D4AF37]/70";
-  const smallTextStyle = "text-[10px] text-[#D4AF37]/60";
-  const valueStyle = "text-xs font-medium text-[#D4AF37]";
-  const sectionTitleStyle = "text-sm font-semibold text-[#D4AF37]";
-  const amountLargeStyle = "text-2xl font-semibold text-[#D4AF37]";
-
-  const conseilCardStyle = "bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50";
-  const conseilTitleStyle = "text-xs font-semibold text-[#7DD3A8]";
-  const conseilTextStyle = "text-[10px] text-[#7DD3A8]";
-  const conseilIconStyle = "w-4 h-4 text-[#7DD3A8]";
-
-  // Style commun pour les Tooltips
-  const tooltipContentStyle = { 
-    fontSize: '10px', 
-    backgroundColor: 'rgba(114, 47, 55, 0.95)', 
-    border: '1px solid #D4AF37', 
-    borderRadius: '8px',
-    color: '#D4AF37'
-  };
-  const tooltipLabelStyle = { 
-    fontSize: '10px', 
-    fontWeight: 'bold', 
-    color: '#D4AF37' 
-  };
-
-  // Rendu du résumé
   const renderResume = () => (
     <div className="space-y-4">
-      {/* Solde et bilan rapide */}
       <div className="grid grid-cols-2 gap-3">
-        <div className={cardStyle + " text-center"}>
-          <Wallet className="w-6 h-6 text-[#D4AF37] mx-auto mb-2" />
-          <p className={smallTextStyle}>Solde période</p>
-          <p className={`text-xl font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {solde >= 0 ? '+' : ''}{solde.toFixed(2)} €
-          </p>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
+          <Wallet className="w-6 h-6 mx-auto mb-2" style={textPrimary} />
+          <p className="text-[10px]" style={textSecondary}>Solde période</p>
+          <p className={`text-xl font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</p>
         </div>
-        <div className={cardStyle + " text-center"}>
-          <TrendingUp className="w-6 h-6 text-[#D4AF37] mx-auto mb-2" />
-          <p className={smallTextStyle}>Reste à vivre</p>
-          <p className={`text-xl font-bold ${resteAVivre >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {resteAVivre.toFixed(2)} €
-          </p>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
+          <TrendingUp className="w-6 h-6 mx-auto mb-2" style={textPrimary} />
+          <p className="text-[10px]" style={textSecondary}>Reste à vivre</p>
+          <p className={`text-xl font-bold ${resteAVivre >= 0 ? 'text-green-400' : 'text-red-400'}`}>{resteAVivre.toFixed(2)} €</p>
         </div>
       </div>
 
-      {/* Tableau Mon Budget */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3 flex items-center gap-2"}>
-          <BarChart3 className="w-4 h-4" /> Mon Budget
-        </h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><BarChart3 className="w-4 h-4" /> Mon Budget</h3>
         <div className="space-y-2">
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={valueStyle}>Revenus</span>
-            <span className="text-sm font-semibold text-green-400">+{totalRevenus.toFixed(2)} €</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={valueStyle}>Factures</span>
-            <span className="text-sm font-semibold text-red-400">-{totalFactures.toFixed(2)} €</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={valueStyle}>Dépenses</span>
-            <span className="text-sm font-semibold text-orange-400">-{totalDepenses.toFixed(2)} €</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={valueStyle}>Épargnes</span>
-            <span className="text-sm font-semibold text-blue-400">-{totalEpargnes.toFixed(2)} €</span>
-          </div>
-          <div className="flex justify-between items-center py-2 bg-[#D4AF37]/10 rounded-lg px-2 mt-2">
-            <span className={valueStyle + " font-bold"}>Balance</span>
-            <span className={`text-sm font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {solde >= 0 ? '+' : ''}{solde.toFixed(2)} €
-            </span>
-          </div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Revenus</span><span className="text-sm font-semibold text-green-400">+{totalRevenus.toFixed(2)} €</span></div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Factures</span><span className="text-sm font-semibold text-red-400">-{totalFactures.toFixed(2)} €</span></div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Dépenses</span><span className="text-sm font-semibold text-orange-400">-{totalDepenses.toFixed(2)} €</span></div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Épargnes</span><span className="text-sm font-semibold text-blue-400">-{totalEpargnes.toFixed(2)} €</span></div>
+          <div className="flex justify-between items-center py-2 rounded-lg px-2 mt-2" style={{ background: `${theme.colors.primary}10` }}><span className="text-xs font-bold" style={textPrimary}>Balance</span><span className={`text-sm font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</span></div>
         </div>
       </div>
 
-      {/* Graphique Répartition */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3 flex items-center gap-2"}>
-          <PieChart className="w-4 h-4" /> Répartition des sorties
-        </h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><PieChart className="w-4 h-4" /> Répartition des sorties</h3>
         {repartitionData.length > 0 ? (
           <div style={{ width: '100%', height: 200 }}>
             <ResponsiveContainer width="100%" height={200}>
               <RechartsPie>
-                <Pie
-                  data={repartitionData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
-                  labelLine={false}
-                >
-                  {repartitionData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                <Pie data={repartitionData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={5} dataKey="value" label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
+                  {repartitionData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
                 </Pie>
-                <Tooltip 
-                  formatter={(value: number) => `${value.toFixed(2)} €`} 
-                  contentStyle={tooltipContentStyle} 
-                  labelStyle={tooltipLabelStyle} 
-                />
+                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
               </RechartsPie>
             </ResponsiveContainer>
           </div>
-        ) : (
-          <p className={pageSubtitleStyle + " text-center py-8"}>Aucune donnée</p>
-        )}
-        <div className="flex justify-center gap-4 mt-2">
-          {repartitionData.map((item, i) => (
-            <div key={i} className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-              <span className={smallTextStyle}>{item.name}</span>
-            </div>
-          ))}
-        </div>
+        ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
+        <div className="flex justify-center gap-4 mt-2">{repartitionData.map((item, i) => (<div key={i} className="flex items-center gap-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-[10px]" style={textSecondary}>{item.name}</span></div>))}</div>
       </div>
 
-      {/* Graphique Barres Bilan */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3 flex items-center gap-2"}>
-          <BarChart3 className="w-4 h-4" /> Bilan du budget
-        </h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><BarChart3 className="w-4 h-4" /> Bilan du budget</h3>
         <div style={{ width: '100%', height: 200 }}>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={bilanData} layout="vertical">
-              <XAxis type="number" tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <YAxis dataKey="name" type="category" tick={{ fill: '#D4AF37', fontSize: 10 }} width={70} />
-              <Tooltip 
-                formatter={(value: number) => `${value.toFixed(2)} €`} 
-                contentStyle={tooltipContentStyle} 
-                labelStyle={tooltipLabelStyle}
-              />
-              <Bar dataKey="montant" radius={[0, 4, 4, 0]}>
-                {bilanData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Bar>
+              <XAxis type="number" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <YAxis dataKey="name" type="category" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} width={70} />
+              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+              <Bar dataKey="montant" radius={[0, 4, 4, 0]}>{bilanData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}</Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Top 5 Dépenses */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3 flex items-center gap-2"}>
-          <Receipt className="w-4 h-4" /> Top 5 Dépenses
-        </h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Receipt className="w-4 h-4" /> Top 5 Dépenses</h3>
         {top5Depenses.length > 0 ? (
-          <div className="space-y-2">
-            {top5Depenses.map((item, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1">
-                  <span className="w-5 h-5 bg-[#D4AF37]/20 rounded-full flex items-center justify-center text-[10px] text-[#D4AF37] font-bold">
-                    {i + 1}
-                  </span>
-                  <span className={valueStyle + " truncate"}>{item.name}</span>
-                </div>
-                <span className="text-sm font-semibold text-orange-400">{item.value.toFixed(2)} €</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={pageSubtitleStyle + " text-center py-4"}>Aucune dépense</p>
-        )}
+          <div className="space-y-2">{top5Depenses.map((item, i) => (<div key={i} className="flex items-center justify-between"><div className="flex items-center gap-2 flex-1"><span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: `${theme.colors.primary}20`, color: theme.colors.textPrimary }}>{i + 1}</span><span className="text-xs font-medium truncate" style={textPrimary}>{item.name}</span></div><span className="text-sm font-semibold text-orange-400">{item.value.toFixed(2)} €</span></div>))}</div>
+        ) : (<p className="text-xs text-center py-4" style={textSecondary}>Aucune dépense</p>)}
       </div>
 
-      {/* Conseils */}
-      <div className={conseilCardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className={conseilIconStyle} />
-          <h4 className={conseilTitleStyle}>💡 Analyse</h4>
-        </div>
+      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
+        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Analyse</h4></div>
         <div className="space-y-2">
-          {solde >= 0 ? (
-            <p className={conseilTextStyle}>✅ Budget équilibré ! Solde positif de {solde.toFixed(2)} €</p>
-          ) : (
-            <p className={conseilTextStyle}>⚠️ Attention ! Déficit de {Math.abs(solde).toFixed(2)} €</p>
-          )}
-          {totalEpargnes > 0 && totalRevenus > 0 && (
-            <p className={conseilTextStyle}>💰 Taux d'épargne : {((totalEpargnes / totalRevenus) * 100).toFixed(1)}%</p>
-          )}
-          {totalDepenses > totalFactures && (
-            <p className={conseilTextStyle}>📊 Dépenses variables supérieures aux charges fixes</p>
-          )}
+          {solde >= 0 ? (<p className="text-[10px] text-[#7DD3A8]">✅ Budget équilibré ! Solde positif de {solde.toFixed(2)} €</p>) : (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Déficit de {Math.abs(solde).toFixed(2)} €</p>)}
+          {totalEpargnes > 0 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Taux d'épargne : {((totalEpargnes / totalRevenus) * 100).toFixed(1)}%</p>)}
+          {totalDepenses > totalFactures && (<p className="text-[10px] text-[#7DD3A8]">📊 Dépenses variables supérieures aux charges fixes</p>)}
         </div>
       </div>
     </div>
   );
 
-  // Rendu détail par type
   const renderDetail = (type: string, color: string) => {
     const data = getDataByCategorie(type);
     const total = data.reduce((sum, d) => sum + d.value, 0);
-
     return (
       <div className="space-y-4">
-        {/* Total */}
-        <div className={cardStyle + " text-center"}>
-          <p className={pageSubtitleStyle}>Total {type}</p>
-          <p className={amountLargeStyle} style={{ color }}>{total.toFixed(2)} €</p>
-          <p className={smallTextStyle}>{data.length} catégorie(s)</p>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
+          <p className="text-xs" style={textSecondary}>Total {type}</p>
+          <p className="text-2xl font-semibold" style={{ color }}>{total.toFixed(2)} €</p>
+          <p className="text-[10px]" style={textSecondary}>{data.length} catégorie(s)</p>
         </div>
 
-        {/* Camembert */}
-        <div className={cardStyle}>
-          <h3 className={sectionTitleStyle + " mb-3"}>Répartition</h3>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Répartition</h3>
           {data.length > 0 ? (
             <div style={{ width: '100%', height: 200 }}>
               <ResponsiveContainer width="100%" height={200}>
                 <RechartsPie>
-                  <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={70}
-                    dataKey="value"
-                    label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                  <Pie data={data} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
+                    {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                   </Pie>
-                  <Tooltip 
-                    formatter={(value: number) => `${value.toFixed(2)} €`} 
-                    contentStyle={tooltipContentStyle} 
-                    labelStyle={tooltipLabelStyle} 
-                  />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
                 </RechartsPie>
               </ResponsiveContainer>
             </div>
-          ) : (
-            <p className={pageSubtitleStyle + " text-center py-8"}>Aucune donnée</p>
-          )}
+          ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
         </div>
 
-        {/* Tableau détaillé */}
-        <div className={cardStyle}>
-          <h3 className={sectionTitleStyle + " mb-3"}>Détail par catégorie</h3>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Détail par catégorie</h3>
           {data.length > 0 ? (
             <div className="space-y-2">
-              {/* En-tête */}
-              <div className="flex items-center py-2 border-b border-[#D4AF37]/30">
-                <span className={smallTextStyle + " flex-1 font-semibold"}>Catégorie</span>
-                <span className={smallTextStyle + " w-20 text-right font-semibold"}>Montant</span>
-                <span className={smallTextStyle + " w-16 text-right font-semibold"}>%</span>
-              </div>
-              {/* Lignes */}
-              {data.map((item, i) => (
-                <div key={i} className="flex items-center py-2 border-b border-[#D4AF37]/10">
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                    <span className={valueStyle + " truncate"}>{item.name}</span>
-                  </div>
-                  <span className={valueStyle + " w-20 text-right"}>{item.value.toFixed(2)} €</span>
-                  <span className={smallTextStyle + " w-16 text-right"}>
-                    {total > 0 ? ((item.value / total) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-              ))}
-              {/* Total */}
-              <div className="flex items-center py-2 bg-[#D4AF37]/10 rounded-lg px-2 mt-2">
-                <span className={valueStyle + " flex-1 font-bold"}>Total</span>
-                <span className={valueStyle + " w-20 text-right font-bold"}>{total.toFixed(2)} €</span>
-                <span className={smallTextStyle + " w-16 text-right font-bold"}>100%</span>
-              </div>
+              <div className="flex items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="flex-1 text-[10px] font-semibold" style={textSecondary}>Catégorie</span><span className="w-20 text-right text-[10px] font-semibold" style={textSecondary}>Montant</span><span className="w-16 text-right text-[10px] font-semibold" style={textSecondary}>%</span></div>
+              {data.map((item, i) => (<div key={i} className="flex items-center py-2" style={{ borderBottomWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}><div className="flex items-center gap-2 flex-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} /><span className="text-xs font-medium truncate" style={textPrimary}>{item.name}</span></div><span className="w-20 text-right text-xs font-medium" style={textPrimary}>{item.value.toFixed(2)} €</span><span className="w-16 text-right text-[10px]" style={textSecondary}>{total > 0 ? ((item.value / total) * 100).toFixed(1) : 0}%</span></div>))}
+              <div className="flex items-center py-2 rounded-lg px-2 mt-2" style={{ background: `${theme.colors.primary}10` }}><span className="flex-1 text-xs font-bold" style={textPrimary}>Total</span><span className="w-20 text-right text-xs font-bold" style={textPrimary}>{total.toFixed(2)} €</span><span className="w-16 text-right text-[10px] font-bold" style={textSecondary}>100%</span></div>
             </div>
-          ) : (
-            <p className={pageSubtitleStyle + " text-center py-8"}>Aucune donnée</p>
-          )}
+          ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
         </div>
       </div>
     );
   };
 
-  // Rendu évolution
   const renderEvolution = () => (
     <div className="space-y-4">
-      {/* Courbe évolution */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3"}>Évolution mensuelle {selectedYear}</h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution mensuelle {selectedYear}</h3>
         <div style={{ width: '100%', height: 250 }}>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart data={evolutionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#D4AF37" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <Tooltip 
-                formatter={(value: number) => `${value.toFixed(2)} €`} 
-                contentStyle={tooltipContentStyle} 
-                labelStyle={tooltipLabelStyle} 
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.primary} opacity={0.2} />
+              <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
               <Legend wrapperStyle={{ fontSize: '10px' }} />
               <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={2} dot={{ r: 3 }} name="Revenus" />
               <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={2} dot={{ r: 3 }} name="Factures" />
@@ -446,40 +250,30 @@ export default function StatistiquesPage() {
         </div>
       </div>
 
-      {/* Courbe solde */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3"}>Évolution du solde {selectedYear}</h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution du solde {selectedYear}</h3>
         <div style={{ width: '100%', height: 200 }}>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={evolutionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#D4AF37" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <Tooltip 
-                formatter={(value: number) => `${value.toFixed(2)} €`} 
-                contentStyle={tooltipContentStyle} 
-                labelStyle={tooltipLabelStyle} 
-              />
-              <Line type="monotone" dataKey="solde" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4 }} name="Solde" />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.primary} opacity={0.2} />
+              <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+              <Line type="monotone" dataKey="solde" stroke={theme.colors.primary} strokeWidth={3} dot={{ r: 4 }} name="Solde" />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Barres comparatives */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3"}>Revenus vs Dépenses par mois</h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Revenus vs Dépenses par mois</h3>
         <div style={{ width: '100%', height: 250 }}>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={evolutionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#D4AF37" opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <YAxis tick={{ fill: '#D4AF37', fontSize: 10 }} />
-              <Tooltip 
-                formatter={(value: number) => `${value.toFixed(2)} €`} 
-                contentStyle={tooltipContentStyle} 
-                labelStyle={tooltipLabelStyle} 
-              />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.primary} opacity={0.2} />
+              <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
+              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
               <Legend wrapperStyle={{ fontSize: '10px' }} />
               <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
               <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
@@ -489,48 +283,37 @@ export default function StatistiquesPage() {
         </div>
       </div>
 
-      {/* Tableau récapitulatif - CENTRÉ */}
-      <div className={cardStyle}>
-        <h3 className={sectionTitleStyle + " mb-3"}>Récapitulatif annuel</h3>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Récapitulatif annuel</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-[#D4AF37]/30">
-                <th className="py-2 text-left text-[#D4AF37] w-12">Mois</th>
+              <tr style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+                <th className="py-2 text-left w-12" style={textPrimary}>Mois</th>
                 <th className="py-2 text-center text-green-400">Revenus</th>
                 <th className="py-2 text-center text-red-400">Factures</th>
                 <th className="py-2 text-center text-orange-400">Dépenses</th>
-                <th className="py-2 text-center text-[#D4AF37]">Solde</th>
+                <th className="py-2 text-center" style={textPrimary}>Solde</th>
               </tr>
             </thead>
             <tbody>
               {evolutionData.map((row, i) => (
-                <tr key={i} className="border-b border-[#D4AF37]/10">
-                  <td className="py-2 text-[#D4AF37]">{row.name}</td>
+                <tr key={i} style={{ borderBottomWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+                  <td className="py-2" style={textPrimary}>{row.name}</td>
                   <td className="py-2 text-center text-green-400">{row.revenus > 0 ? row.revenus.toFixed(0) : '-'}</td>
                   <td className="py-2 text-center text-red-400">{row.factures > 0 ? row.factures.toFixed(0) : '-'}</td>
                   <td className="py-2 text-center text-orange-400">{row.depenses > 0 ? row.depenses.toFixed(0) : '-'}</td>
-                  <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {row.solde !== 0 ? row.solde.toFixed(0) : '-'}
-                  </td>
+                  <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{row.solde !== 0 ? row.solde.toFixed(0) : '-'}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-[#D4AF37]/10">
-                <td className="py-2 font-bold text-[#D4AF37]">Total</td>
-                <td className="py-2 text-center font-bold text-green-400">
-                  {evolutionData.reduce((s, r) => s + r.revenus, 0).toFixed(0)}
-                </td>
-                <td className="py-2 text-center font-bold text-red-400">
-                  {evolutionData.reduce((s, r) => s + r.factures, 0).toFixed(0)}
-                </td>
-                <td className="py-2 text-center font-bold text-orange-400">
-                  {evolutionData.reduce((s, r) => s + r.depenses, 0).toFixed(0)}
-                </td>
-                <td className="py-2 text-center font-bold text-[#D4AF37]">
-                  {evolutionData.reduce((s, r) => s + r.solde, 0).toFixed(0)}
-                </td>
+              <tr style={{ background: `${theme.colors.primary}10` }}>
+                <td className="py-2 font-bold" style={textPrimary}>Total</td>
+                <td className="py-2 text-center font-bold text-green-400">{evolutionData.reduce((s, r) => s + r.revenus, 0).toFixed(0)}</td>
+                <td className="py-2 text-center font-bold text-red-400">{evolutionData.reduce((s, r) => s + r.factures, 0).toFixed(0)}</td>
+                <td className="py-2 text-center font-bold text-orange-400">{evolutionData.reduce((s, r) => s + r.depenses, 0).toFixed(0)}</td>
+                <td className="py-2 text-center font-bold" style={textPrimary}>{evolutionData.reduce((s, r) => s + r.solde, 0).toFixed(0)}</td>
               </tr>
             </tfoot>
           </table>
@@ -540,93 +323,28 @@ export default function StatistiquesPage() {
   );
 
   const tabs: { id: TabType; label: string }[] = [
-    { id: 'resume', label: 'Résumé' },
-    { id: 'revenus', label: 'Revenus' },
-    { id: 'factures', label: 'Factures' },
-    { id: 'depenses', label: 'Dépenses' },
-    { id: 'epargnes', label: 'Épargnes' },
-    { id: 'evolution', label: 'Évolution' },
+    { id: 'resume', label: 'Résumé' }, { id: 'revenus', label: 'Revenus' }, { id: 'factures', label: 'Factures' },
+    { id: 'depenses', label: 'Dépenses' }, { id: 'epargnes', label: 'Épargnes' }, { id: 'evolution', label: 'Évolution' }
   ];
 
   return (
     <div className="pb-4">
-      {/* Titre */}
-      <div className="text-center mb-4">
-        <h1 className={pageTitleStyle}>Statistiques</h1>
-        <p className={pageSubtitleStyle}>Analyse détaillée de votre budget</p>
-      </div>
+      <div className="text-center mb-4"><h1 className="text-lg font-medium" style={textPrimary}>Statistiques</h1><p className="text-xs" style={textSecondary}>Analyse détaillée de votre budget</p></div>
 
-      {/* Sélecteur de période */}
-      <div className={cardStyle + " mb-4"}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1">
-            <ChevronLeft className="w-5 h-5 text-[#D4AF37]" />
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-[#D4AF37]">
-              {selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'}
-            </span>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-lg px-3 py-1 text-lg font-semibold text-[#D4AF37]"
-            >
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          <button onClick={nextMonth} className="p-1">
-            <ChevronRight className="w-5 h-5 text-[#D4AF37]" />
-          </button>
+          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
+          <div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div>
+          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
         </div>
         <div className="flex flex-wrap gap-2 justify-center">
-          <button
-            onClick={() => setSelectedMonth(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-              selectedMonth === null
-                ? 'bg-[#D4AF37] text-[#722F37] border-[#D4AF37]'
-                : 'bg-transparent text-[#D4AF37] border-[#D4AF37]/50 hover:bg-[#D4AF37]/20'
-            }`}
-          >
-            Année
-          </button>
-          {monthsShort.map((month, index) => (
-            <button
-              key={index}
-              onClick={() => setSelectedMonth(index)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                selectedMonth === index
-                  ? 'bg-[#D4AF37] text-[#722F37] border-[#D4AF37]'
-                  : 'bg-transparent text-[#D4AF37] border-[#D4AF37]/50 hover:bg-[#D4AF37]/20'
-              }`}
-            >
-              {month}
-            </button>
-          ))}
+          <button onClick={() => setSelectedMonth(null)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === null ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>Année</button>
+          {monthsShort.map((month, index) => (<button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>))}
         </div>
       </div>
 
-      {/* Onglets */}
-      <div className="overflow-x-auto mb-4">
-        <div className="bg-[#722F37]/30 backdrop-blur-sm rounded-2xl p-1 shadow-sm flex border border-[#D4AF37]/40 min-w-max">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-3 rounded-xl text-xs font-medium transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-[#D4AF37] text-[#722F37]'
-                  : 'text-[#D4AF37]/70 hover:bg-[#D4AF37]/20'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="overflow-x-auto mb-4"><div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm flex border min-w-max" style={cardStyle}>{tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="py-2 px-3 rounded-xl text-xs font-medium transition-colors whitespace-nowrap" style={activeTab === tab.id ? { background: theme.colors.primary, color: theme.colors.textOnPrimary } : { color: theme.colors.textSecondary }}>{tab.label}</button>))}</div></div>
 
-      {/* Contenu */}
       {activeTab === 'resume' && renderResume()}
       {activeTab === 'revenus' && renderDetail('Revenus', COLORS_TYPE.revenus)}
       {activeTab === 'factures' && renderDetail('Factures', COLORS_TYPE.factures)}

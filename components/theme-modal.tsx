@@ -149,6 +149,9 @@ interface ThemeCardProps {
 }
 
 function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps) {
+  // Use the 'light' palette for the preview card
+  const displayColors = theme.colors.light;
+
   return (
     <button
       onClick={onSelect}
@@ -158,7 +161,7 @@ function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps
           : 'hover:shadow-md hover:scale-[1.01]'
       }`}
       style={{
-        background: `linear-gradient(135deg, ${theme.colors.backgroundGradientFrom}, ${theme.colors.backgroundGradientTo})`,
+        background: `linear-gradient(135deg, ${displayColors.backgroundGradientFrom}, ${displayColors.backgroundGradientTo})`,
         border: isSelected ? `2px solid ${currentTheme.colors.primary}` : `1px solid ${currentTheme.colors.primary}30`,
         boxShadow: isSelected ? `0 0 0 2px ${currentTheme.colors.secondaryLight}, 0 0 0 4px ${currentTheme.colors.primary}` : undefined
       }}
@@ -166,16 +169,16 @@ function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps
       {isSelected && (
         <div
           className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: theme.colors.primary }}
+          style={{ backgroundColor: displayColors.primary }}
         >
           <Check className="w-3 h-3 text-white" />
         </div>
       )}
 
       <div className="flex gap-1 mb-2">
-        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: theme.colors.primary }} />
-        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: theme.colors.secondary }} />
-        <div className="w-6 h-6 rounded-lg" style={{ background: `linear-gradient(135deg, ${theme.colors.gradientFrom}, ${theme.colors.gradientTo})` }} />
+        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: displayColors.primary }} />
+        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: displayColors.secondary }} />
+        <div className="w-6 h-6 rounded-lg" style={{ background: `linear-gradient(135deg, ${displayColors.gradientFrom}, ${displayColors.gradientTo})` }} />
       </div>
 
       <div className="text-left">

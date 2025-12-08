@@ -14,7 +14,7 @@ import EpargnesPage from './epargnes/page';
 import StatistiquesPage from './statistiques/page';
 import CreditsDettesPageFull from './credits-dettes/page';
 import ObjectifsPageFull from './objectifs/page';
-import { ThemeProvider, useTheme } from '../contexts/theme-context';
+import { useTheme } from '../contexts/theme-context';
 import { ThemeModal } from '@/components/theme-modal';
 
 interface Transaction {
@@ -784,7 +784,7 @@ function HomePageContent() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(180deg, ${theme.colors.backgroundGradientFrom} 0%, ${theme.colors.backgroundGradientTo} 50%, ${theme.colors.backgroundGradientFrom} 100%)` }}>
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: theme.colors.primary, borderTopColor: 'transparent' }}></div>
+          <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderLeftColor: theme.colors.primary, borderRightColor: theme.colors.primary, borderBottomColor: theme.colors.primary, borderTopColor: 'transparent' }}></div>
           <p className="font-medium" style={{ color: theme.colors.textPrimary }}>Chargement...</p>
         </div>
       </div>
@@ -829,8 +829,6 @@ function HomePageContent() {
 
 export default function Home() {
   return (
-    <ThemeProvider>
-      <HomePageContent />
-    </ThemeProvider>
+    <HomePageContent />
   );
 }

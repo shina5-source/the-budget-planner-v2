@@ -39,32 +39,30 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setMounted(true);
   }, []);
 
+  const theme = getTheme(themeKey);
+  const resolvedColors = isDarkMode ? theme.colors.dark : theme.colors.light;
+  const resolvedThemeForContext = { ...theme, colors: resolvedColors };
+
   useEffect(() => {
     if (!mounted) return;
 
-    const theme = getTheme(themeKey);
     const root = document.documentElement;
-
-    root.style.setProperty('--color-primary', theme.colors.primary);
-    root.style.setProperty('--color-primary-light', theme.colors.primaryLight);
-    root.style.setProperty('--color-secondary', theme.colors.secondary);
-    root.style.setProperty('--color-secondary-light', theme.colors.secondaryLight);
-    root.style.setProperty('--color-accent', theme.colors.accent);
-    root.style.setProperty('--color-gradient-from', theme.colors.gradientFrom);
-    root.style.setProperty('--color-gradient-to', theme.colors.gradientTo);
-    root.style.setProperty('--color-bg-gradient-from', theme.colors.backgroundGradientFrom);
-    root.style.setProperty('--color-bg-gradient-to', theme.colors.backgroundGradientTo);
+    
+    Object.keys(resolvedColors).forEach(key => {
+      const cssVar = `--color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+      root.style.setProperty(cssVar, resolvedColors[key as keyof typeof resolvedColors]);
+    });
 
     localStorage.setItem(STORAGE_KEY, themeKey);
-  }, [themeKey, mounted]);
+  }, [themeKey, resolvedColors, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
 
     if (isDarkMode) {
-      document.documentElement.classList.add('dark-mode');
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark-mode');
+      document.documentElement.classList.remove('dark');
     }
 
     localStorage.setItem(DARK_MODE_KEY, isDarkMode.toString());
@@ -78,10 +76,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     setIsDarkMode(!isDarkMode);
   };
 
-  const theme = getTheme(themeKey);
-
   return (
-    <ThemeContext.Provider value={{ theme, themeKey, setTheme, isDarkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ theme: resolvedThemeForContext, themeKey, setTheme, isDarkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -91,8 +87,9 @@ export function useTheme(): ThemeContextType {
   const context = useContext(ThemeContext);
   
   if (context === undefined) {
+    const defaultTheme = getTheme(DEFAULT_THEME);
     return {
-      theme: getTheme(DEFAULT_THEME),
+      theme: { ...defaultTheme, colors: defaultTheme.colors.light },
       themeKey: DEFAULT_THEME,
       setTheme: () => {},
       isDarkMode: false,

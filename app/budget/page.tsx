@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, TrendingUp, Home as HomeIcon, Mail, PiggyBank, FileText, RefreshCw, PieChart } from 'lucide-react';
+import { useTheme } from '../../contexts/theme-context';
 
 interface Transaction {
   id: number;
@@ -19,18 +20,24 @@ type TabType = 'vue' | 'revenus' | 'correctifs' | 'epargne' | 'bilan';
 type BilanAccordionType = 'revenus' | 'factures' | 'depenses' | 'epargnes' | null;
 
 export default function BudgetPage() {
+  const { theme } = useTheme();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('vue');
   const [bilanAccordion, setBilanAccordion] = useState<BilanAccordionType>(null);
 
+  // Dynamic styles
+  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
+  const textPrimary = { color: theme.colors.textPrimary };
+  const textSecondary = { color: theme.colors.textSecondary };
+  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+
   useEffect(() => {
     const saved = localStorage.getItem('budget-transactions');
     if (saved) setTransactions(JSON.parse(saved));
   }, []);
 
-  // Réinitialiser l'accordéon quand on change de mois
   useEffect(() => {
     setBilanAccordion(null);
   }, [selectedMonth, selectedYear]);
@@ -64,34 +71,16 @@ export default function BudgetPage() {
     else setSelectedMonth(selectedMonth + 1);
   };
 
-  // STYLES UNIFORMISÉS - À utiliser sur toutes les pages
-  const cardStyle = "bg-[#722F37]/30 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#D4AF37]/40";
-  const pageTitleStyle = "text-lg font-medium text-[#D4AF37]";
-  const pageSubtitleStyle = "text-xs text-[#D4AF37]/70";
-  const cardTitleStyle = "text-xs text-[#D4AF37]/80";
-  const amountLargeStyle = "text-2xl font-semibold text-[#D4AF37]";
-  const amountMediumStyle = "text-lg font-semibold text-[#D4AF37]";
-  const smallTextStyle = "text-[10px] text-[#D4AF37]/60";
-  const labelStyle = "text-xs text-[#D4AF37]/80";
-  const valueStyle = "text-xs font-medium text-[#D4AF37]";
-  const sectionTitleStyle = "text-sm font-semibold text-[#D4AF37]";
-
-  // STYLE CONSEILS - Vert menthe
-  const conseilCardStyle = "bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50";
-  const conseilTitleStyle = "text-xs font-semibold text-[#7DD3A8]";
-  const conseilTextStyle = "text-[10px] text-[#7DD3A8]";
-  const conseilItemStyle = "bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30";
-
   const Card = ({ title, amount, subtitle, icon: Icon }: { title: string; amount: number; subtitle: string; icon: any }) => (
-    <div className={cardStyle}>
+    <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
       <div className="flex items-start justify-between">
         <div>
-          <p className={cardTitleStyle}>{title}</p>
-          <p className={amountLargeStyle + " mt-1"}>{amount.toFixed(2)} €</p>
-          <p className={smallTextStyle + " mt-1"}>{subtitle}</p>
+          <p className="text-xs" style={textSecondary}>{title}</p>
+          <p className="text-2xl font-semibold mt-1" style={textPrimary}>{amount.toFixed(2)} €</p>
+          <p className="text-[10px] mt-1" style={textSecondary}>{subtitle}</p>
         </div>
-        <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-full flex items-center justify-center border border-[#D4AF37]/50">
-          <Icon className="w-5 h-5 text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-full flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+          <Icon className="w-5 h-5" style={textPrimary} />
         </div>
       </div>
     </div>
@@ -107,43 +96,43 @@ export default function BudgetPage() {
     </div>
   );
 
-  const TransactionList = ({ transactions, title, icon: Icon, emptyMessage }: { transactions: Transaction[]; title: string; icon: any; emptyMessage: string }) => {
-    const total = transactions.reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const TransactionList = ({ transactions: txList, title, icon: Icon, emptyMessage }: { transactions: Transaction[]; title: string; icon: any; emptyMessage: string }) => {
+    const total = txList.reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center border border-[#D4AF37]/50">
-            <Icon className="w-5 h-5 text-[#D4AF37]" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+            <Icon className="w-5 h-5" style={textPrimary} />
           </div>
           <div className="flex-1">
-            <h3 className={sectionTitleStyle}>{title}</h3>
-            <p className={smallTextStyle}>{monthsFull[selectedMonth]} {selectedYear}</p>
+            <h3 className="text-sm font-semibold" style={textPrimary}>{title}</h3>
+            <p className="text-[10px]" style={textSecondary}>{monthsFull[selectedMonth]} {selectedYear}</p>
           </div>
           <div className="text-right">
-            <p className={amountMediumStyle}>{total.toFixed(2)} €</p>
-            <p className={smallTextStyle}>{transactions.length} transaction{transactions.length > 1 ? 's' : ''}</p>
+            <p className="text-lg font-semibold" style={textPrimary}>{total.toFixed(2)} €</p>
+            <p className="text-[10px]" style={textSecondary}>{txList.length} transaction{txList.length > 1 ? 's' : ''}</p>
           </div>
         </div>
-        {transactions.length === 0 ? (
-          <div className={cardStyle + " text-center"}>
-            <p className={pageSubtitleStyle}>{emptyMessage}</p>
+        {txList.length === 0 ? (
+          <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
+            <p className="text-xs" style={textSecondary}>{emptyMessage}</p>
           </div>
         ) : (
-          <div className={cardStyle + " overflow-hidden p-0"}>
-            <div className="divide-y divide-[#D4AF37]/20">
-              {transactions.map((t, index) => (
-                <div key={index} className="p-3 flex items-center justify-between">
+          <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden p-0" style={cardStyle}>
+            <div style={{ borderColor: theme.colors.cardBorder }}>
+              {txList.map((t, index) => (
+                <div key={index} className="p-3 flex items-center justify-between" style={{ borderBottomWidth: index < txList.length - 1 ? 1 : 0, borderColor: theme.colors.cardBorder }}>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-[#D4AF37]">{t.categorie}</p>
-                    <p className={smallTextStyle}>{t.date}</p>
+                    <p className="text-sm font-medium" style={textPrimary}>{t.categorie}</p>
+                    <p className="text-[10px]" style={textSecondary}>{t.date}</p>
                   </div>
-                  <p className="text-sm font-semibold text-[#D4AF37]">{parseFloat(t.montant).toFixed(2)} €</p>
+                  <p className="text-sm font-semibold" style={textPrimary}>{parseFloat(t.montant).toFixed(2)} €</p>
                 </div>
               ))}
             </div>
-            <div className="bg-[#722F37]/50 p-3 flex items-center justify-between border-t border-[#D4AF37]/30">
-              <p className="text-sm font-medium text-[#D4AF37]">Total</p>
-              <p className="text-sm font-bold text-[#D4AF37]">{total.toFixed(2)} €</p>
+            <div className="p-3 flex items-center justify-between" style={{ background: theme.colors.cardBackgroundLight, borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
+              <p className="text-sm font-medium" style={textPrimary}>Total</p>
+              <p className="text-sm font-bold" style={textPrimary}>{total.toFixed(2)} €</p>
             </div>
           </div>
         )}
@@ -156,12 +145,12 @@ export default function BudgetPage() {
   const renderEpargne = () => (
     <div className="space-y-4">
       <TransactionList transactions={epargnesTransactions} title="Épargnes du mois" icon={PiggyBank} emptyMessage="Aucune épargne enregistrée pour ce mois" />
-      <div className={cardStyle + " text-center"}>
-        <p className={pageSubtitleStyle + " mb-1"}>Total épargné ce mois</p>
-        <p className={amountLargeStyle}>{totalEpargnes.toFixed(2)} €</p>
-        <div className="mt-3 bg-[#D4AF37]/10 rounded-xl p-3 inline-block border border-[#D4AF37]/30">
-          <p className={smallTextStyle}>Taux d'épargne</p>
-          <p className="text-xl font-semibold text-[#D4AF37]">{tauxEpargne} %</p>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
+        <p className="text-xs mb-1" style={textSecondary}>Total épargné ce mois</p>
+        <p className="text-2xl font-semibold" style={textPrimary}>{totalEpargnes.toFixed(2)} €</p>
+        <div className="mt-3 rounded-xl p-3 inline-block border" style={{ background: `${theme.colors.primary}10`, borderColor: theme.colors.cardBorder }}>
+          <p className="text-[10px]" style={textSecondary}>Taux d'épargne</p>
+          <p className="text-xl font-semibold" style={textPrimary}>{tauxEpargne} %</p>
         </div>
       </div>
     </div>
@@ -170,60 +159,60 @@ export default function BudgetPage() {
   const renderCorrectifs = () => (
     <div className="space-y-4">
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center border border-[#D4AF37]/50">
-          <RefreshCw className="w-5 h-5 text-[#D4AF37]" />
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+          <RefreshCw className="w-5 h-5" style={textPrimary} />
         </div>
         <div>
-          <h3 className={sectionTitleStyle}>Correctifs & Analyse</h3>
-          <p className={smallTextStyle}>{monthsFull[selectedMonth]} {selectedYear}</p>
+          <h3 className="text-sm font-semibold" style={textPrimary}>Correctifs & Analyse</h3>
+          <p className="text-[10px]" style={textSecondary}>{monthsFull[selectedMonth]} {selectedYear}</p>
         </div>
       </div>
-      <div className={cardStyle}>
-        <h4 className={cardTitleStyle + " font-semibold mb-3"}>📊 Résumé du mois</h4>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        <h4 className="text-xs font-semibold mb-3" style={textSecondary}>📊 Résumé du mois</h4>
         <div className="space-y-2">
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={labelStyle}>Revenus totaux</span>
-            <span className={valueStyle}>+ {totalRevenus.toFixed(2)} €</span>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs" style={textSecondary}>Revenus totaux</span>
+            <span className="text-xs font-medium" style={textPrimary}>+ {totalRevenus.toFixed(2)} €</span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={labelStyle}>Dépenses fixes</span>
-            <span className={valueStyle}>- {totalFactures.toFixed(2)} €</span>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs" style={textSecondary}>Dépenses fixes</span>
+            <span className="text-xs font-medium" style={textPrimary}>- {totalFactures.toFixed(2)} €</span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={labelStyle}>Dépenses variables</span>
-            <span className={valueStyle}>- {totalDepenses.toFixed(2)} €</span>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs" style={textSecondary}>Dépenses variables</span>
+            <span className="text-xs font-medium" style={textPrimary}>- {totalDepenses.toFixed(2)} €</span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-[#D4AF37]/20">
-            <span className={labelStyle}>Épargnes</span>
-            <span className={valueStyle}>- {totalEpargnes.toFixed(2)} €</span>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs" style={textSecondary}>Épargnes</span>
+            <span className="text-xs font-medium" style={textPrimary}>- {totalEpargnes.toFixed(2)} €</span>
           </div>
           <div className="flex justify-between items-center py-2">
-            <span className={labelStyle + " font-semibold"}>Solde final</span>
-            <span className={valueStyle + " font-bold"}>{solde >= 0 ? '+ ' : ''}{solde.toFixed(2)} €</span>
+            <span className="text-xs font-semibold" style={textSecondary}>Solde final</span>
+            <span className="text-xs font-bold" style={textPrimary}>{solde >= 0 ? '+ ' : ''}{solde.toFixed(2)} €</span>
           </div>
         </div>
       </div>
-      <div className={conseilCardStyle}>
-        <h4 className={conseilTitleStyle + " mb-3"}>💡 Conseils</h4>
+      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
+        <h4 className="text-xs font-semibold text-[#7DD3A8] mb-3">💡 Conseils</h4>
         <div className="space-y-2">
           {totalDepenses > budgetApresDepenses && (
-            <div className={conseilItemStyle}>
-              <p className={conseilTextStyle}>⚠️ Vos dépenses variables dépassent votre budget de {(totalDepenses - budgetApresDepenses).toFixed(2)} €</p>
+            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
+              <p className="text-[10px] text-[#7DD3A8]">⚠️ Vos dépenses variables dépassent votre budget de {(totalDepenses - budgetApresDepenses).toFixed(2)} €</p>
             </div>
           )}
           {totalEpargnes === 0 && totalRevenus > 0 && (
-            <div className={conseilItemStyle}>
-              <p className={conseilTextStyle}>💰 Pensez à épargner au moins 10% ({(totalRevenus * 0.1).toFixed(2)} €)</p>
+            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
+              <p className="text-[10px] text-[#7DD3A8]">💰 Pensez à épargner au moins 10% ({(totalRevenus * 0.1).toFixed(2)} €)</p>
             </div>
           )}
           {solde >= 0 && totalEpargnes > 0 && (
-            <div className={conseilItemStyle}>
-              <p className={conseilTextStyle}>✅ Bravo ! Solde positif et épargne active !</p>
+            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
+              <p className="text-[10px] text-[#7DD3A8]">✅ Bravo ! Solde positif et épargne active !</p>
             </div>
           )}
           {filteredTransactions.length === 0 && (
-            <div className={conseilItemStyle}>
-              <p className={conseilTextStyle}>📝 Aucune transaction. Commencez à enregistrer !</p>
+            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
+              <p className="text-[10px] text-[#7DD3A8]">📝 Aucune transaction. Commencez à enregistrer !</p>
             </div>
           )}
         </div>
@@ -232,70 +221,46 @@ export default function BudgetPage() {
   );
 
   const renderBilan = () => {
-    // Composant Accordéon réutilisable
-    const AccordionSection = ({ 
-      title, 
-      icon: Icon, 
-      transactions: sectionTransactions, 
-      total, 
-      isExpense = true,
-      sectionKey
-    }: { 
-      title: string; 
-      icon: any; 
-      transactions: Transaction[]; 
-      total: number; 
-      isExpense?: boolean;
-      sectionKey: BilanAccordionType;
-    }) => {
+    const AccordionSection = ({ title, icon: Icon, transactions: sectionTransactions, total, isExpense = true, sectionKey }: { title: string; icon: any; transactions: Transaction[]; total: number; isExpense?: boolean; sectionKey: BilanAccordionType }) => {
       const isOpen = bilanAccordion === sectionKey;
       const prefix = isExpense ? '-' : '+';
       const count = sectionTransactions.length;
 
       return (
-        <div className={cardStyle + " overflow-hidden p-0"}>
-          <button 
-            onClick={() => setBilanAccordion(isOpen ? null : sectionKey)}
-            className="w-full flex items-center justify-between p-4 hover:bg-[#D4AF37]/5 transition-colors"
-          >
+        <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden p-0" style={cardStyle}>
+          <button onClick={() => setBilanAccordion(isOpen ? null : sectionKey)} className="w-full flex items-center justify-between p-4 transition-colors">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-[#D4AF37]/20 rounded-lg flex items-center justify-center border border-[#D4AF37]/50">
-                <Icon className="w-4 h-4 text-[#D4AF37]" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                <Icon className="w-4 h-4" style={textPrimary} />
               </div>
               <div className="text-left">
-                <span className="text-sm font-medium text-[#D4AF37]">{title}</span>
-                <span className={smallTextStyle + " block"}>{count} élément{count > 1 ? 's' : ''}</span>
+                <span className="text-sm font-medium" style={textPrimary}>{title}</span>
+                <span className="text-[10px] block" style={textSecondary}>{count} élément{count > 1 ? 's' : ''}</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`text-sm font-semibold ${isExpense ? 'text-red-400' : 'text-green-400'}`}>
-                {prefix} {total.toFixed(2)} €
-              </span>
-              {isOpen ? (
-                <ChevronUp className="w-5 h-5 text-[#D4AF37]" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-[#D4AF37]" />
-              )}
+              <span className={`text-sm font-semibold ${isExpense ? 'text-red-400' : 'text-green-400'}`}>{prefix} {total.toFixed(2)} €</span>
+              {isOpen ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}
             </div>
           </button>
           
           {isOpen && (
-            <div className="border-t border-[#D4AF37]/20">
+            <div style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
               {sectionTransactions.length === 0 ? (
-                <p className={smallTextStyle + " text-center py-4"}>Aucun élément ce mois</p>
+                <p className="text-[10px] text-center py-4" style={textSecondary}>Aucun élément ce mois</p>
               ) : (
-                <div className="divide-y divide-[#D4AF37]/10">
+                <div>
                   {sectionTransactions.map((t, i) => (
-                    <div key={i} className="flex justify-between items-center px-4 py-2">
-                      <span className={labelStyle}>{t.categorie}</span>
-                      <span className={valueStyle}>{prefix} {parseFloat(t.montant).toFixed(2)} €</span>
+                    <div key={i} className="flex justify-between items-center px-4 py-2" style={{ borderBottomWidth: i < sectionTransactions.length - 1 ? 1 : 0, borderColor: theme.colors.cardBorder }}>
+                      <span className="text-xs" style={textSecondary}>{t.categorie}</span>
+                      <span className="text-xs font-medium" style={textPrimary}>{prefix} {parseFloat(t.montant).toFixed(2)} €</span>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="bg-[#722F37]/50 px-4 py-3 flex justify-between items-center border-t border-[#D4AF37]/30">
-                <span className="text-sm font-medium text-[#D4AF37]">Total</span>
-                <span className="text-sm font-bold text-[#D4AF37]">{prefix} {total.toFixed(2)} €</span>
+              <div className="px-4 py-3 flex justify-between items-center" style={{ background: theme.colors.cardBackgroundLight, borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
+                <span className="text-sm font-medium" style={textPrimary}>Total</span>
+                <span className="text-sm font-bold" style={textPrimary}>{prefix} {total.toFixed(2)} €</span>
               </div>
             </div>
           )}
@@ -305,65 +270,29 @@ export default function BudgetPage() {
 
     return (
       <div className="space-y-3">
-        {/* Header */}
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center border border-[#D4AF37]/50">
-            <FileText className="w-5 h-5 text-[#D4AF37]" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+            <FileText className="w-5 h-5" style={textPrimary} />
           </div>
           <div>
-            <h3 className={sectionTitleStyle}>Bilan mensuel</h3>
-            <p className={smallTextStyle}>{monthsFull[selectedMonth]} {selectedYear}</p>
+            <h3 className="text-sm font-semibold" style={textPrimary}>Bilan mensuel</h3>
+            <p className="text-[10px]" style={textSecondary}>{monthsFull[selectedMonth]} {selectedYear}</p>
           </div>
         </div>
 
-        {/* Sections Accordéon */}
-        <AccordionSection 
-          title="Revenus mensuels" 
-          icon={TrendingUp} 
-          transactions={revenusTransactions} 
-          total={totalRevenus} 
-          isExpense={false}
-          sectionKey="revenus"
-        />
+        <AccordionSection title="Revenus mensuels" icon={TrendingUp} transactions={revenusTransactions} total={totalRevenus} isExpense={false} sectionKey="revenus" />
+        <AccordionSection title="Dépenses fixes" icon={HomeIcon} transactions={facturesTransactions} total={totalFactures} isExpense={true} sectionKey="factures" />
+        <AccordionSection title="Dépenses variables" icon={Mail} transactions={depensesTransactions} total={totalDepenses} isExpense={true} sectionKey="depenses" />
+        <AccordionSection title="Épargnes" icon={PiggyBank} transactions={epargnesTransactions} total={totalEpargnes} isExpense={true} sectionKey="epargnes" />
 
-        <AccordionSection 
-          title="Dépenses fixes" 
-          icon={HomeIcon} 
-          transactions={facturesTransactions} 
-          total={totalFactures} 
-          isExpense={true}
-          sectionKey="factures"
-        />
-
-        <AccordionSection 
-          title="Dépenses variables" 
-          icon={Mail} 
-          transactions={depensesTransactions} 
-          total={totalDepenses} 
-          isExpense={true}
-          sectionKey="depenses"
-        />
-
-        <AccordionSection 
-          title="Épargnes" 
-          icon={PiggyBank} 
-          transactions={epargnesTransactions} 
-          total={totalEpargnes} 
-          isExpense={true}
-          sectionKey="epargnes"
-        />
-
-        {/* Solde final */}
-        <div className={cardStyle + " text-center"}>
-          <p className={pageSubtitleStyle + " mb-1"}>Solde du mois</p>
-          <p className={`text-3xl font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {solde >= 0 ? '+' : ''}{solde.toFixed(2)} €
-          </p>
-          <div className="bg-[#D4AF37]/10 rounded-xl p-3 mt-4 inline-flex items-center gap-2 border border-[#D4AF37]/30">
-            <PiggyBank className="w-4 h-4 text-[#D4AF37]" />
-            <span className={labelStyle}>Taux d'épargne</span>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
+          <p className="text-xs mb-1" style={textSecondary}>Solde du mois</p>
+          <p className={`text-3xl font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</p>
+          <div className="rounded-xl p-3 mt-4 inline-flex items-center gap-2 border" style={{ background: `${theme.colors.primary}10`, borderColor: theme.colors.cardBorder }}>
+            <PiggyBank className="w-4 h-4" style={textPrimary} />
+            <span className="text-xs" style={textSecondary}>Taux d'épargne</span>
           </div>
-          <p className="text-2xl font-semibold mt-2 text-[#D4AF37]">{tauxEpargne} %</p>
+          <p className="text-2xl font-semibold mt-2" style={textPrimary}>{tauxEpargne} %</p>
           {solde > 0 ? (
             <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30 inline-block">✨ Excellent ! Solde positif de {solde.toFixed(2)} €</p>
           ) : solde < 0 ? (
@@ -386,35 +315,34 @@ export default function BudgetPage() {
 
   return (
     <div className="pb-4">
-      {/* Titre centré */}
       <div className="text-center mb-4">
-        <h1 className={pageTitleStyle}>Budget</h1>
-        <p className={pageSubtitleStyle}>Vue d'ensemble de {monthsFull[selectedMonth]} {selectedYear}</p>
+        <h1 className="text-lg font-medium" style={textPrimary}>Budget</h1>
+        <p className="text-xs" style={textSecondary}>Vue d'ensemble de {monthsFull[selectedMonth]} {selectedYear}</p>
       </div>
 
-      {/* Sélecteur de mois - UN SEUL menu déroulant pour l'année */}
-      <div className={cardStyle + " mb-4"}>
+      {/* Sélecteur de mois */}
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5 text-[#D4AF37]" /></button>
+          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-[#D4AF37]">{monthsFull[selectedMonth]}</span>
-            <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-lg px-3 py-1 text-lg font-semibold text-[#D4AF37]">
+            <span className="text-lg font-semibold" style={textPrimary}>{monthsFull[selectedMonth]}</span>
+            <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
               {years.map(year => (<option key={year} value={year}>{year}</option>))}
             </select>
           </div>
-          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5 text-[#D4AF37]" /></button>
+          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
         </div>
         <div className="flex flex-wrap gap-2 justify-center">
           {monthsShort.map((month, index) => (
-            <button key={index} onClick={() => setSelectedMonth(index)} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${selectedMonth === index ? 'bg-[#D4AF37] text-[#722F37] border-[#D4AF37]' : 'bg-transparent text-[#D4AF37] border-[#D4AF37]/50 hover:bg-[#D4AF37]/20'}`}>{month}</button>
+            <button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
           ))}
         </div>
       </div>
 
       {/* Onglets */}
-      <div className="bg-[#722F37]/30 backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border border-[#D4AF37]/40">
+      <div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border" style={cardStyle}>
         {tabs.map((tab) => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors ${activeTab === tab.id ? 'bg-[#D4AF37] text-[#722F37]' : 'text-[#D4AF37]/70 hover:bg-[#D4AF37]/20'}`}>{tab.label}</button>
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors" style={activeTab === tab.id ? { background: theme.colors.primary, color: theme.colors.textOnPrimary } : { color: theme.colors.textSecondary }}>{tab.label}</button>
         ))}
       </div>
 

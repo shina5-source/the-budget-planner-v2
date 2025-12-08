@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, X, Check, Trash2, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { useTheme } from '../../contexts/theme-context';
 
 interface MemoItem {
   id: number;
@@ -31,11 +32,10 @@ const months = [
 ];
 
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
-
-// PAGINATION
 const ITEMS_PER_PAGE = 50;
 
 export default function MemoPage() {
+  const { theme } = useTheme();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [memoData, setMemoData] = useState<MemoData>({});
   const [showForm, setShowForm] = useState(false);
@@ -43,16 +43,19 @@ export default function MemoPage() {
   const [formData, setFormData] = useState({ description: '', montant: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
-
-  // PAGINATION STATE - Un compteur par mois
   const [displayCounts, setDisplayCounts] = useState<{ [key: string]: number }>({});
+
+  // Dynamic styles
+  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
+  const textPrimary = { color: theme.colors.textPrimary };
+  const textSecondary = { color: theme.colors.textSecondary };
+  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
 
   useEffect(() => {
     const saved = localStorage.getItem('budget-memo');
     if (saved) setMemoData(JSON.parse(saved));
   }, []);
 
-  // Réinitialiser la pagination quand on change d'année
   useEffect(() => {
     setDisplayCounts({});
   }, [selectedYear]);
@@ -63,17 +66,8 @@ export default function MemoPage() {
   };
 
   const getMonthKey = (monthNum: string) => `${selectedYear}-${monthNum}`;
-
-  const getDisplayCount = (monthNum: string) => {
-    return displayCounts[monthNum] || ITEMS_PER_PAGE;
-  };
-
-  const loadMoreForMonth = (monthNum: string) => {
-    setDisplayCounts(prev => ({
-      ...prev,
-      [monthNum]: (prev[monthNum] || ITEMS_PER_PAGE) + ITEMS_PER_PAGE
-    }));
-  };
+  const getDisplayCount = (monthNum: string) => displayCounts[monthNum] || ITEMS_PER_PAGE;
+  const loadMoreForMonth = (monthNum: string) => setDisplayCounts(prev => ({ ...prev, [monthNum]: (prev[monthNum] || ITEMS_PER_PAGE) + ITEMS_PER_PAGE }));
 
   const openAddForm = (monthNum: string) => {
     setSelectedMonth(monthNum);
@@ -85,22 +79,14 @@ export default function MemoPage() {
   const handleSubmit = () => {
     if (formData.description && selectedMonth) {
       const monthKey = getMonthKey(selectedMonth);
-      const newItem: MemoItem = {
-        id: editingId || Date.now(),
-        description: formData.description,
-        montant: formData.montant || '0,00',
-        checked: false,
-      };
-
+      const newItem: MemoItem = { id: editingId || Date.now(), description: formData.description, montant: formData.montant || '0,00', checked: false };
       const monthItems = memoData[monthKey] || [];
       let newData: MemoData;
-
       if (editingId) {
         newData = { ...memoData, [monthKey]: monthItems.map(item => item.id === editingId ? newItem : item) };
       } else {
         newData = { ...memoData, [monthKey]: [...monthItems, newItem] };
       }
-
       saveMemoData(newData);
       setShowForm(false);
       setFormData({ description: '', montant: '' });
@@ -130,52 +116,15 @@ export default function MemoPage() {
   const getMonthTotal = (monthNum: string) => {
     const monthKey = getMonthKey(monthNum);
     const items = memoData[monthKey] || [];
-    return items.reduce((sum, item) => {
-      const montant = parseFloat(item.montant.replace(',', '.')) || 0;
-      return sum + montant;
-    }, 0);
+    return items.reduce((sum, item) => sum + (parseFloat(item.montant.replace(',', '.')) || 0), 0);
   };
 
   const getYearTotal = () => months.reduce((sum, month) => sum + getMonthTotal(month.num), 0);
-
-  const getTotalItems = () => months.reduce((sum, month) => {
-    const monthKey = getMonthKey(month.num);
-    return sum + (memoData[monthKey]?.length || 0);
-  }, 0);
-
-  const getCheckedItems = () => months.reduce((sum, month) => {
-    const monthKey = getMonthKey(month.num);
-    return sum + (memoData[monthKey]?.filter(item => item.checked).length || 0);
-  }, 0);
-
+  const getTotalItems = () => months.reduce((sum, month) => sum + (memoData[getMonthKey(month.num)]?.length || 0), 0);
+  const getCheckedItems = () => months.reduce((sum, month) => sum + (memoData[getMonthKey(month.num)]?.filter(item => item.checked).length || 0), 0);
   const toggleMonth = (monthNum: string) => setExpandedMonth(expandedMonth === monthNum ? null : monthNum);
-
-  const prevYear = () => {
-    if (selectedYear > 2020) { setSelectedYear(selectedYear - 1); setExpandedMonth(null); }
-  };
-
-  const nextYear = () => {
-    if (selectedYear < 2100) { setSelectedYear(selectedYear + 1); setExpandedMonth(null); }
-  };
-
-  // STYLES UNIFORMISÉS
-  const cardStyle = "bg-[#722F37]/30 backdrop-blur-sm rounded-2xl shadow-sm border border-[#D4AF37]/40 overflow-hidden";
-  const pageTitleStyle = "text-lg font-medium text-[#D4AF37]";
-  const pageSubtitleStyle = "text-xs text-[#D4AF37]/70";
-  const cardTitleStyle = "text-xs text-[#D4AF37]/80";
-  const amountLargeStyle = "text-2xl font-semibold text-[#D4AF37]";
-  const amountMediumStyle = "text-lg font-semibold text-[#D4AF37]";
-  const smallTextStyle = "text-[10px] text-[#D4AF37]/60";
-  const labelStyle = "text-xs font-medium text-[#D4AF37] mb-1 block";
-  const valueStyle = "text-xs font-medium text-[#D4AF37]";
-  const sectionTitleStyle = "text-sm font-semibold text-[#D4AF37]";
-  const inputStyle = "w-full bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-xl px-3 py-2 text-sm text-[#D4AF37] placeholder-[#D4AF37]/50 focus:outline-none focus:border-[#D4AF37]";
-
-  // STYLE SPÉCIAL POUR LES CONSEILS - Vert menthe
-  const conseilCardStyle = "bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50";
-  const conseilTitleStyle = "text-xs font-semibold text-[#7DD3A8]";
-  const conseilTextStyle = "text-[10px] text-[#7DD3A8]";
-  const conseilIconStyle = "w-4 h-4 text-[#7DD3A8]";
+  const prevYear = () => { if (selectedYear > 2020) { setSelectedYear(selectedYear - 1); setExpandedMonth(null); } };
+  const nextYear = () => { if (selectedYear < 2100) { setSelectedYear(selectedYear + 1); setExpandedMonth(null); } };
 
   const totalItems = getTotalItems();
   const checkedItems = getCheckedItems();
@@ -183,74 +132,53 @@ export default function MemoPage() {
 
   return (
     <div className="pb-4">
-      {/* Titre centré */}
       <div className="text-center mb-4">
-        <h1 className={pageTitleStyle}>Mémo Budget</h1>
-        <p className={pageSubtitleStyle}>Calendrier annuel des dépenses prévues</p>
+        <h1 className="text-lg font-medium" style={textPrimary}>Mémo Budget</h1>
+        <p className="text-xs" style={textSecondary}>Calendrier annuel des dépenses prévues</p>
       </div>
 
       {/* Sélecteur d'année */}
-      <div className={cardStyle + " mb-4 p-4"}>
+      <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4" style={cardStyle}>
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevYear} className="p-1"><ChevronLeft className="w-5 h-5 text-[#D4AF37]" /></button>
+          <button onClick={prevYear} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
           <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-[#D4AF37]">Année</span>
-            <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setExpandedMonth(null); }} className="bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-lg px-3 py-1 text-lg font-semibold text-[#D4AF37]">
+            <span className="text-lg font-semibold" style={textPrimary}>Année</span>
+            <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setExpandedMonth(null); }} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
               {years.map(year => (<option key={year} value={year}>{year}</option>))}
             </select>
           </div>
-          <button onClick={nextYear} className="p-1"><ChevronRight className="w-5 h-5 text-[#D4AF37]" /></button>
+          <button onClick={nextYear} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
         </div>
-        {/* Boutons de navigation rapide par mois */}
         <div className="flex flex-wrap gap-2 justify-center">
           {monthsShort.map((month, index) => {
             const monthNum = String(index + 1).padStart(2, '0');
             const hasItems = (memoData[getMonthKey(monthNum)]?.length || 0) > 0;
             return (
-              <button key={index} onClick={() => { setExpandedMonth(monthNum); }} className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${expandedMonth === monthNum ? 'bg-[#D4AF37] text-[#722F37] border-[#D4AF37]' : hasItems ? 'bg-[#D4AF37]/20 text-[#D4AF37] border-[#D4AF37]/50' : 'bg-transparent text-[#D4AF37] border-[#D4AF37]/50 hover:bg-[#D4AF37]/20'}`}>{month}</button>
+              <button key={index} onClick={() => setExpandedMonth(monthNum)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={expandedMonth === monthNum ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : hasItems ? { background: `${theme.colors.primary}20`, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
             );
           })}
         </div>
       </div>
 
       {/* Total de l'année */}
-      <div className={cardStyle + " mb-4 p-4 text-center"}>
-        <p className={pageSubtitleStyle}>Total prévu pour {selectedYear}</p>
-        <p className={amountLargeStyle + " mt-1"}>{yearTotal.toFixed(2)} €</p>
+      <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4 text-center" style={cardStyle}>
+        <p className="text-xs" style={textSecondary}>Total prévu pour {selectedYear}</p>
+        <p className="text-2xl font-semibold mt-1" style={textPrimary}>{yearTotal.toFixed(2)} €</p>
         <div className="flex justify-center gap-6 mt-3">
-          <div>
-            <p className={smallTextStyle}>Éléments</p>
-            <p className={valueStyle}>{totalItems}</p>
-          </div>
-          <div>
-            <p className={smallTextStyle}>Complétés</p>
-            <p className={valueStyle}>{checkedItems} / {totalItems}</p>
-          </div>
+          <div><p className="text-[10px]" style={textSecondary}>Éléments</p><p className="text-xs font-medium" style={textPrimary}>{totalItems}</p></div>
+          <div><p className="text-[10px]" style={textSecondary}>Complétés</p><p className="text-xs font-medium" style={textPrimary}>{checkedItems} / {totalItems}</p></div>
         </div>
       </div>
 
-      {/* Conseils - COULEUR VERTE */}
-      <div className={conseilCardStyle + " mb-4"}>
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className={conseilIconStyle} />
-          <h4 className={conseilTitleStyle}>💡 Conseils</h4>
-        </div>
+      {/* Conseils */}
+      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50 mb-4">
+        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
         <div className="space-y-2">
-          {totalItems === 0 && (
-            <p className={conseilTextStyle}>📝 Ajoutez vos dépenses prévues pour mieux planifier votre budget</p>
-          )}
-          {totalItems > 0 && checkedItems === totalItems && (
-            <p className={conseilTextStyle}>🎉 Bravo ! Tous vos éléments sont complétés pour {selectedYear}</p>
-          )}
-          {totalItems > 0 && checkedItems < totalItems && (
-            <p className={conseilTextStyle}>📋 Il vous reste {totalItems - checkedItems} élément(s) à compléter</p>
-          )}
-          {yearTotal > 5000 && (
-            <p className={conseilTextStyle}>💰 Budget annuel conséquent ({yearTotal.toFixed(0)} €). Planifiez bien vos épargnes !</p>
-          )}
-          {yearTotal > 0 && yearTotal <= 5000 && (
-            <p className={conseilTextStyle}>✅ Budget annuel de {yearTotal.toFixed(0)} € prévu</p>
-          )}
+          {totalItems === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos dépenses prévues pour mieux planifier votre budget</p>)}
+          {totalItems > 0 && checkedItems === totalItems && (<p className="text-[10px] text-[#7DD3A8]">🎉 Bravo ! Tous vos éléments sont complétés pour {selectedYear}</p>)}
+          {totalItems > 0 && checkedItems < totalItems && (<p className="text-[10px] text-[#7DD3A8]">📋 Il vous reste {totalItems - checkedItems} élément(s) à compléter</p>)}
+          {yearTotal > 5000 && (<p className="text-[10px] text-[#7DD3A8]">💰 Budget annuel conséquent ({yearTotal.toFixed(0)} €). Planifiez bien vos épargnes !</p>)}
+          {yearTotal > 0 && yearTotal <= 5000 && (<p className="text-[10px] text-[#7DD3A8]">✅ Budget annuel de {yearTotal.toFixed(0)} € prévu</p>)}
         </div>
       </div>
 
@@ -262,82 +190,68 @@ export default function MemoPage() {
           const total = getMonthTotal(month.num);
           const isExpanded = expandedMonth === month.num;
           const checkedCount = items.filter(i => i.checked).length;
-
-          // PAGINATION pour ce mois
           const displayCount = getDisplayCount(month.num);
           const displayedItems = items.slice(0, displayCount);
           const hasMore = displayCount < items.length;
           const remainingCount = items.length - displayCount;
 
           return (
-            <div key={month.id} className={cardStyle}>
-              {/* Header du mois */}
-              <div className="bg-[#722F37]/50 px-4 py-3 flex items-center justify-between cursor-pointer border-b border-[#D4AF37]/30" onClick={() => toggleMonth(month.num)}>
+            <div key={month.id} className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden" style={cardStyle}>
+              <div className="px-4 py-3 flex items-center justify-between cursor-pointer" style={{ background: theme.colors.cardBackgroundLight, borderBottomWidth: 1, borderColor: theme.colors.cardBorder }} onClick={() => toggleMonth(month.num)}>
                 <div className="flex items-center gap-3">
-                  <span className={sectionTitleStyle}>{month.label}</span>
-                  <span className={smallTextStyle}>({items.length} élément{items.length > 1 ? 's' : ''})</span>
+                  <span className="text-sm font-semibold" style={textPrimary}>{month.label}</span>
+                  <span className="text-[10px]" style={textSecondary}>({items.length} élément{items.length > 1 ? 's' : ''})</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={valueStyle}>{total.toFixed(2)} €</span>
-                  <button onClick={(e) => { e.stopPropagation(); openAddForm(month.num); }} className="w-7 h-7 bg-[#D4AF37]/20 rounded-full flex items-center justify-center hover:bg-[#D4AF37]/30 transition-colors border border-[#D4AF37]/50">
-                    <Plus className="w-4 h-4 text-[#D4AF37]" />
+                  <span className="text-xs font-medium" style={textPrimary}>{total.toFixed(2)} €</span>
+                  <button onClick={(e) => { e.stopPropagation(); openAddForm(month.num); }} className="w-7 h-7 rounded-full flex items-center justify-center transition-colors border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                    <Plus className="w-4 h-4" style={textPrimary} />
                   </button>
-                  {isExpanded ? <ChevronUp className="w-4 h-4 text-[#D4AF37]" /> : <ChevronDown className="w-4 h-4 text-[#D4AF37]" />}
+                  {isExpanded ? <ChevronUp className="w-4 h-4" style={textPrimary} /> : <ChevronDown className="w-4 h-4" style={textPrimary} />}
                 </div>
               </div>
 
-              {/* Contenu du mois (accordéon) */}
               {isExpanded && (
                 <div className="p-3">
                   {items.length === 0 ? (
-                    <p className={pageSubtitleStyle + " text-center py-4"}>Aucun élément pour ce mois</p>
+                    <p className="text-xs text-center py-4" style={textSecondary}>Aucun élément pour ce mois</p>
                   ) : (
                     <div className="space-y-2">
-                      {/* En-tête */}
-                      <div className="flex items-center px-2 pb-1 border-b border-[#D4AF37]/20">
+                      <div className="flex items-center px-2 pb-1" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
                         <div className="w-6"></div>
-                        <div className={smallTextStyle + " flex-1 font-medium"}>Description</div>
-                        <div className={smallTextStyle + " w-20 text-right font-medium"}>Montant</div>
+                        <div className="text-[10px] font-medium flex-1" style={textSecondary}>Description</div>
+                        <div className="text-[10px] font-medium w-20 text-right" style={textSecondary}>Montant</div>
                         <div className="w-14"></div>
                       </div>
 
-                      {/* Items avec pagination */}
                       {displayedItems.map((item) => (
-                        <div key={item.id} className="flex items-center bg-[#722F37]/40 rounded-xl px-2 py-2 border border-[#D4AF37]/20">
-                          <button onClick={() => toggleCheck(month.num, item.id)} className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors ${item.checked ? 'bg-[#D4AF37] border-[#D4AF37]' : 'border-[#D4AF37]/50 bg-transparent'}`}>
-                            {item.checked && <Check className="w-3 h-3 text-[#722F37]" />}
+                        <div key={item.id} className="flex items-center rounded-xl px-2 py-2 border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+                          <button onClick={() => toggleCheck(month.num, item.id)} className="w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={item.checked ? { background: theme.colors.primary, borderColor: theme.colors.primary } : { borderColor: theme.colors.cardBorder, background: 'transparent' }}>
+                            {item.checked && <Check className="w-3 h-3" style={{ color: theme.colors.textOnPrimary }} />}
                           </button>
-                          <div className={`flex-1 px-3 text-sm ${item.checked ? 'line-through text-[#D4AF37]/50' : 'text-[#D4AF37]'}`}>{item.description}</div>
-                          <div className={`w-20 text-right text-sm font-medium ${item.checked ? 'text-[#D4AF37]/50' : 'text-[#D4AF37]'}`}>{item.montant} €</div>
+                          <div className={`flex-1 px-3 text-sm ${item.checked ? 'line-through opacity-50' : ''}`} style={textPrimary}>{item.description}</div>
+                          <div className={`w-20 text-right text-sm font-medium ${item.checked ? 'opacity-50' : ''}`} style={textPrimary}>{item.montant} €</div>
                           <div className="w-14 flex items-center justify-end gap-1">
-                            <button onClick={() => editItem(month.num, item)} className="p-1.5 bg-[#D4AF37]/20 rounded-lg hover:bg-[#D4AF37]/30 border border-[#D4AF37]/30">
-                              <Pencil className="w-3 h-3 text-[#D4AF37]" />
+                            <button onClick={() => editItem(month.num, item)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                              <Pencil className="w-3 h-3" style={textPrimary} />
                             </button>
-                            <button onClick={() => deleteItem(month.num, item.id)} className="p-1.5 bg-[#D4AF37]/20 rounded-lg hover:bg-[#D4AF37]/30 border border-[#D4AF37]/30">
-                              <Trash2 className="w-3 h-3 text-[#D4AF37]" />
+                            <button onClick={() => deleteItem(month.num, item.id)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                              <Trash2 className="w-3 h-3" style={textPrimary} />
                             </button>
                           </div>
                         </div>
                       ))}
 
-                      {/* Bouton Voir plus */}
                       {hasMore && (
-                        <button
-                          onClick={() => loadMoreForMonth(month.num)}
-                          className="w-full py-3 mt-2 border-2 border-dashed border-[#D4AF37]/50 rounded-xl text-sm font-medium text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors"
-                        >
+                        <button onClick={() => loadMoreForMonth(month.num)} className="w-full py-3 mt-2 border-2 border-dashed rounded-xl text-sm font-medium transition-colors" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
                           Voir plus ({remainingCount} restant{remainingCount > 1 ? 's' : ''})
                         </button>
                       )}
 
-                      {/* Résumé du mois */}
                       {items.length > 0 && (
-                        <div className="pt-2 mt-2 border-t border-[#D4AF37]/20 flex justify-between items-center">
-                          <span className={smallTextStyle}>
-                            {checkedCount}/{items.length} complété(s)
-                            {items.length > ITEMS_PER_PAGE && ` • ${displayedItems.length} sur ${items.length} affichés`}
-                          </span>
-                          <span className={valueStyle + " font-semibold"}>Total: {total.toFixed(2)} €</span>
+                        <div className="pt-2 mt-2 flex justify-between items-center" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
+                          <span className="text-[10px]" style={textSecondary}>{checkedCount}/{items.length} complété(s){items.length > ITEMS_PER_PAGE && ` • ${displayedItems.length} sur ${items.length} affichés`}</span>
+                          <span className="text-xs font-semibold" style={textPrimary}>Total: {total.toFixed(2)} €</span>
                         </div>
                       )}
                     </div>
@@ -352,24 +266,24 @@ export default function MemoPage() {
       {/* Modal Formulaire */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-[#8B4557] w-full max-w-sm rounded-2xl p-4 border border-[#D4AF37]/40">
+          <div className="w-full max-w-sm rounded-2xl p-4 border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className={pageTitleStyle}>{editingId ? 'Modifier' : 'Ajouter'} - {months.find(m => m.num === selectedMonth)?.label} {selectedYear}</h3>
-              <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-[#D4AF37]" /></button>
+              <h3 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Ajouter'} - {months.find(m => m.num === selectedMonth)?.label} {selectedYear}</h3>
+              <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={textPrimary} /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className={labelStyle}>Description</label>
-                <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className={inputStyle} placeholder="Ex: Anniversaire de Maman" />
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Description</label>
+                <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyle} placeholder="Ex: Anniversaire de Maman" />
               </div>
               <div>
-                <label className={labelStyle}>Montant (€)</label>
-                <input type="text" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className={inputStyle} placeholder="0,00" />
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant (€)</label>
+                <input type="text" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyle} placeholder="0,00" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowForm(false)} className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium">Annuler</button>
-                <button onClick={handleSubmit} className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2">
+                <button onClick={() => setShowForm(false)} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
                   <Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Ajouter'}
                 </button>
               </div>
