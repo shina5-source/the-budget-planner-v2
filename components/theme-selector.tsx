@@ -16,34 +16,57 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
   const { theme, themeKey, setTheme, isDarkMode, toggleDarkMode } = useTheme();
   const allThemes = getAllThemes();
 
+  // --- LOGIC FIX: Add pending state for theme selection ---
+  const [pendingThemeKey, setPendingThemeKey] = useState<ThemeKey>(themeKey);
+
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Reset pending theme when the modal is opened or the global theme changes
+    if (isOpen) {
+      setPendingThemeKey(themeKey);
+    }
+  }, [isOpen, themeKey]);
 
   const handleSelectTheme = (key: ThemeKey) => {
-    setTheme(key);
+    setPendingThemeKey(key);
   };
 
-  const pageTitleStyle = "text-lg font-medium text-[#D4AF37]";
+  const handleValidate = () => {
+    setTheme(pendingThemeKey);
+    setIsOpen(false);
+  };
 
+  const handleCancel = () => {
+    setIsOpen(false);
+  };
+
+  // --- STYLE FIX: Use dynamic theme colors ---
   const modalContent = (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[1000] p-4 overflow-y-auto">
-      <div className="bg-[#8B4557] rounded-2xl p-4 w-full max-w-md border border-[#D4AF37]/40 mb-20 mt-20">
+      <div 
+        className="rounded-2xl p-4 w-full max-w-md border my-20"
+        style={{
+          backgroundColor: theme.colors.secondaryLight,
+          borderColor: theme.colors.cardBorder
+        }}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className={pageTitleStyle}>Personnalisation</h2>
-          <button onClick={() => setIsOpen(false)} className="p-1">
-            <X className="w-5 h-5 text-[#D4AF37]" />
+          <h2 className="text-lg font-medium" style={{ color: theme.colors.primary }}>
+            Personnalisation
+          </h2>
+          <button onClick={handleCancel} className="p-1">
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
         <div className="space-y-4">
           <div 
             onClick={toggleDarkMode}
-            className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-              isDarkMode 
-                ? 'bg-gray-900/50 border-[#D4AF37]' 
-                : 'bg-[#722F37]/30 border-[#D4AF37]/30 hover:border-[#D4AF37]/50'
-            }`}
+            className="flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all"
+            style={{
+              backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.5)' : theme.colors.cardBackground,
+              borderColor: isDarkMode ? theme.colors.primary : theme.colors.cardBorder
+            }}
           >
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -56,48 +79,62 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
                 )}
               </div>
               <div>
-                <p className="font-medium text-[#D4AF37] text-sm">Mode sombre</p>
-                <p className="text-[10px] text-[#D4AF37]/60">
+                <p className="font-medium text-sm" style={{ color: theme.colors.textPrimary }}>
+                  Mode sombre
+                </p>
+                <p className="text-[10px]" style={{ color: theme.colors.textSecondary }}>
                   {isDarkMode ? 'Activé' : 'Désactivé'}
                 </p>
               </div>
             </div>
-            <div className={`w-12 h-7 rounded-full p-1 transition-colors ${
-              isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#722F37]/50'
-            }`}>
+            <div 
+              className="w-12 h-7 rounded-full p-1 transition-colors"
+              style={{ backgroundColor: isDarkMode ? theme.colors.primary : theme.colors.secondaryLight }}
+            >
               <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
                 isDarkMode ? 'translate-x-5' : 'translate-x-0'
               }`} />
             </div>
           </div>
 
-          <p className="text-xs font-medium text-[#D4AF37]">Thèmes de couleurs</p>
+          <p className="text-xs font-medium" style={{ color: theme.colors.textPrimary }}>
+            Thèmes de couleurs
+          </p>
 
           <div className="grid grid-cols-2 gap-3">
             {allThemes.map((t) => (
               <ThemeCard
                 key={t.key}
                 theme={t}
-                isSelected={themeKey === t.key}
+                currentTheme={theme}
+                isSelected={pendingThemeKey === t.key}
                 onSelect={() => handleSelectTheme(t.key)}
               />
             ))}
           </div>
 
-          <p className="text-[10px] text-center text-[#D4AF37]/60">
+          <p className="text-[10px] text-center" style={{ color: theme.colors.textSecondary }}>
             Les préférences sont sauvegardées automatiquement 💾
           </p>
 
           <div className="flex gap-3 pt-2">
             <button
-              onClick={() => setIsOpen(false)}
-              className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium"
+              onClick={handleCancel}
+              className="flex-1 py-3 border rounded-xl font-medium"
+              style={{ 
+                borderColor: theme.colors.primary,
+                color: theme.colors.primary
+              }}
             >
               Annuler
             </button>
             <button
-              onClick={() => setIsOpen(false)}
-              className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold flex items-center justify-center gap-2"
+              onClick={handleValidate}
+              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+              style={{ 
+                backgroundColor: theme.colors.primary,
+                color: theme.colors.textOnPrimary
+              }}
             >
               <Check className="w-5 h-5" />
               Valider
@@ -113,7 +150,8 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
       <>
         <button
           onClick={() => setIsOpen(true)}
-          className="p-2 rounded-lg hover:bg-[#D4AF37]/20 transition-all"
+          className="p-2 rounded-lg hover:bg-opacity-20"
+          style={{backgroundColor: `${theme.colors.primary}20`}}
           title="Changer le thème"
         >
           <span className="text-base">{theme.emoji}</span>
@@ -124,15 +162,16 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
     );
   }
 
+  // --- Inline Variant Styling ---
   return (
     <div className="space-y-4">
       <div 
         onClick={toggleDarkMode}
-        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-          isDarkMode 
-            ? 'bg-gray-900/50 border-[#D4AF37]' 
-            : 'bg-[#722F37]/30 border-[#D4AF37]/30 hover:border-[#D4AF37]/50'
-        }`}
+        className="flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all"
+        style={{
+            backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.5)' : theme.colors.cardBackground,
+            borderColor: isDarkMode ? theme.colors.primary : theme.colors.cardBorder
+        }}
       >
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -145,28 +184,34 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
             )}
           </div>
           <div>
-            <p className="font-medium text-[#D4AF37] text-sm">Mode sombre</p>
-            <p className="text-[10px] text-[#D4AF37]/60">
+            <p className="font-medium text-sm" style={{ color: theme.colors.textPrimary }}>
+              Mode sombre
+            </p>
+            <p className="text-[10px]" style={{ color: theme.colors.textSecondary }}>
               {isDarkMode ? 'Activé' : 'Désactivé'}
             </p>
           </div>
         </div>
-        <div className={`w-12 h-7 rounded-full p-1 transition-colors ${
-          isDarkMode ? 'bg-[#D4AF37]' : 'bg-[#722F37]/50'
-        }`}>
+        <div 
+          className="w-12 h-7 rounded-full p-1 transition-colors"
+          style={{ backgroundColor: isDarkMode ? theme.colors.primary : theme.colors.secondaryLight }}
+        >
           <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
             isDarkMode ? 'translate-x-5' : 'translate-x-0'
           }`} />
         </div>
       </div>
 
-      <p className="text-xs font-medium text-[#D4AF37]">Thèmes de couleurs</p>
+      <p className="text-xs font-medium" style={{ color: theme.colors.textPrimary }}>
+        Thèmes de couleurs
+      </p>
 
       <div className="grid grid-cols-2 gap-3">
         {allThemes.map((t) => (
           <ThemeCard
             key={t.key}
             theme={t}
+            currentTheme={theme}
             isSelected={themeKey === t.key}
             onSelect={() => handleSelectTheme(t.key)}
           />
@@ -178,40 +223,48 @@ export function ThemeSelector({ variant = 'button' }: ThemeSelectorProps) {
 
 interface ThemeCardProps {
   theme: Theme;
+  currentTheme: Theme;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-function ThemeCard({ theme, isSelected, onSelect }: ThemeCardProps) {
+function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps) {
+  // Use the 'light' palette for the preview card
+  const displayColors = theme.colors.light;
+  
   return (
     <button
       onClick={onSelect}
-      className={`relative rounded-xl overflow-hidden transition-all duration-200 p-3 ${
+      className={`relative rounded-xl overflow-hidden transition-all duration-200 p-3 text-left ${
         isSelected
-          ? 'ring-2 ring-[#D4AF37] ring-offset-2 ring-offset-[#8B4557] shadow-lg scale-[1.02]'
-          : 'hover:shadow-md hover:scale-[1.01] border border-[#D4AF37]/30'
+          ? 'ring-2 shadow-lg scale-[1.02]'
+          : 'hover:shadow-md hover:scale-[1.01] border'
       }`}
       style={{
-        background: `linear-gradient(135deg, ${theme.colors.backgroundGradientFrom}, ${theme.colors.backgroundGradientTo})`,
-      }}
+        background: `linear-gradient(135deg, ${displayColors.backgroundGradientFrom}, ${displayColors.backgroundGradientTo})`,
+        borderColor: isSelected ? currentTheme.colors.primary : displayColors.cardBorder,
+        ringColor: currentTheme.colors.primary,
+        '--tw-ring-offset-color': currentTheme.colors.secondaryLight // For ring-offset color
+      } as React.CSSProperties}
     >
+      {/* --- CHECKMARK FIX --- */}
       {isSelected && (
         <div
           className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: theme.colors.primary }}
+          style={{ backgroundColor: displayColors.primary, color: displayColors.textOnPrimary }}
         >
-          <Check className="w-3 h-3 text-white" />
+          <Check className="w-3 h-3" strokeWidth={3} />
         </div>
       )}
 
       <div className="flex gap-1 mb-2">
-        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: theme.colors.primary }} />
-        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: theme.colors.secondary }} />
-        <div className="w-6 h-6 rounded-lg" style={{ background: `linear-gradient(135deg, ${theme.colors.gradientFrom}, ${theme.colors.gradientTo})` }} />
+        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: displayColors.primary }} />
+        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: displayColors.secondary }} />
+        <div className="w-6 h-6 rounded-lg" style={{ background: `linear-gradient(135deg, ${displayColors.gradientFrom}, ${displayColors.gradientTo})` }} />
       </div>
 
-      <div className="text-left">
-        <span className="text-xs font-medium text-gray-700">{theme.emoji} {theme.name}</span>
+      <div>
+        <span className="text-xs font-medium" style={{color: displayColors.textPrimary}}>{theme.emoji} {theme.name}</span>
       </div>
     </button>
   );

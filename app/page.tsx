@@ -260,14 +260,14 @@ function EnveloppesPage() {
   const [formData, setFormData] = useState({ nom: '', budget: '', couleur: 'pastel-green', icone: 'shopping-cart', categories: [] as string[] });
 
   const couleursDisponibles = [
-    { id: 'pastel-green', nom: 'Vert', bg: 'bg-green-200', border: 'border-green-400', text: 'text-green-700', progress: 'bg-green-400' },
-    { id: 'pastel-blue', nom: 'Bleu', bg: 'bg-blue-200', border: 'border-blue-400', text: 'text-blue-700', progress: 'bg-blue-400' },
-    { id: 'pastel-pink', nom: 'Rose', bg: 'bg-pink-200', border: 'border-pink-400', text: 'text-pink-700', progress: 'bg-pink-400' },
-    { id: 'pastel-purple', nom: 'Violet', bg: 'bg-purple-200', border: 'border-purple-400', text: 'text-purple-700', progress: 'bg-purple-400' },
-    { id: 'pastel-orange', nom: 'Orange', bg: 'bg-orange-200', border: 'border-orange-400', text: 'text-orange-700', progress: 'bg-orange-400' },
-    { id: 'pastel-yellow', nom: 'Jaune', bg: 'bg-yellow-200', border: 'border-yellow-400', text: 'text-yellow-700', progress: 'bg-yellow-400' },
-    { id: 'pastel-teal', nom: 'Turquoise', bg: 'bg-teal-200', border: 'border-teal-400', text: 'text-teal-700', progress: 'bg-teal-400' },
-    { id: 'pastel-red', nom: 'Rouge', bg: 'bg-red-200', border: 'border-red-400', text: 'text-red-700', progress: 'bg-red-400' },
+    { id: 'pastel-green', nom: 'Vert', bg: 'bg-green-200 dark:bg-green-900', border: 'border-green-400 dark:border-green-700', text: 'text-green-700 dark:text-green-300', progress: 'bg-green-400 dark:bg-green-500' },
+    { id: 'pastel-blue', nom: 'Bleu', bg: 'bg-blue-200 dark:bg-blue-900', border: 'border-blue-400 dark:border-blue-700', text: 'text-blue-700 dark:text-blue-300', progress: 'bg-blue-400 dark:bg-blue-500' },
+    { id: 'pastel-pink', nom: 'Rose', bg: 'bg-pink-200 dark:bg-pink-900', border: 'border-pink-400 dark:border-pink-700', text: 'text-pink-700 dark:text-pink-300', progress: 'bg-pink-400 dark:bg-pink-500' },
+    { id: 'pastel-purple', nom: 'Violet', bg: 'bg-purple-200 dark:bg-purple-900', border: 'border-purple-400 dark:border-purple-700', text: 'text-purple-700 dark:text-purple-300', progress: 'bg-purple-400 dark:bg-purple-500' },
+    { id: 'pastel-orange', nom: 'Orange', bg: 'bg-orange-200 dark:bg-orange-900', border: 'border-orange-400 dark:border-orange-700', text: 'text-orange-700 dark:text-orange-300', progress: 'bg-orange-400 dark:bg-orange-500' },
+    { id: 'pastel-yellow', nom: 'Jaune', bg: 'bg-yellow-200 dark:bg-yellow-900', border: 'border-yellow-400 dark:border-yellow-700', text: 'text-yellow-700 dark:text-yellow-300', progress: 'bg-yellow-400 dark:bg-yellow-500' },
+    { id: 'pastel-teal', nom: 'Turquoise', bg: 'bg-teal-200 dark:bg-teal-900', border: 'border-teal-400 dark:border-teal-700', text: 'text-teal-700 dark:text-teal-300', progress: 'bg-teal-400 dark:bg-teal-500' },
+    { id: 'pastel-red', nom: 'Rouge', bg: 'bg-red-200 dark:bg-red-900', border: 'border-red-400 dark:border-red-700', text: 'text-red-700 dark:text-red-300', progress: 'bg-red-400 dark:bg-red-500' },
   ];
 
   const iconesDisponibles = [

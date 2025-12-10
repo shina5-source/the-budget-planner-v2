@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../contexts/theme-context';
 import { getAllThemes, Theme, ThemeKey } from '../lib/themes';
@@ -13,9 +13,24 @@ interface ThemeModalProps {
 export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
   const { theme, themeKey, setTheme, isDarkMode, toggleDarkMode } = useTheme();
   const allThemes = getAllThemes();
+  
+  // Local state to track pending theme selection
+  const [pendingThemeKey, setPendingThemeKey] = useState<ThemeKey>(themeKey);
+
+  // Reset local state when modal is opened
+  useEffect(() => {
+    if (isOpen) {
+      setPendingThemeKey(themeKey);
+    }
+  }, [isOpen, themeKey]);
 
   const handleSelectTheme = (key: ThemeKey) => {
-    setTheme(key);
+    setPendingThemeKey(key);
+  };
+
+  const handleValidate = () => {
+    setTheme(pendingThemeKey);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -99,7 +114,7 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
                 key={t.key}
                 theme={t}
                 currentTheme={theme}
-                isSelected={themeKey === t.key}
+                isSelected={pendingThemeKey === t.key}
                 onSelect={() => handleSelectTheme(t.key)}
               />
             ))}
@@ -114,7 +129,7 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
 
           <div className="flex gap-3 pt-2">
             <button
-              onClick={onClose}
+              onClick={(e) => { e.stopPropagation(); onClose(); }}
               className="flex-1 py-3 border rounded-xl font-medium"
               style={{ 
                 borderColor: theme.colors.primary,
@@ -124,7 +139,7 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
               Annuler
             </button>
             <button
-              onClick={onClose}
+              onClick={handleValidate}
               className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
               style={{ 
                 backgroundColor: theme.colors.primary,
@@ -171,7 +186,7 @@ function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps
           className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
           style={{ backgroundColor: displayColors.primary }}
         >
-          <Check className="w-3 h-3 text-white" />
+          <Check className="w-3 h-3" style={{ color: displayColors.textOnPrimary }} />
         </div>
       )}
 

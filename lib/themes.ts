@@ -129,26 +129,26 @@ export const themes: Record<ThemeKey, Theme> = {
         textOnPrimary: '#1e293b',
       },
       dark: {
-        primary: '#E8C84B',
-        primaryLight: '#D4AF37',
+        primary: '#f472b6',
+        primaryLight: '#f9a8d4',
         secondary: '#0f172a',
         secondaryLight: '#1e293b',
-        accent: '#E8C84B',
-        gradientFrom: '#E8C84B',
-        gradientTo: '#0f172a',
+        accent: '#f472b6',
+        gradientFrom: '#f472b6',
+        gradientTo: '#1e293b',
         backgroundGradientFrom: '#334155',
         backgroundGradientTo: '#1e293b',
         cardBackground: 'rgba(15, 23, 42, 0.8)',
         cardBackgroundLight: 'rgba(30, 41, 59, 0.8)',
-        cardBorder: 'rgba(232, 200, 75, 0.3)',
-        textPrimary: '#E8C84B',
-        textSecondary: 'rgba(232, 200, 75, 0.7)',
+        cardBorder: 'rgba(244, 114, 182, 0.3)',
+        textPrimary: '#f9a8d4',
+        textSecondary: 'rgba(249, 168, 212, 0.7)',
         textOnPrimary: '#0f172a',
       }
     },
   },
 
-  // ========== THÈMES PASTELS (DÉGRADÉ AMÉLIORÉ) ==========
+  // ========== THÈMES PASTELS (DÉGRADÉ AMÉLIORÉ V3) ==========
   'pastel-violet': {
     key: 'pastel-violet',
     name: 'Violet Pastel',
@@ -169,7 +169,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(124, 58, 237, 0.2)',
         textPrimary: '#5b21b6',
         textSecondary: 'rgba(91, 33, 182, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#5b21b6',
       },
       dark: {
         primary: '#a78bfa',
@@ -210,7 +210,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(59, 130, 246, 0.2)',
         textPrimary: '#1e3a8a',
         textSecondary: 'rgba(30, 58, 138, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#1e3a8a',
       },
       dark: {
         primary: '#60a5fa',
@@ -251,7 +251,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(34, 197, 94, 0.2)',
         textPrimary: '#14532d',
         textSecondary: 'rgba(20, 83, 45, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#14532d',
       },
       dark: {
         primary: '#4ade80',
@@ -292,7 +292,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(251, 146, 60, 0.2)',
         textPrimary: '#9a3412',
         textSecondary: 'rgba(154, 52, 18, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#9a3412',
       },
       dark: {
         primary: '#fb923c',
@@ -335,7 +335,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(14, 165, 233, 0.3)',
         textPrimary: '#084c61',
         textSecondary: 'rgba(8, 76, 97, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#084c61',
       },
       dark: {
         primary: '#38bdf8',
@@ -376,7 +376,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(34, 197, 94, 0.3)',
         textPrimary: '#14532d',
         textSecondary: 'rgba(20, 83, 45, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#14532d',
       },
       dark: {
         primary: '#4ade80',
@@ -417,7 +417,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(20, 184, 166, 0.3)',
         textPrimary: '#134e4a',
         textSecondary: 'rgba(19, 78, 74, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#134e4a',
       },
       dark: {
         primary: '#2dd4bf',
@@ -460,7 +460,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(244, 63, 94, 0.3)',
         textPrimary: '#881337',
         textSecondary: 'rgba(136, 19, 55, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#881337',
       },
       dark: {
         primary: '#fb7185',
@@ -501,7 +501,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(225, 29, 72, 0.3)',
         textPrimary: '#831843',
         textSecondary: 'rgba(131, 24, 67, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#831843',
       },
       dark: {
         primary: '#f472b6',
@@ -542,7 +542,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(146, 64, 14, 0.3)',
         textPrimary: '#451a03',
         textSecondary: 'rgba(69, 26, 3, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#451a03',
       },
       dark: {
         primary: '#fde68a',
@@ -585,7 +585,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(219, 39, 119, 0.3)',
         textPrimary: '#831843',
         textSecondary: 'rgba(131, 24, 67, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#831843',
       },
       dark: {
         primary: '#f472b6',
@@ -626,7 +626,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(124, 58, 237, 0.3)',
         textPrimary: '#4c1d95',
         textSecondary: 'rgba(76, 29, 149, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#4c1d95',
       },
       dark: {
         primary: '#a78bfa',
@@ -667,7 +667,7 @@ export const themes: Record<ThemeKey, Theme> = {
         cardBorder: 'rgba(99, 102, 241, 0.3)',
         textPrimary: '#312e81',
         textSecondary: 'rgba(49, 46, 129, 0.75)',
-        textOnPrimary: '#ffffff',
+        textOnPrimary: '#312e81',
       },
       dark: {
         primary: '#818cf8',
