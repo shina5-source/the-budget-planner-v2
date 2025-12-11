@@ -13,12 +13,11 @@ export default function PlusPage() {
     { icon: PiggyBank, label: 'Épargnes', page: '/epargnes' },
     { icon: Building2, label: 'Crédits & Dettes', page: '/credits-dettes' },
     { icon: FileText, label: 'Mémo', page: '/memo' },
-    { icon: Mail, label: 'Enveloppes', page: '/' },
+    { icon: Mail, label: 'Enveloppes', page: '/enveloppes' },
     { icon: BarChart3, label: 'Statistiques', page: '/statistiques' },
-    { icon: Settings, label: 'Paramètres', page: '/' },
+    { icon: Settings, label: 'Paramètres', page: '/parametres' },
   ];
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
