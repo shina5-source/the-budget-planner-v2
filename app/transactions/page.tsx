@@ -1,80 +1,29 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, X, Check, ChevronDown, ChevronUp, Trash2, Edit3, Lightbulb, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
-import { useTheme } from '../contexts/theme-context';
+import { ChevronLeft, ChevronRight, Search, Plus, Edit3, Trash2, X, RefreshCw, Lightbulb, ChevronUp, ChevronDown } from 'lucide-react';
+import { useTheme } from '../../contexts/theme-context';
+import { Transaction, ParametresData, monthsShort, monthsFull, years, defaultParametres, types, moyensPaiement, comptesOptions, ITEMS_PER_PAGE } from '../../lib/constants-and-types';
 
-// NOTE: These components and functions will need to be imported from their actual locations
-// For now, these are placeholders to avoid breaking the code.
-const RecurringTransactions = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void, [key: string]: any }) => {
-    if (!isOpen) return null;
-    return <div className="fixed inset-0 bg-black/50 z-50"><div className="bg-white p-4 rounded">Recurring Transactions Modal (Placeholder) <button onClick={onClose}>Close</button></div></div>;
-};
-const processRecurringTransactions = () => { console.log("Processing recurring transactions..."); return []; };
-
-
-interface Transaction {
-  id: number;
-  date: string;
-  montant: string;
-  type: string;
-  categorie: string;
-  depuis?: string;
-  vers?: string;
-  memo?: string;
-  isCredit?: boolean;
-  capitalTotal?: string;
-  tauxInteret?: string;
-  dureeMois?: string;
-  dateDebut?: string;
+// Temporarily moved here, will be refactored to a dedicated hooks file later
+function useParametres() {
+  const [parametres, setParametres] = useState<ParametresData>(defaultParametres);
+  useEffect(() => {
+    const saved = localStorage.getItem('budget-parametres');
+    if (saved) setParametres({ ...defaultParametres, ...JSON.parse(saved) });
+  }, []);
+  const saveParametres = (newParametres: ParametresData) => {
+    setParametres(newParametres);
+    localStorage.setItem('budget-parametres', JSON.stringify(newParametres));
+  };
+  return { parametres, saveParametres };
 }
-
-interface CompteBancaire {
-  id: number;
-  nom: string;
-  soldeDepart: number;
-  isEpargne: boolean;
-}
-
-interface ParametresData {
-  dateDepart: string;
-  budgetAvantPremier: boolean;
-  devise: string;
-  categoriesRevenus: string[];
-  categoriesFactures: string[];
-  categoriesDepenses: string[];
-  categoriesEpargnes: string[];
-  comptesBancaires: CompteBancaire[];
-}
-
-const defaultParametres: ParametresData = {
-    dateDepart: new Date().toISOString().split('T')[0],
-    budgetAvantPremier: false,
-    devise: '€',
-    categoriesRevenus: ['Salaire', 'Revenus Secondaires', 'Allocations', 'Aides', 'Remboursement', 'Autres Revenus'],
-    categoriesFactures: ['Loyer', 'Électricité', 'Eau', 'Assurance', 'Internet', 'Mobile', 'Abonnements', 'Crédits', 'Impôts'],
-    categoriesDepenses: ['Courses', 'Restaurant', 'Essence', 'Shopping', 'Loisirs', 'Santé', 'Cadeaux', 'Autres'],
-    categoriesEpargnes: ['Livret A', 'Épargne', 'Tirelire', 'Vacances', 'Projets'],
-    comptesBancaires: [
-        { id: 1, nom: 'Compte Principal', soldeDepart: 0, isEpargne: false },
-        { id: 2, nom: 'Livret A', soldeDepart: 0, isEpargne: true },
-    ]
-};
-
-const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
-const types = ['Revenus', 'Factures', 'Dépenses', 'Épargnes', 'Reprise d\'épargne', 'Remboursement', 'Transfert de fond'];
-const moyensPaiement = ['Prélèvement', 'Paiement CB', 'Virement', 'Chèque', 'Espèces', 'Paiement en ligne', 'Paiement mobile'];
-const comptesOptions = ['Externe', 'CCP La Banque Postale', 'CCP BoursoBank', 'Livret A La Banque Postale', 'Livret A Kim La Banque Postale', 'Tirelire', 'Espèce'];
-const ITEMS_PER_PAGE = 50;
 
 
 export default function TransactionsPage() {
-    // ... (logic is here, now adding the full JSX)
     const { theme } = useTheme();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [parametres, setParametres] = useState<ParametresData>(defaultParametres);
+    const { parametres, saveParametres } = useParametres(); // Using the hook
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [showFilters, setShowFilters] = useState(false);
@@ -118,12 +67,15 @@ export default function TransactionsPage() {
 
     useEffect(() => {
         loadTransactions();
-        const savedParametres = localStorage.getItem('budget-parametres');
-        if (savedParametres) setParametres({ ...defaultParametres, ...JSON.parse(savedParametres) });
+        // The useParametres hook already handles loading parametres
+        // const savedParametres = localStorage.getItem('budget-parametres');
+        // if (savedParametres) setParametres({ ...defaultParametres, ...JSON.parse(savedParametres) });
         
-        const created = processRecurringTransactions();
-        if (created.length > 0) loadTransactions();
-    }, []);
+        // This import needs to be updated to point to the actual RecurringTransactions component
+        // and processRecurringTransactions function. For now, they are placeholders in this file.
+        // const created = processRecurringTransactions();
+        // if (created.length > 0) loadTransactions();
+    }, []); // Removed 'created' from dependency array to avoid undefined
 
     useEffect(() => {
         setDisplayCount(ITEMS_PER_PAGE);
@@ -272,7 +224,378 @@ export default function TransactionsPage() {
                 </div>
             </div>
 
-            {/* The rest of the JSX for the component */}
+            {/* Résumé */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
+                    <p className="text-[10px]" style={textSecondary}>Revenus</p>
+                    <p className="text-sm font-semibold text-green-400">{totalRevenus.toFixed(0)}{parametres.devise}</p>
+                </div>
+                <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
+                    <p className="text-[10px]" style={textSecondary}>Dépenses</p>
+                    <p className="text-sm font-semibold text-red-400">{totalDepenses.toFixed(0)}{parametres.devise}</p>
+                </div>
+                <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
+                    <p className="text-[10px]" style={textSecondary}>Solde</p>
+                    <p className={`text-sm font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde.toFixed(0)}{parametres.devise}</p>
+                </div>
+            </div>
+
+            {/* Barre de recherche */}
+            <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+                <div className="flex items-center gap-2 mb-3">
+                    <Search className="w-4 h-4" style={textSecondary} />
+                    <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" style={textPrimary} />
+                </div>
+
+                <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 text-xs" style={textSecondary}>
+                    {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    Filtres avancés
+                    {(filterType || filterCategorie || filterDepuis || filterVers || filterMoyenPaiement) && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>Actifs</span>
+                    )}
+                </button>
+
+                {showFilters && (
+                    <div className="mt-4 space-y-3">
+                        <div>
+                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Type</label>
+                            <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                                <option value="">Tous les types</option>
+                                {types.map(type => (<option key={type} value={type}>{type}</option>))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégorie</label>
+                            <select value={filterCategorie} onChange={(e) => setFilterCategorie(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                                <option value="">Toutes les catégories</option>
+                                {(filterType ? getCategoriesForType(filterType) : getAllCategories()).map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Depuis</label>
+                            <select value={filterDepuis} onChange={(e) => setFilterDepuis(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                                <option value="">Tous les comptes</option>
+                                {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Vers</label>
+                            <select value={filterVers} onChange={(e) => setFilterVers(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                                <option value="">Tous les comptes</option>
+                                {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Moyen de paiement</label>
+                            <select value={filterMoyenPaiement} onChange={(e) => setFilterMoyenPaiement(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                                <option value="">Tous les moyens</option>
+                                {moyensPaiement.map(moyen => (<option key={moyen} value={moyen}>{moyen}</option>))}
+                            </select>
+                        </div>
+
+                        {(filterType || filterCategorie || filterDepuis || filterVers || filterMoyenPaiement) && (
+                            <button onClick={clearFilters} className="w-full py-2 text-xs rounded-xl border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}>Effacer les filtres</button>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Boutons d'action */}
+            <div className="flex gap-2 mb-4">
+                <button
+                    onClick={() => { resetForm(); setShowForm(true); }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm"
+                    style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
+                >
+                    <Plus className="w-4 h-4" />
+                    Nouvelle transaction
+                </button>
+                <button
+                    onClick={() => setShowRecurring(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-500/80 text-white rounded-xl font-medium text-sm"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Récurrentes
+                </button>
+            </div>
+
+            {/* Historique */}
+            <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold" style={textPrimary}>Historique</h3>
+                    {filteredTransactions.length > 0 && (
+                        <span className="text-[10px]" style={textSecondary}>
+                            {displayedTransactions.length} sur {filteredTransactions.length}
+                        </span>
+                    )}
+                </div>
+                
+                {displayedTransactions.length > 0 ? (
+                    <div className="space-y-2">
+                        {displayedTransactions.map((t) => (
+                            <div key={t.id} className="p-3 rounded-xl border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs font-medium truncate" style={textPrimary}>{t.categorie}</p>
+                                            {t.isCredit && (
+                                                <span className="px-1.5 py-0.5 bg-purple-500/30 text-purple-300 rounded text-[9px]">Crédit</span>
+                                            )}
+                                            {t.memo?.includes('🔄') && (
+                                                <span className="px-1.5 py-0.5 bg-indigo-500/30 text-indigo-300 rounded text-[9px]">Auto</span>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px]" style={textSecondary}>{t.date} • {t.type}{t.moyenPaiement ? ` • ${t.moyenPaiement}` : ''}</p>
+                                        {t.depuis && <p className="text-[10px]" style={textSecondary}>De: {t.depuis} → {t.vers || '-'}</p>}
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={`text-sm font-semibold ${getTypeColor(t.type)}`}>
+                                            {t.type === 'Revenus' ? '+' : '-'}{parseFloat(t.montant).toFixed(2)} {parametres.devise}
+                                        </p>
+                                    </div>
+                                </div>
+                                {t.memo && <p className="text-[10px] italic mt-1" style={textSecondary}>"{t.memo}"</p>}
+                                <div className="flex justify-end gap-2 mt-2">
+                                    <button onClick={() => handleEdit(t)} className="p-1.5 rounded-lg" style={{ color: theme.colors.textPrimary }}><Edit3 className="w-4 h-4" /></button>
+                                    <button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Bouton Voir plus */}
+                        {hasMore && (
+                            <button
+                                onClick={loadMore}
+                                className="w-full py-3 mt-3 border-2 border-dashed rounded-xl text-sm font-medium transition-colors"
+                                style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}
+                            >
+                                Voir plus ({remainingCount} restante{remainingCount > 1 ? 's' : ''})
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <p className="text-xs text-center py-8" style={textSecondary}>Aucune transaction trouvée</p>
+                )}
+            </div>
+
+            {/* Conseils */}
+            <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
+                <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
+                <div className="space-y-2">
+                    {filteredTransactions.length === 0 && (
+                        <p className="text-[10px] text-[#7DD3A8]">📝 Commencez à enregistrer vos transactions</p>
+                    )}
+                    {solde < 0 && (
+                        <p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Solde négatif de {Math.abs(solde).toFixed(2)} {parametres.devise}</p>
+                    )}
+                    {solde >= 0 && solde < 100 && filteredTransactions.length > 0 && (
+                        <p className="text-[10px] text-[#7DD3A8]">💡 Solde serré, surveillez vos dépenses</p>
+                    )}
+                    {solde >= 100 && (
+                        <p className="text-[10px] text-[#7DD3A8]">✅ Bon solde ! Pensez à épargner</p>
+                    )}
+                    {filteredTransactions.filter(t => t.type === 'Dépenses').length > 20 && (
+                        <p className="text-[10px] text-[#7DD3A8]">📊 +20 dépenses ce mois, analysez vos habitudes</p>
+                    )}
+                    {nbCredits > 0 && (
+                        <p className="text-[10px] text-[#7DD3A8]">💳 {nbCredits} crédit(s) actif(s) enregistré(s)</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Modal formulaire */}
+            {showForm && (
+                <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+                    <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
+                            <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1">
+                                <X className="w-5 h-5" style={textPrimary} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.date}
+                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Type</label>
+                                <select
+                                    value={formData.type}
+                                    onChange={(e) => setFormData({ ...formData, type: e.target.value, categorie: '' })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                >
+                                    {types.map(type => (<option key={type} value={type}>{type}</option>))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant ({parametres.devise})</label>
+                                <input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={formData.montant}
+                                    onChange={(e) => setFormData({ ...formData, montant: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégorie</label>
+                                <select
+                                    value={formData.categorie}
+                                    onChange={(e) => setFormData({ ...formData, categorie: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                >
+                                    <option value="">Sélectionner...</option>
+                                    {getCategoriesForType(formData.type).map(cat => (
+                                        <option key={cat} value={cat}>{cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Depuis</label>
+                                <select
+                                    value={formData.depuis}
+                                    onChange={(e) => setFormData({ ...formData, depuis: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                >
+                                    <option value="">Aucun</option>
+                                    {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Vers</label>
+                                <select
+                                    value={formData.vers}
+                                    onChange={(e) => setFormData({ ...formData, vers: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                >
+                                    <option value="">Aucun</option>
+                                    {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Moyen de paiement</label>
+                                <select
+                                    value={formData.moyenPaiement}
+                                    onChange={(e) => setFormData({ ...formData, moyenPaiement: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                >
+                                    <option value="">Sélectionner...</option>
+                                    {moyensPaiement.map(moyen => (<option key={moyen} value={moyen}>{moyen}</option>))}
+                                </select>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="isCredit"
+                                    checked={formData.isCredit}
+                                    onChange={(e) => setFormData({ ...formData, isCredit: e.target.checked })}
+                                    className="w-5 h-5 rounded border-[#D4AF37]/50 bg-[#722F37]/50 text-[#D4AF37]"
+                                />
+                                <label htmlFor="isCredit" className="text-xs font-medium mb-0" style={textPrimary}>C'est un crédit</label>
+                            </div>
+
+                            {formData.isCredit && (
+                                <div className="space-y-3 p-3 rounded-xl border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
+                                    <p className="text-[10px] text-center" style={textSecondary}>Informations du crédit</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Capital total</label>
+                                            <input
+                                                type="number"
+                                                placeholder="0"
+                                                value={formData.capitalTotal}
+                                                onChange={(e) => setFormData({ ...formData, capitalTotal: e.target.value })}
+                                                className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Taux (%)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="0"
+                                                step="0.1"
+                                                value={formData.tauxInteret}
+                                                onChange={(e) => setFormData({ ...formData, tauxInteret: e.target.value })}
+                                                className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Durée (mois)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="0"
+                                                value={formData.dureeMois}
+                                                onChange={(e) => setFormData({ ...formData, dureeMois: e.target.value })}
+                                                className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date début</label>
+                                            <input
+                                                type="date"
+                                                value={formData.dateDebut}
+                                                onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })}
+                                                className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Description (optionnel)</label>
+                                <textarea
+                                    placeholder="Ajouter une note..."
+                                    value={formData.memo}
+                                    onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+                                    className="w-full rounded-xl px-3 py-2 text-sm border min-h-[60px]" style={inputStyle}
+                                />
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
+                                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                                <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Créer'}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Récurrentes - Placeholder */}
+            {showRecurring && (
+                <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+                    <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-medium" style={textPrimary}>Transactions récurrentes</h2>
+                            <button onClick={() => setShowRecurring(false)} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
+                        </div>
+                        <div className="text-center py-8">
+                            <p className="text-sm" style={textSecondary}>Fonctionnalité non implémentée</p>
+                            <p className="text-xs mt-2" style={textSecondary}>Nous y travaillerons bientôt !</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
