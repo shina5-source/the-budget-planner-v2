@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Plus, Trash2, Edit3, TrendingUp, FileText, ShoppingCart, PiggyBank, Building, Upload, RefreshCw, Database, Lightbulb, Settings, LogOut, X } from 'lucide-react';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 import { supabase } from '@/lib/supabase';
 
 interface CompteBancaire {
@@ -50,8 +52,9 @@ function useParametres() {
   return { parametres, saveParametres };
 }
 
-export default function ParametresPage() {
-  const { theme } = useTheme();
+function ParametresContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const { parametres, saveParametres } = useParametres();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [newCategorie, setNewCategorie] = useState('');
@@ -175,93 +178,95 @@ export default function ParametresPage() {
   );
 
   return (
-    <div className="pb-4">
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-medium" style={textPrimary}>Paramètres</h1>
-        <p className="text-xs" style={textSecondary}>Configuration de l'application</p>
-      </div>
-
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Settings className="w-5 h-5" />Général</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Devise</label>
-            <select value={parametres.devise} onChange={(e) => saveParametres({ ...parametres, devise: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-              <option value="€">€ Euro</option>
-              <option value="$">$ Dollar</option>
-              <option value="£">£ Livre</option>
-              <option value="CHF">CHF Franc Suisse</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date de départ</label>
-            <input type="date" value={parametres.dateDepart} onChange={(e) => saveParametres({ ...parametres, dateDepart: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
-          </div>
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-medium" style={textPrimary}>Budget avant le 1er du mois</label>
-            <button onClick={() => saveParametres({ ...parametres, budgetAvantPremier: !parametres.budgetAvantPremier })} className="w-12 h-6 rounded-full transition-colors" style={{ background: parametres.budgetAvantPremier ? theme.colors.primary : theme.colors.cardBackgroundLight }}>
-              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${parametres.budgetAvantPremier ? 'translate-x-6' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
+    <>
+      <div className="pb-4">
+        <div className="text-center mb-4">
+          <h1 className="text-lg font-medium" style={textPrimary}>Paramètres</h1>
+          <p className="text-xs" style={textSecondary}>Configuration de l'application</p>
         </div>
-      </div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <button onClick={() => toggleSection('comptes')} className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3"><Building className="w-5 h-5" style={textPrimary} /><span className="text-sm font-semibold" style={textPrimary}>Comptes bancaires</span><span className="text-[10px]" style={textSecondary}>({parametres.comptesBancaires.length})</span></div>
-          {activeSection === 'comptes' ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}
-        </button>
-        {activeSection === 'comptes' && (
-          <div className="mt-4 space-y-3">
-            <button onClick={() => { setCompteForm({ nom: '', soldeDepart: '', isEpargne: false }); setEditingCompte(null); setShowCompteForm(true); }} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Plus className="w-4 h-4" />Ajouter un compte</button>
-            <div className="space-y-2">
-              {parametres.comptesBancaires.map((compte) => (
-                <div key={compte.id} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: theme.colors.cardBackgroundLight }}>
-                  <div>
-                    <p className="text-xs font-medium" style={textPrimary}>{compte.nom}</p>
-                    <p className="text-[10px]" style={textSecondary}>{compte.isEpargne ? '💰 Épargne' : '🏦 Courant'} • Solde: {compte.soldeDepart}{parametres.devise}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => editCompte(compte)} className="p-1.5 rounded-lg"><Edit3 className="w-4 h-4" style={textPrimary} /></button>
-                    <button onClick={() => deleteCompte(compte.id)} className="p-1.5 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
-                  </div>
-                </div>
-              ))}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Settings className="w-5 h-5" />Général</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Devise</label>
+              <select value={parametres.devise} onChange={(e) => saveParametres({ ...parametres, devise: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                <option value="€">€ Euro</option>
+                <option value="$">$ Dollar</option>
+                <option value="£">£ Livre</option>
+                <option value="CHF">CHF Franc Suisse</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date de départ</label>
+              <input type="date" value={parametres.dateDepart} onChange={(e) => saveParametres({ ...parametres, dateDepart: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-medium" style={textPrimary}>Budget avant le 1er du mois</label>
+              <button onClick={() => saveParametres({ ...parametres, budgetAvantPremier: !parametres.budgetAvantPremier })} className="w-12 h-6 rounded-full transition-colors" style={{ background: parametres.budgetAvantPremier ? theme.colors.primary : theme.colors.cardBackgroundLight }}>
+                <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${parametres.budgetAvantPremier ? 'translate-x-6' : 'translate-x-0.5'}`} />
+              </button>
             </div>
           </div>
-        )}
-      </div>
-
-      {renderCategorieSection('Catégories Revenus', 'categoriesRevenus', <TrendingUp className="w-5 h-5 text-green-400" />)}
-      {renderCategorieSection('Catégories Factures', 'categoriesFactures', <FileText className="w-5 h-5 text-red-400" />)}
-      {renderCategorieSection('Catégories Dépenses', 'categoriesDepenses', <ShoppingCart className="w-5 h-5 text-orange-400" />)}
-      {renderCategorieSection('Catégories Épargnes', 'categoriesEpargnes', <PiggyBank className="w-5 h-5 text-blue-400" />)}
-
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Database className="w-5 h-5" />Données</h3>
-        <div className="space-y-3">
-          <button onClick={exportData} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Upload className="w-5 h-5" />Exporter les données</button>
-          <label className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium cursor-pointer border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
-            <RefreshCw className="w-5 h-5" />Importer des données
-            <input type="file" accept=".json" onChange={importData} className="hidden" />
-          </label>
-          <button onClick={resetAllData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl font-medium"><Trash2 className="w-5 h-5" />Réinitialiser toutes les données</button>
-          <button onClick={async () => { document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; await supabase.auth.signOut(); window.location.href = '/auth'; }} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}><LogOut className="w-5 h-5" />Se déconnecter</button>
         </div>
-      </div>
 
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-        <div className="space-y-2">
-          <p className="text-[10px] text-[#7DD3A8]">📦 Exportez régulièrement vos données pour les sauvegarder</p>
-          <p className="text-[10px] text-[#7DD3A8]">🏦 Ajoutez tous vos comptes pour un suivi complet</p>
-          <p className="text-[10px] text-[#7DD3A8]">📂 Personnalisez les catégories selon vos besoins</p>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <button onClick={() => toggleSection('comptes')} className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-3"><Building className="w-5 h-5" style={textPrimary} /><span className="text-sm font-semibold" style={textPrimary}>Comptes bancaires</span><span className="text-[10px]" style={textSecondary}>({parametres.comptesBancaires.length})</span></div>
+            {activeSection === 'comptes' ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}
+          </button>
+          {activeSection === 'comptes' && (
+            <div className="mt-4 space-y-3">
+              <button onClick={() => { setCompteForm({ nom: '', soldeDepart: '', isEpargne: false }); setEditingCompte(null); setShowCompteForm(true); }} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Plus className="w-4 h-4" />Ajouter un compte</button>
+              <div className="space-y-2">
+                {parametres.comptesBancaires.map((compte) => (
+                  <div key={compte.id} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: theme.colors.cardBackgroundLight }}>
+                    <div>
+                      <p className="text-xs font-medium" style={textPrimary}>{compte.nom}</p>
+                      <p className="text-[10px]" style={textSecondary}>{compte.isEpargne ? '💰 Épargne' : '🏦 Courant'} • Solde: {compte.soldeDepart}{parametres.devise}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => editCompte(compte)} className="p-1.5 rounded-lg"><Edit3 className="w-4 h-4" style={textPrimary} /></button>
+                      <button onClick={() => deleteCompte(compte.id)} className="p-1.5 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 mt-4 text-center border" style={cardStyle}>
-        <p className="text-[10px]" style={textSecondary}>The Budget Planner v1.0</p>
-        <p className="text-[10px]" style={textSecondary}>Créé avec ❤️ par Shina5</p>
+        {renderCategorieSection('Catégories Revenus', 'categoriesRevenus', <TrendingUp className="w-5 h-5 text-green-400" />)}
+        {renderCategorieSection('Catégories Factures', 'categoriesFactures', <FileText className="w-5 h-5 text-red-400" />)}
+        {renderCategorieSection('Catégories Dépenses', 'categoriesDepenses', <ShoppingCart className="w-5 h-5 text-orange-400" />)}
+        {renderCategorieSection('Catégories Épargnes', 'categoriesEpargnes', <PiggyBank className="w-5 h-5 text-blue-400" />)}
+
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Database className="w-5 h-5" />Données</h3>
+          <div className="space-y-3">
+            <button onClick={exportData} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Upload className="w-5 h-5" />Exporter les données</button>
+            <label className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium cursor-pointer border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
+              <RefreshCw className="w-5 h-5" />Importer des données
+              <input type="file" accept=".json" onChange={importData} className="hidden" />
+            </label>
+            <button onClick={resetAllData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl font-medium"><Trash2 className="w-5 h-5" />Réinitialiser toutes les données</button>
+            <button onClick={async () => { document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; await supabase.auth.signOut(); window.location.href = '/auth'; }} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}><LogOut className="w-5 h-5" />Se déconnecter</button>
+          </div>
+        </div>
+
+        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
+          <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
+          <div className="space-y-2">
+            <p className="text-[10px] text-[#7DD3A8]">📦 Exportez régulièrement vos données pour les sauvegarder</p>
+            <p className="text-[10px] text-[#7DD3A8]">🏦 Ajoutez tous vos comptes pour un suivi complet</p>
+            <p className="text-[10px] text-[#7DD3A8]">📂 Personnalisez les catégories selon vos besoins</p>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-sm rounded-2xl p-4 mt-4 text-center border" style={cardStyle}>
+          <p className="text-[10px]" style={textSecondary}>The Budget Planner v1.0</p>
+          <p className="text-[10px]" style={textSecondary}>Créé avec ❤️ par Shina5</p>
+        </div>
       </div>
 
       {showCompteForm && (
@@ -294,6 +299,24 @@ export default function ParametresPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
+  );
+}
+
+export default function ParametresPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="parametres" onNavigate={handleNavigate}>
+      <ParametresContent />
+    </AppShell>
   );
 }

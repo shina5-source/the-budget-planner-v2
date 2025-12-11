@@ -2,10 +2,12 @@
 
 import { CreditCard, PiggyBank, Building2, FileText, Mail, Settings, BarChart3 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '../../contexts/theme-context';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
-export default function PlusPage() {
-  const { theme } = useTheme();
+function PlusContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const router = useRouter();
 
   const menuItems = [
@@ -51,5 +53,23 @@ export default function PlusPage() {
         })}
       </div>
     </div>
+  );
+}
+
+export default function PlusPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="plus" onNavigate={handleNavigate}>
+      <PlusContent />
+    </AppShell>
   );
 }
