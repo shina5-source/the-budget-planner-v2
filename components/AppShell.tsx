@@ -12,8 +12,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, currentPage, onNavigate }: AppShellProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme } = useTheme() as any;
+  const { theme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
 
@@ -22,9 +21,10 @@ export function AppShell({ children, currentPage, onNavigate }: AppShellProps) {
     onNavigate(page);
   };
 
+  // Exactement le même style que HomePageContent dans app/page.tsx
   return (
     <div 
-      className="min-h-screen" 
+      className="min-h-screen"
       style={{ 
         background: `linear-gradient(180deg, ${theme.colors.backgroundGradientFrom} 0%, ${theme.colors.backgroundGradientTo} 50%, ${theme.colors.backgroundGradientFrom} 100%)` 
       }}

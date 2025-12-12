@@ -3,8 +3,19 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Theme, ThemeKey, getTheme, DEFAULT_THEME } from '../lib/themes';
 
+// Type pour les couleurs résolues (aplaties, sans light/dark)
+type ResolvedColors = Theme['colors']['light'];
+
+// Type pour le thème avec couleurs résolues
+interface ResolvedTheme {
+  key: ThemeKey;
+  name: string;
+  emoji: string;
+  colors: ResolvedColors;
+}
+
 interface ThemeContextType {
-  theme: Theme;
+  theme: ResolvedTheme;
   themeKey: ThemeKey;
   setTheme: (key: ThemeKey) => void;
   isDarkMode: boolean;
@@ -41,7 +52,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   const theme = getTheme(themeKey);
   const resolvedColors = isDarkMode ? theme.colors.dark : theme.colors.light;
-  const resolvedThemeForContext = { ...theme, colors: resolvedColors };
+  
+  // Thème avec couleurs résolues (aplaties)
+  const resolvedTheme: ResolvedTheme = {
+    key: theme.key,
+    name: theme.name,
+    emoji: theme.emoji,
+    colors: resolvedColors
+  };
 
   useEffect(() => {
     if (!mounted) return;
@@ -77,7 +95,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme: resolvedThemeForContext, themeKey, setTheme, isDarkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ theme: resolvedTheme, themeKey, setTheme, isDarkMode, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -88,8 +106,14 @@ export function useTheme(): ThemeContextType {
   
   if (context === undefined) {
     const defaultTheme = getTheme(DEFAULT_THEME);
+    const defaultResolved: ResolvedTheme = {
+      key: defaultTheme.key,
+      name: defaultTheme.name,
+      emoji: defaultTheme.emoji,
+      colors: defaultTheme.colors.light
+    };
     return {
-      theme: { ...defaultTheme, colors: defaultTheme.colors.light },
+      theme: defaultResolved,
       themeKey: DEFAULT_THEME,
       setTheme: () => {},
       isDarkMode: false,

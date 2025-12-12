@@ -792,8 +792,12 @@ function HomePageContent() {
   }
 
   const handleNavigate = (page: string) => {
-    setCurrentPage(page);
     setSidebarOpen(false);
+    if (page === 'accueil') {
+      setCurrentPage('accueil');
+      } else {
+        window.location.href = `/${page}`;
+        }
   };
 
   const renderPage = () => {
@@ -809,7 +813,7 @@ function HomePageContent() {
       case 'objectifs': return <ObjectifsPageFull />;
       case 'parametres': return <ParametresPage />;
       case 'statistiques': return <StatistiquesPage />;
-      case 'plus': return <PlusPage onNavigate={handleNavigate} />;
+      case 'plus': return <PlusPage />;
       default: return <AccueilPage onNavigate={handleNavigate} />;
     }
   };
