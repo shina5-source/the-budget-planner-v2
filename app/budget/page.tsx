@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, TrendingUp, Home as HomeIcon, Mail, PiggyBank, FileText, RefreshCw, PieChart } from 'lucide-react';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface Transaction {
   id: number;
@@ -19,15 +21,15 @@ const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 type TabType = 'vue' | 'revenus' | 'correctifs' | 'epargne' | 'bilan';
 type BilanAccordionType = 'revenus' | 'factures' | 'depenses' | 'epargnes' | null;
 
-export default function BudgetPage() {
-  const { theme } = useTheme();
+function BudgetContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('vue');
   const [bilanAccordion, setBilanAccordion] = useState<BilanAccordionType>(null);
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
@@ -71,6 +73,7 @@ export default function BudgetPage() {
     else setSelectedMonth(selectedMonth + 1);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Card = ({ title, amount, subtitle, icon: Icon }: { title: string; amount: number; subtitle: string; icon: any }) => (
     <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
       <div className="flex items-start justify-between">
@@ -96,6 +99,7 @@ export default function BudgetPage() {
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const TransactionList = ({ transactions: txList, title, icon: Icon, emptyMessage }: { transactions: Transaction[]; title: string; icon: any; emptyMessage: string }) => {
     const total = txList.reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     return (
@@ -149,7 +153,7 @@ export default function BudgetPage() {
         <p className="text-xs mb-1" style={textSecondary}>Total épargné ce mois</p>
         <p className="text-2xl font-semibold" style={textPrimary}>{totalEpargnes.toFixed(2)} €</p>
         <div className="mt-3 rounded-xl p-3 inline-block border" style={{ background: `${theme.colors.primary}10`, borderColor: theme.colors.cardBorder }}>
-          <p className="text-[10px]" style={textSecondary}>Taux d'épargne</p>
+          <p className="text-[10px]" style={textSecondary}>Taux d&apos;épargne</p>
           <p className="text-xl font-semibold" style={textPrimary}>{tauxEpargne} %</p>
         </div>
       </div>
@@ -221,6 +225,7 @@ export default function BudgetPage() {
   );
 
   const renderBilan = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const AccordionSection = ({ title, icon: Icon, transactions: sectionTransactions, total, isExpense = true, sectionKey }: { title: string; icon: any; transactions: Transaction[]; total: number; isExpense?: boolean; sectionKey: BilanAccordionType }) => {
       const isOpen = bilanAccordion === sectionKey;
       const prefix = isExpense ? '-' : '+';
@@ -243,7 +248,7 @@ export default function BudgetPage() {
               {isOpen ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}
             </div>
           </button>
-          
+
           {isOpen && (
             <div style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
               {sectionTransactions.length === 0 ? (
@@ -290,7 +295,7 @@ export default function BudgetPage() {
           <p className={`text-3xl font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</p>
           <div className="rounded-xl p-3 mt-4 inline-flex items-center gap-2 border" style={{ background: `${theme.colors.primary}10`, borderColor: theme.colors.cardBorder }}>
             <PiggyBank className="w-4 h-4" style={textPrimary} />
-            <span className="text-xs" style={textSecondary}>Taux d'épargne</span>
+            <span className="text-xs" style={textSecondary}>Taux d&apos;épargne</span>
           </div>
           <p className="text-2xl font-semibold mt-2" style={textPrimary}>{tauxEpargne} %</p>
           {solde > 0 ? (
@@ -298,7 +303,7 @@ export default function BudgetPage() {
           ) : solde < 0 ? (
             <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 inline-block">⚠️ Attention ! Solde négatif de {Math.abs(solde).toFixed(2)} €</p>
           ) : (
-            <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 inline-block">➖ Solde à l'équilibre : 0.00 €</p>
+            <p className="text-xs mt-3 px-3 py-1.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 inline-block">➖ Solde à l&apos;équilibre : 0.00 €</p>
           )}
         </div>
       </div>
@@ -317,10 +322,9 @@ export default function BudgetPage() {
     <div className="pb-4">
       <div className="text-center mb-4">
         <h1 className="text-lg font-medium" style={textPrimary}>Budget</h1>
-        <p className="text-xs" style={textSecondary}>Vue d'ensemble de {monthsFull[selectedMonth]} {selectedYear}</p>
+        <p className="text-xs" style={textSecondary}>Vue d&apos;ensemble de {monthsFull[selectedMonth]} {selectedYear}</p>
       </div>
 
-      {/* Sélecteur de mois */}
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <div className="flex items-center justify-between mb-4">
           <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
@@ -339,7 +343,6 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      {/* Onglets */}
       <div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border" style={cardStyle}>
         {tabs.map((tab) => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors" style={activeTab === tab.id ? { background: theme.colors.primary, color: theme.colors.textOnPrimary } : { color: theme.colors.textSecondary }}>{tab.label}</button>
@@ -352,5 +355,23 @@ export default function BudgetPage() {
       {activeTab === 'epargne' && renderEpargne()}
       {activeTab === 'bilan' && renderBilan()}
     </div>
+  );
+}
+
+export default function BudgetPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="budget" onNavigate={handleNavigate}>
+      <BudgetContent />
+    </AppShell>
   );
 }

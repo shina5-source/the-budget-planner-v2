@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, Lightbulb } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface Transaction {
   id: number;
@@ -19,7 +21,6 @@ const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', '
 const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
-// Couleurs pour les graphiques - PRÉSERVÉES (semantiques)
 const COLORS = ['#D4AF37', '#8B4557', '#7DD3A8', '#5C9EAD', '#E8A87C', '#C38D9E', '#41B3A3', '#E27D60', '#85DCB8', '#E8A87C'];
 const COLORS_TYPE = {
   revenus: '#4CAF50',
@@ -30,24 +31,23 @@ const COLORS_TYPE = {
 
 type TabType = 'resume' | 'revenus' | 'factures' | 'depenses' | 'epargnes' | 'evolution';
 
-export default function StatistiquesPage() {
-  const { theme } = useTheme();
+function StatistiquesContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [activeTab, setActiveTab] = useState<TabType>('resume');
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
 
-  // Tooltip style dynamique
-  const tooltipContentStyle = { 
-    fontSize: '10px', 
-    backgroundColor: theme.colors.cardBackground, 
-    border: `1px solid ${theme.colors.cardBorder}`, 
+  const tooltipContentStyle = {
+    fontSize: '10px',
+    backgroundColor: theme.colors.cardBackground,
+    border: `1px solid ${theme.colors.cardBorder}`,
     borderRadius: '8px',
     color: theme.colors.textPrimary
   };
@@ -135,7 +135,7 @@ export default function StatistiquesPage() {
           <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Factures</span><span className="text-sm font-semibold text-red-400">-{totalFactures.toFixed(2)} €</span></div>
           <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Dépenses</span><span className="text-sm font-semibold text-orange-400">-{totalDepenses.toFixed(2)} €</span></div>
           <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Épargnes</span><span className="text-sm font-semibold text-blue-400">-{totalEpargnes.toFixed(2)} €</span></div>
-          <div className="flex justify-between items-center py-2 rounded-lg px-2 mt-2" style={{ background: `${theme.colors.primary}10` }}><span className="text-xs font-bold" style={textPrimary}>Balance</span><span className={`text-sm font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</span></div>
+          <div className="flex justify-between items-center py-2 rounded-lg px-2 mt-2" style={{ background: `${theme.colors.primary}10` }}><span className="text-xs font-bold" style={textPrimary}>Balance</span><span className={`text-sm font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</span></div> 
         </div>
       </div>
 
@@ -181,7 +181,7 @@ export default function StatistiquesPage() {
         <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Analyse</h4></div>
         <div className="space-y-2">
           {solde >= 0 ? (<p className="text-[10px] text-[#7DD3A8]">✅ Budget équilibré ! Solde positif de {solde.toFixed(2)} €</p>) : (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Déficit de {Math.abs(solde).toFixed(2)} €</p>)}
-          {totalEpargnes > 0 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Taux d'épargne : {((totalEpargnes / totalRevenus) * 100).toFixed(1)}%</p>)}
+          {totalEpargnes > 0 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Taux d&apos;épargne : {((totalEpargnes / totalRevenus) * 100).toFixed(1)}%</p>)}  
           {totalDepenses > totalFactures && (<p className="text-[10px] text-[#7DD3A8]">📊 Dépenses variables supérieures aux charges fixes</p>)}
         </div>
       </div>
@@ -303,7 +303,7 @@ export default function StatistiquesPage() {
                   <td className="py-2 text-center text-green-400">{row.revenus > 0 ? row.revenus.toFixed(0) : '-'}</td>
                   <td className="py-2 text-center text-red-400">{row.factures > 0 ? row.factures.toFixed(0) : '-'}</td>
                   <td className="py-2 text-center text-orange-400">{row.depenses > 0 ? row.depenses.toFixed(0) : '-'}</td>
-                  <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{row.solde !== 0 ? row.solde.toFixed(0) : '-'}</td>
+                  <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{row.solde !== 0 ? row.solde.toFixed(0) : '-'}</td>      
                 </tr>
               ))}
             </tbody>
@@ -352,5 +352,23 @@ export default function StatistiquesPage() {
       {activeTab === 'epargnes' && renderDetail('Épargnes', COLORS_TYPE.epargnes)}
       {activeTab === 'evolution' && renderEvolution()}
     </div>
+  );
+}
+
+export default function StatistiquesPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="statistiques" onNavigate={handleNavigate}>
+      <StatistiquesContent />
+    </AppShell>
   );
 }

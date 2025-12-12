@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, X, Check, ChevronDown, ChevronUp, Trash2, Edit3, Lightbulb, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
-import RecurringTransactions from '../../components/RecurringTransactions';
-import { processRecurringTransactions } from '../../lib/recurring-transactions';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import RecurringTransactions from '@/components/RecurringTransactions';
+import { processRecurringTransactions } from '@/lib/recurring-transactions';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface Transaction {
   id: number;
@@ -64,8 +66,9 @@ const comptesOptions = [
 
 const ITEMS_PER_PAGE = 50;
 
-export default function TransactionsPage() {
-  const { theme } = useTheme();
+function TransactionsContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [parametres, setParametres] = useState<ParametresData>(defaultParametres);
   const [showForm, setShowForm] = useState(false);
@@ -75,7 +78,7 @@ export default function TransactionsPage() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [showRecurring, setShowRecurring] = useState(false);
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterCategorie, setFilterCategorie] = useState('');
@@ -99,7 +102,6 @@ export default function TransactionsPage() {
     dateDebut: ''
   });
 
-  // Dynamic styles based on theme
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
@@ -114,7 +116,7 @@ export default function TransactionsPage() {
     loadTransactions();
     const savedParametres = localStorage.getItem('budget-parametres');
     if (savedParametres) setParametres({ ...defaultParametres, ...JSON.parse(savedParametres) });
-    
+
     const created = processRecurringTransactions();
     if (created.length > 0) loadTransactions();
   }, []);
@@ -240,176 +242,171 @@ export default function TransactionsPage() {
   const loadMore = () => setDisplayCount(prev => prev + ITEMS_PER_PAGE);
 
   return (
-    <div className="pb-4">
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-medium" style={textPrimary}>Transactions</h1>
-        <p className="text-xs" style={textSecondary}>{filteredTransactions.length} transaction(s)</p>
-      </div>
+    <>
+      <div className="pb-4">
+        <div className="text-center mb-4">
+          <h1 className="text-lg font-medium" style={textPrimary}>Transactions</h1>
+          <p className="text-xs" style={textSecondary}>{filteredTransactions.length} transaction(s)</p>
+        </div>
 
-      {/* Sélecteur de mois */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold" style={textPrimary}>{selectedMonth !== null ? monthsFull[selectedMonth] : 'Tous'}</span>
-            <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
-              {years.map(year => (<option key={year} value={year}>{year}</option>))}
-            </select>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold" style={textPrimary}>{selectedMonth !== null ? monthsFull[selectedMonth] : 'Tous'}</span>
+              <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
+                {years.map(year => (<option key={year} value={year}>{year}</option>))}
+              </select>
+            </div>
+            <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
           </div>
-          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
-        </div>
-        <div className="flex flex-wrap gap-2 justify-center">
-          <button onClick={() => setSelectedMonth(null)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === null ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>Tous</button>
-          {monthsShort.map((month, index) => (
-            <button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Résumé */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
-          <p className="text-[10px]" style={textSecondary}>Revenus</p>
-          <p className="text-sm font-semibold text-green-400">{totalRevenus.toFixed(0)}{parametres.devise}</p>
-        </div>
-        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
-          <p className="text-[10px]" style={textSecondary}>Dépenses</p>
-          <p className="text-sm font-semibold text-red-400">{totalDepenses.toFixed(0)}{parametres.devise}</p>
-        </div>
-        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
-          <p className="text-[10px]" style={textSecondary}>Solde</p>
-          <p className={`text-sm font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde.toFixed(0)}{parametres.devise}</p>
-        </div>
-      </div>
-
-      {/* Barre de recherche */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <div className="flex items-center gap-2 mb-3">
-          <Search className="w-4 h-4" style={textSecondary} />
-          <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" style={textPrimary} />
-        </div>
-
-        <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 text-xs" style={textSecondary}>
-          {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          Filtres avancés
-          {(filterType || filterCategorie || filterDepuis || filterVers || filterMoyenPaiement) && (
-            <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>Actifs</span>
-          )}
-        </button>
-
-        {showFilters && (
-          <div className="mt-4 space-y-3">
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Type</label>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-                <option value="">Tous les types</option>
-                {types.map(type => (<option key={type} value={type}>{type}</option>))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégorie</label>
-              <select value={filterCategorie} onChange={(e) => setFilterCategorie(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-                <option value="">Toutes les catégories</option>
-                {(filterType ? getCategoriesForType(filterType) : getAllCategories()).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Depuis</label>
-              <select value={filterDepuis} onChange={(e) => setFilterDepuis(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-                <option value="">Tous les comptes</option>
-                {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Vers</label>
-              <select value={filterVers} onChange={(e) => setFilterVers(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-                <option value="">Tous les comptes</option>
-                {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block" style={textPrimary}>Moyen de paiement</label>
-              <select value={filterMoyenPaiement} onChange={(e) => setFilterMoyenPaiement(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-                <option value="">Tous les moyens</option>
-                {moyensPaiement.map(moyen => (<option key={moyen} value={moyen}>{moyen}</option>))}
-              </select>
-            </div>
-            {(filterType || filterCategorie || filterDepuis || filterVers || filterMoyenPaiement) && (
-              <button onClick={clearFilters} className="w-full py-2 text-xs rounded-xl border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}>Effacer les filtres</button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Boutons d'action */}
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => { resetForm(); setShowForm(true); }} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
-          <Plus className="w-4 h-4" />Nouvelle transaction
-        </button>
-        <button onClick={() => setShowRecurring(true)} className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-500/80 text-white rounded-xl font-medium text-sm">
-          <RefreshCw className="w-4 h-4" />Récurrentes
-        </button>
-      </div>
-
-      {/* Historique */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold" style={textPrimary}>Historique</h3>
-          {filteredTransactions.length > 0 && (<span className="text-[10px]" style={textSecondary}>{displayedTransactions.length} sur {filteredTransactions.length}</span>)}
-        </div>
-        
-        {displayedTransactions.length > 0 ? (
-          <div className="space-y-2">
-            {displayedTransactions.map((t) => (
-              <div key={t.id} className="p-3 rounded-xl border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-medium truncate" style={textPrimary}>{t.categorie}</p>
-                      {t.isCredit && (<span className="px-1.5 py-0.5 bg-purple-500/30 text-purple-300 rounded text-[9px]">Crédit</span>)}
-                      {t.memo?.includes('🔄') && (<span className="px-1.5 py-0.5 bg-indigo-500/30 text-indigo-300 rounded text-[9px]">Auto</span>)}
-                    </div>
-                    <p className="text-[10px]" style={textSecondary}>{t.date} • {t.type}{t.moyenPaiement ? ` • ${t.moyenPaiement}` : ''}</p>
-                    {t.depuis && <p className="text-[10px]" style={textSecondary}>De: {t.depuis} → {t.vers || '-'}</p>}
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-semibold ${getTypeColor(t.type)}`}>{t.type === 'Revenus' ? '+' : '-'}{parseFloat(t.montant).toFixed(2)} {parametres.devise}</p>
-                  </div>
-                </div>
-                {t.memo && <p className="text-[10px] italic mt-1" style={textSecondary}>"{t.memo}"</p>}
-                <div className="flex justify-end gap-2 mt-2">
-                  <button onClick={() => handleEdit(t)} className="p-1.5 rounded-lg" style={{ color: theme.colors.textPrimary }}><Edit3 className="w-4 h-4" /></button>
-                  <button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              </div>
+          <div className="flex flex-wrap gap-2 justify-center">
+            <button onClick={() => setSelectedMonth(null)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === null ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>Tous</button>
+            {monthsShort.map((month, index) => (
+              <button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
             ))}
-            {hasMore && (
-              <button onClick={loadMore} className="w-full py-3 mt-3 border-2 border-dashed rounded-xl text-sm font-medium transition-colors" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
-                Voir plus ({remainingCount} restante{remainingCount > 1 ? 's' : ''})
-              </button>
-            )}
           </div>
-        ) : (
-          <p className="text-xs text-center py-8" style={textSecondary}>Aucune transaction trouvée</p>
-        )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
+            <p className="text-[10px]" style={textSecondary}>Revenus</p>
+            <p className="text-sm font-semibold text-green-400">{totalRevenus.toFixed(0)}{parametres.devise}</p>
+          </div>
+          <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
+            <p className="text-[10px]" style={textSecondary}>Dépenses</p>
+            <p className="text-sm font-semibold text-red-400">{totalDepenses.toFixed(0)}{parametres.devise}</p>
+          </div>
+          <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
+            <p className="text-[10px]" style={textSecondary}>Solde</p>
+            <p className={`text-sm font-semibold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde.toFixed(0)}{parametres.devise}</p>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <div className="flex items-center gap-2 mb-3">
+            <Search className="w-4 h-4" style={textSecondary} />
+            <input type="text" placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 bg-transparent text-sm focus:outline-none" style={textPrimary} />
+          </div>
+
+          <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 text-xs" style={textSecondary}>
+            {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            Filtres avancés
+            {(filterType || filterCategorie || filterDepuis || filterVers || filterMoyenPaiement) && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px]" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>Actifs</span>
+            )}
+          </button>
+
+          {showFilters && (
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Type</label>
+                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                  <option value="">Tous les types</option>
+                  {types.map(type => (<option key={type} value={type}>{type}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégorie</label>
+                <select value={filterCategorie} onChange={(e) => setFilterCategorie(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                  <option value="">Toutes les catégories</option>
+                  {(filterType ? getCategoriesForType(filterType) : getAllCategories()).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Depuis</label>
+                <select value={filterDepuis} onChange={(e) => setFilterDepuis(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                  <option value="">Tous les comptes</option>
+                  {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Vers</label>
+                <select value={filterVers} onChange={(e) => setFilterVers(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                  <option value="">Tous les comptes</option>
+                  {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Moyen de paiement</label>
+                <select value={filterMoyenPaiement} onChange={(e) => setFilterMoyenPaiement(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                  <option value="">Tous les moyens</option>
+                  {moyensPaiement.map(moyen => (<option key={moyen} value={moyen}>{moyen}</option>))}
+                </select>
+              </div>
+              {(filterType || filterCategorie || filterDepuis || filterVers || filterMoyenPaiement) && (
+                <button onClick={clearFilters} className="w-full py-2 text-xs rounded-xl border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}>Effacer les filtres</button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => { resetForm(); setShowForm(true); }} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
+            <Plus className="w-4 h-4" />Nouvelle transaction
+          </button>
+          <button onClick={() => setShowRecurring(true)} className="flex items-center justify-center gap-2 px-4 py-3 bg-purple-500/80 text-white rounded-xl font-medium text-sm">
+            <RefreshCw className="w-4 h-4" />Récurrentes
+          </button>
+        </div>
+
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold" style={textPrimary}>Historique</h3>
+            {filteredTransactions.length > 0 && (<span className="text-[10px]" style={textSecondary}>{displayedTransactions.length} sur {filteredTransactions.length}</span>)}
+          </div>
+
+          {displayedTransactions.length > 0 ? (
+            <div className="space-y-2">
+              {displayedTransactions.map((t) => (
+                <div key={t.id} className="p-3 rounded-xl border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-medium truncate" style={textPrimary}>{t.categorie}</p>
+                        {t.isCredit && (<span className="px-1.5 py-0.5 bg-purple-500/30 text-purple-300 rounded text-[9px]">Crédit</span>)}
+                        {t.memo?.includes('🔄') && (<span className="px-1.5 py-0.5 bg-indigo-500/30 text-indigo-300 rounded text-[9px]">Auto</span>)}
+                      </div>
+                      <p className="text-[10px]" style={textSecondary}>{t.date} • {t.type}{t.moyenPaiement ? ` • ${t.moyenPaiement}` : ''}</p>
+                      {t.depuis && <p className="text-[10px]" style={textSecondary}>De: {t.depuis} → {t.vers || '-'}</p>}
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-semibold ${getTypeColor(t.type)}`}>{t.type === 'Revenus' ? '+' : '-'}{parseFloat(t.montant).toFixed(2)} {parametres.devise}</p>
+                    </div>
+                  </div>
+                  {t.memo && <p className="text-[10px] italic mt-1" style={textSecondary}>&quot;{t.memo}&quot;</p>}
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button onClick={() => handleEdit(t)} className="p-1.5 rounded-lg" style={{ color: theme.colors.textPrimary }}><Edit3 className="w-4 h-4" /></button>
+                    <button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              ))}
+              {hasMore && (
+                <button onClick={loadMore} className="w-full py-3 mt-3 border-2 border-dashed rounded-xl text-sm font-medium transition-colors" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
+                  Voir plus ({remainingCount} restante{remainingCount > 1 ? 's' : ''})
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-center py-8" style={textSecondary}>Aucune transaction trouvée</p>
+          )}
+        </div>
+
+        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="w-4 h-4 text-[#7DD3A8]" />
+            <h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4>
+          </div>
+          <div className="space-y-2">
+            {filteredTransactions.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Commencez à enregistrer vos transactions</p>)}
+            {solde < 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Solde négatif de {Math.abs(solde).toFixed(2)} {parametres.devise}</p>)}
+            {solde >= 0 && solde < 100 && filteredTransactions.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">💡 Solde serré, surveillez vos dépenses</p>)}
+            {solde >= 100 && (<p className="text-[10px] text-[#7DD3A8]">✅ Bon solde ! Pensez à épargner</p>)}
+            {nbCredits > 0 && (<p className="text-[10px] text-[#7DD3A8]">💳 {nbCredits} crédit(s) actif(s)</p>)}
+          </div>
+        </div>
       </div>
 
-      {/* Conseils */}
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="w-4 h-4 text-[#7DD3A8]" />
-          <h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4>
-        </div>
-        <div className="space-y-2">
-          {filteredTransactions.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Commencez à enregistrer vos transactions</p>)}
-          {solde < 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Solde négatif de {Math.abs(solde).toFixed(2)} {parametres.devise}</p>)}
-          {solde >= 0 && solde < 100 && filteredTransactions.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">💡 Solde serré, surveillez vos dépenses</p>)}
-          {solde >= 100 && (<p className="text-[10px] text-[#7DD3A8]">✅ Bon solde ! Pensez à épargner</p>)}
-          {nbCredits > 0 && (<p className="text-[10px] text-[#7DD3A8]">💳 {nbCredits} crédit(s) actif(s)</p>)}
-        </div>
-      </div>
-
-      {/* Modal formulaire */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
           <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
@@ -470,7 +467,7 @@ export default function TransactionsPage() {
 
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="isCredit" checked={formData.isCredit} onChange={(e) => setFormData({ ...formData, isCredit: e.target.checked })} className="w-5 h-5 rounded" />
-                <label htmlFor="isCredit" className="text-xs font-medium" style={textPrimary}>C'est un crédit</label>
+                <label htmlFor="isCredit" className="text-xs font-medium" style={textPrimary}>C&apos;est un crédit</label>
               </div>
 
               {formData.isCredit && (
@@ -513,7 +510,6 @@ export default function TransactionsPage() {
         </div>
       )}
 
-      {/* Modal Transactions Récurrentes */}
       <RecurringTransactions
         isOpen={showRecurring}
         onClose={() => setShowRecurring(false)}
@@ -523,6 +519,24 @@ export default function TransactionsPage() {
         comptes={parametres.comptesBancaires}
         onTransactionCreated={loadTransactions}
       />
-    </div>
+    </>
+  );
+}
+
+export default function TransactionsPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="transactions" onNavigate={handleNavigate}>
+      <TransactionsContent />
+    </AppShell>
   );
 }

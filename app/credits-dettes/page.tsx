@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingDown, Lightbulb, Calendar, Percent, Wallet, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface Transaction {
   id: number;
@@ -28,14 +30,14 @@ const defaultParametres: ParametresData = {
   devise: '€'
 };
 
-export default function CreditsDettesPage() {
-  const { theme } = useTheme();
+function CreditsDettesContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [parametres, setParametres] = useState<ParametresData>(defaultParametres);
   const [revenusMensuels, setRevenusMensuels] = useState(0);
   const [expandedCredit, setExpandedCredit] = useState<number | null>(null);
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
@@ -45,7 +47,7 @@ export default function CreditsDettesPage() {
     if (savedTransactions) {
       const allTransactions: Transaction[] = JSON.parse(savedTransactions);
       setTransactions(allTransactions);
-      
+
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       const revenus = allTransactions
@@ -84,17 +86,17 @@ export default function CreditsDettesPage() {
     const capital = parseFloat(credit.capitalTotal || '0');
     const taux = parseFloat(credit.tauxInteret || '0');
     const duree = parseInt(credit.dureeMois || '0');
-    
+
     const interetsTotal = capital * (taux / 100) * (duree / 12);
     const totalADu = capital + interetsTotal;
     const totalRembourse = Math.min(moisEcoules * mensualite, totalADu);
     const resteADu = Math.max(0, totalADu - totalRembourse);
     const progression = totalADu > 0 ? (totalRembourse / totalADu) * 100 : 0;
     const moisRestants = Math.max(0, duree - moisEcoules);
-    
+
     const dateFin = new Date(dateDebut);
     dateFin.setMonth(dateFin.getMonth() + duree);
-    
+
     const estTermine = progression >= 100 || moisRestants <= 0;
 
     return { totalRembourse, resteADu, progression, moisEcoules, moisRestants, totalADu, interetsTotal, dateFin, estTermine };
@@ -136,7 +138,6 @@ export default function CreditsDettesPage() {
         <p className="text-xs" style={textSecondary}>Suivi automatique de vos remboursements</p>
       </div>
 
-      {/* Résumé principal */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
           <div className="flex items-center justify-center gap-2 mb-2">
@@ -150,7 +151,7 @@ export default function CreditsDettesPage() {
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
           <div className="flex items-center justify-center gap-2 mb-2">
             <Percent className="w-4 h-4" style={textPrimary} />
-            <p className="text-[10px] uppercase tracking-wide" style={textSecondary}>Taux d'Endettement</p>
+            <p className="text-[10px] uppercase tracking-wide" style={textSecondary}>Taux d&apos;Endettement</p>
           </div>
           <div className="relative w-16 h-16 mx-auto">
             <svg className="w-16 h-16 transform -rotate-90">
@@ -165,7 +166,6 @@ export default function CreditsDettesPage() {
         </div>
       </div>
 
-      {/* Mensualités et Cumul */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
           <div className="flex items-center justify-center gap-2 mb-1">
@@ -183,7 +183,6 @@ export default function CreditsDettesPage() {
         </div>
       </div>
 
-      {/* Statistiques crédits */}
       {credits.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mb-4">
           <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
@@ -204,7 +203,6 @@ export default function CreditsDettesPage() {
         </div>
       )}
 
-      {/* Barres de progression globales */}
       {credits.length > 0 && (
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
           <h3 className="text-sm font-semibold mb-3 text-center uppercase tracking-wide" style={textPrimary}>Progression des Remboursements</h3>
@@ -233,11 +231,10 @@ export default function CreditsDettesPage() {
         </div>
       )}
 
-      {/* Détail des crédits - ACCORDÉON */}
       {credits.length > 0 ? (
         <div className="space-y-3 mb-4">
           <h3 className="text-sm font-semibold text-center uppercase tracking-wide" style={textPrimary}>Détail des Crédits</h3>
-          
+
           {credits.map((credit) => {
             const { totalRembourse, resteADu, progression, moisRestants, totalADu, interetsTotal, dateFin, estTermine } = getRemboursements(credit);
             const isOpen = expandedCredit === credit.id;
@@ -327,28 +324,45 @@ export default function CreditsDettesPage() {
           <p className="text-xs mb-2" style={textSecondary}>Aucun crédit enregistré</p>
           <p className="text-[10px]" style={textSecondary}>
             Pour ajouter un crédit, allez dans <strong>Transactions</strong>,
-            <br />créez une transaction de type "Factures" et cochez 
-            <br /><strong>"C'est un crédit"</strong>
+            <br />créez une transaction de type &quot;Factures&quot; et cochez
+            <br /><strong>&quot;C&apos;est un crédit&quot;</strong>
           </p>
         </div>
       )}
 
-      {/* Conseils */}
       <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
         <div className="flex items-center gap-2 mb-3">
           <Lightbulb className="w-4 h-4 text-[#7DD3A8]" />
           <h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4>
         </div>
         <div className="space-y-2">
-          {tauxEndettement > 35 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Votre taux d'endettement ({Math.round(tauxEndettement)}%) dépasse le seuil de 35%</p>)}
-          {tauxEndettement > 0 && tauxEndettement <= 35 && (<p className="text-[10px] text-[#7DD3A8]">✅ Taux d'endettement dans la norme ({Math.round(tauxEndettement)}%)</p>)}
+          {tauxEndettement > 35 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Votre taux d&apos;endettement ({Math.round(tauxEndettement)}%) dépasse le seuil de 35%</p>)}
+          {tauxEndettement > 0 && tauxEndettement <= 35 && (<p className="text-[10px] text-[#7DD3A8]">✅ Taux d&apos;endettement dans la norme ({Math.round(tauxEndettement)}%)</p>)}
           {credits.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos crédits dans Transactions pour un suivi automatique</p>)}
           {nbCreditsTermines > 0 && (<p className="text-[10px] text-[#7DD3A8]">🎉 Félicitations ! {nbCreditsTermines} crédit(s) terminé(s)</p>)}
           {credits.some(c => getRemboursements(c).moisRestants <= 3 && !getRemboursements(c).estTermine) && (<p className="text-[10px] text-[#7DD3A8]">🏁 Certains crédits sont presque terminés !</p>)}
-          {revenusMensuels === 0 && credits.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Ajoutez vos revenus pour calculer le taux d'endettement</p>)}
+          {revenusMensuels === 0 && credits.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Ajoutez vos revenus pour calculer le taux d&apos;endettement</p>)}
           {credits.length > 0 && totalMensualites > 0 && (<p className="text-[10px] text-[#7DD3A8]">📊 Vous remboursez {totalMensualites.toFixed(2)} {parametres.devise}/mois</p>)}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CreditsDettesPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="credits-dettes" onNavigate={handleNavigate}>
+      <CreditsDettesContent />
+    </AppShell>
   );
 }

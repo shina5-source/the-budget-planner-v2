@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, PiggyBank, Lightbulb, Plus, Trash2, Edit3, Check, X, Home as HomeIcon, ShoppingBag } from 'lucide-react';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface Transaction {
   id: number;
@@ -47,8 +49,9 @@ const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
 type TabType = 'vue' | 'revenus' | 'factures' | 'depenses' | 'epargne' | 'analyse';
 
-export default function PrevisionnelPage() {
-  const { theme } = useTheme();
+function PrevisionnelContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -61,7 +64,6 @@ export default function PrevisionnelPage() {
   const [newMontant, setNewMontant] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
@@ -160,6 +162,7 @@ export default function PrevisionnelPage() {
     return filteredTransactions.filter(t => t.type === type && t.categorie === categorie).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const PrevisionCard = ({ title, prevu, reel, icon: Icon }: { title: string; prevu: number; reel: number; icon: any }) => {
     const ecart = reel - prevu;
     const pourcentage = prevu > 0 ? Math.min((reel / prevu) * 100, 100) : 0;
@@ -178,6 +181,7 @@ export default function PrevisionnelPage() {
     );
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const PrevisionSection = ({ title, type, items, icon: Icon, typeTransaction }: { title: string; type: 'revenus' | 'factures' | 'depenses' | 'epargnes'; items: PrevisionItem[]; icon: any; typeTransaction: string }) => {
     const total = items.reduce((sum, p) => sum + p.montantPrevu, 0);
     const totalReel = filteredTransactions.filter(t => t.type === typeTransaction).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -220,8 +224,8 @@ export default function PrevisionnelPage() {
       <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
         <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils du mois</h4></div>
         <div className="space-y-2">
-          {totalRevenusPrev === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos revenus prévus dans l'onglet "Revenus"</p>)}
-          {totalFacturesPrev === 0 && totalRevenusPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 N'oubliez pas d'ajouter vos factures prévues</p>)}
+          {totalRevenusPrev === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos revenus prévus dans l&apos;onglet &quot;Revenus&quot;</p>)}
+          {totalFacturesPrev === 0 && totalRevenusPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 N&apos;oubliez pas d&apos;ajouter vos factures prévues</p>)}
           {totalRevenusReel < totalRevenusPrev && totalRevenusPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Revenus inférieurs de {(totalRevenusPrev - totalRevenusReel).toFixed(2)} € au prévu</p>)}
           {totalDepensesReel > totalDepensesPrev && totalDepensesPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Dépenses supérieures de {(totalDepensesReel - totalDepensesPrev).toFixed(2)} € au prévu</p>)}
           {soldeReel > soldePrevu && soldePrevu !== 0 && (<p className="text-[10px] text-[#7DD3A8]">✅ Excellent ! Vous êtes au-dessus de vos prévisions !</p>)}
@@ -250,26 +254,28 @@ export default function PrevisionnelPage() {
   const tabs: { id: TabType; label: string }[] = [{ id: 'vue', label: 'Vue' }, { id: 'revenus', label: 'Revenus' }, { id: 'factures', label: 'Factures' }, { id: 'depenses', label: 'Dépenses' }, { id: 'epargne', label: 'Épargne' }, { id: 'analyse', label: 'Analyse' }];
 
   return (
-    <div className="pb-4">
-      <div className="text-center mb-4"><h1 className="text-lg font-medium" style={textPrimary}>Prévisionnel</h1><p className="text-xs" style={textSecondary}>Comparaison prévu vs réel</p></div>
+    <>
+      <div className="pb-4">
+        <div className="text-center mb-4"><h1 className="text-lg font-medium" style={textPrimary}>Prévisionnel</h1><p className="text-xs" style={textSecondary}>Comparaison prévu vs réel</p></div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
-          <div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{monthsFull[selectedMonth]}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div>
-          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
+            <div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{monthsFull[selectedMonth]}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div>
+            <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
+          </div>
+          <div className="flex flex-wrap gap-2 justify-center">{monthsShort.map((month, index) => (<button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>))}</div>
         </div>
-        <div className="flex flex-wrap gap-2 justify-center">{monthsShort.map((month, index) => (<button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>))}</div>
+
+        <div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border overflow-x-auto" style={cardStyle}>{tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap" style={activeTab === tab.id ? { background: theme.colors.primary, color: theme.colors.textOnPrimary } : { color: theme.colors.textSecondary }}>{tab.label}</button>))}</div>
+
+        {activeTab === 'vue' && renderVue()}
+        {activeTab === 'revenus' && <PrevisionSection title="Revenus prévus" type="revenus" items={previsions.revenus} icon={TrendingUp} typeTransaction="Revenus" />}
+        {activeTab === 'factures' && <PrevisionSection title="Factures prévues" type="factures" items={previsions.factures} icon={HomeIcon} typeTransaction="Factures" />}
+        {activeTab === 'depenses' && <PrevisionSection title="Dépenses prévues" type="depenses" items={previsions.depenses} icon={ShoppingBag} typeTransaction="Dépenses" />}
+        {activeTab === 'epargne' && <PrevisionSection title="Épargne prévue" type="epargnes" items={previsions.epargnes} icon={PiggyBank} typeTransaction="Épargnes" />}
+        {activeTab === 'analyse' && renderAnalyse()}
       </div>
-
-      <div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border overflow-x-auto" style={cardStyle}>{tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap" style={activeTab === tab.id ? { background: theme.colors.primary, color: theme.colors.textOnPrimary } : { color: theme.colors.textSecondary }}>{tab.label}</button>))}</div>
-
-      {activeTab === 'vue' && renderVue()}
-      {activeTab === 'revenus' && <PrevisionSection title="Revenus prévus" type="revenus" items={previsions.revenus} icon={TrendingUp} typeTransaction="Revenus" />}
-      {activeTab === 'factures' && <PrevisionSection title="Factures prévues" type="factures" items={previsions.factures} icon={HomeIcon} typeTransaction="Factures" />}
-      {activeTab === 'depenses' && <PrevisionSection title="Dépenses prévues" type="depenses" items={previsions.depenses} icon={ShoppingBag} typeTransaction="Dépenses" />}
-      {activeTab === 'epargne' && <PrevisionSection title="Épargne prévue" type="epargnes" items={previsions.epargnes} icon={PiggyBank} typeTransaction="Épargnes" />}
-      {activeTab === 'analyse' && renderAnalyse()}
 
       {showAddForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -289,6 +295,24 @@ export default function PrevisionnelPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
+  );
+}
+
+export default function PrevisionnelPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="previsionnel" onNavigate={handleNavigate}>
+      <PrevisionnelContent />
+    </AppShell>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, X, Check, Trash2, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface MemoItem {
   id: number;
@@ -34,8 +36,9 @@ const months = [
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 const ITEMS_PER_PAGE = 50;
 
-export default function MemoPage() {
-  const { theme } = useTheme();
+function MemoContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [memoData, setMemoData] = useState<MemoData>({});
   const [showForm, setShowForm] = useState(false);
@@ -45,7 +48,6 @@ export default function MemoPage() {
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const [displayCounts, setDisplayCounts] = useState<{ [key: string]: number }>({});
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
@@ -131,139 +133,136 @@ export default function MemoPage() {
   const yearTotal = getYearTotal();
 
   return (
-    <div className="pb-4">
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-medium" style={textPrimary}>Mémo Budget</h1>
-        <p className="text-xs" style={textSecondary}>Calendrier annuel des dépenses prévues</p>
-      </div>
-
-      {/* Sélecteur d'année */}
-      <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4" style={cardStyle}>
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevYear} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold" style={textPrimary}>Année</span>
-            <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setExpandedMonth(null); }} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
-              {years.map(year => (<option key={year} value={year}>{year}</option>))}
-            </select>
-          </div>
-          <button onClick={nextYear} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
+    <>
+      <div className="pb-4">
+        <div className="text-center mb-4">
+          <h1 className="text-lg font-medium" style={textPrimary}>Mémo Budget</h1>
+          <p className="text-xs" style={textSecondary}>Calendrier annuel des dépenses prévues</p>
         </div>
-        <div className="flex flex-wrap gap-2 justify-center">
-          {monthsShort.map((month, index) => {
-            const monthNum = String(index + 1).padStart(2, '0');
-            const hasItems = (memoData[getMonthKey(monthNum)]?.length || 0) > 0;
+
+        <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4" style={cardStyle}>
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={prevYear} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-semibold" style={textPrimary}>Année</span>
+              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setExpandedMonth(null); }} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
+                {years.map(year => (<option key={year} value={year}>{year}</option>))}
+              </select>
+            </div>
+            <button onClick={nextYear} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
+          </div>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {monthsShort.map((month, index) => {
+              const monthNum = String(index + 1).padStart(2, '0');
+              const hasItems = (memoData[getMonthKey(monthNum)]?.length || 0) > 0;
+              return (
+                <button key={index} onClick={() => setExpandedMonth(monthNum)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={expandedMonth === monthNum ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : hasItems ? { background: `${theme.colors.primary}20`, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4 text-center" style={cardStyle}>
+          <p className="text-xs" style={textSecondary}>Total prévu pour {selectedYear}</p>
+          <p className="text-2xl font-semibold mt-1" style={textPrimary}>{yearTotal.toFixed(2)} €</p>
+          <div className="flex justify-center gap-6 mt-3">
+            <div><p className="text-[10px]" style={textSecondary}>Éléments</p><p className="text-xs font-medium" style={textPrimary}>{totalItems}</p></div>
+            <div><p className="text-[10px]" style={textSecondary}>Complétés</p><p className="text-xs font-medium" style={textPrimary}>{checkedItems} / {totalItems}</p></div>
+          </div>
+        </div>
+
+        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50 mb-4">
+          <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
+          <div className="space-y-2">
+            {totalItems === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos dépenses prévues pour mieux planifier votre budget</p>)}
+            {totalItems > 0 && checkedItems === totalItems && (<p className="text-[10px] text-[#7DD3A8]">🎉 Bravo ! Tous vos éléments sont complétés pour {selectedYear}</p>)}
+            {totalItems > 0 && checkedItems < totalItems && (<p className="text-[10px] text-[#7DD3A8]">📋 Il vous reste {totalItems - checkedItems} élément(s) à compléter</p>)}
+            {yearTotal > 5000 && (<p className="text-[10px] text-[#7DD3A8]">💰 Budget annuel conséquent ({yearTotal.toFixed(0)} €). Planifiez bien vos épargnes !</p>)}
+            {yearTotal > 0 && yearTotal <= 5000 && (<p className="text-[10px] text-[#7DD3A8]">✅ Budget annuel de {yearTotal.toFixed(0)} € prévu</p>)}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {months.map((month) => {
+            const monthKey = getMonthKey(month.num);
+            const items = memoData[monthKey] || [];
+            const total = getMonthTotal(month.num);
+            const isExpanded = expandedMonth === month.num;
+            const checkedCount = items.filter(i => i.checked).length;
+            const displayCount = getDisplayCount(month.num);
+            const displayedItems = items.slice(0, displayCount);
+            const hasMore = displayCount < items.length;
+            const remainingCount = items.length - displayCount;
+
             return (
-              <button key={index} onClick={() => setExpandedMonth(monthNum)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={expandedMonth === monthNum ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : hasItems ? { background: `${theme.colors.primary}20`, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
+              <div key={month.id} className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden" style={cardStyle}>
+                <div className="px-4 py-3 flex items-center justify-between cursor-pointer" style={{ background: theme.colors.cardBackgroundLight, borderBottomWidth: 1, borderColor: theme.colors.cardBorder }} onClick={() => toggleMonth(month.num)}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold" style={textPrimary}>{month.label}</span>
+                    <span className="text-[10px]" style={textSecondary}>({items.length} élément{items.length > 1 ? 's' : ''})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium" style={textPrimary}>{total.toFixed(2)} €</span>
+                    <button onClick={(e) => { e.stopPropagation(); openAddForm(month.num); }} className="w-7 h-7 rounded-full flex items-center justify-center transition-colors border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                      <Plus className="w-4 h-4" style={textPrimary} />
+                    </button>
+                    {isExpanded ? <ChevronUp className="w-4 h-4" style={textPrimary} /> : <ChevronDown className="w-4 h-4" style={textPrimary} />}
+                  </div>
+                </div>
+
+                {isExpanded && (
+                  <div className="p-3">
+                    {items.length === 0 ? (
+                      <p className="text-xs text-center py-4" style={textSecondary}>Aucun élément pour ce mois</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center px-2 pb-1" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+                          <div className="w-6"></div>
+                          <div className="text-[10px] font-medium flex-1" style={textSecondary}>Description</div>
+                          <div className="text-[10px] font-medium w-20 text-right" style={textSecondary}>Montant</div>
+                          <div className="w-14"></div>
+                        </div>
+
+                        {displayedItems.map((item) => (
+                          <div key={item.id} className="flex items-center rounded-xl px-2 py-2 border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+                            <button onClick={() => toggleCheck(month.num, item.id)} className="w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={item.checked ? { background: theme.colors.primary, borderColor: theme.colors.primary } : { borderColor: theme.colors.cardBorder, background: 'transparent' }}>
+                              {item.checked && <Check className="w-3 h-3" style={{ color: theme.colors.textOnPrimary }} />}
+                            </button>
+                            <div className={`flex-1 px-3 text-sm ${item.checked ? 'line-through opacity-50' : ''}`} style={textPrimary}>{item.description}</div>
+                            <div className={`w-20 text-right text-sm font-medium ${item.checked ? 'opacity-50' : ''}`} style={textPrimary}>{item.montant} €</div>
+                            <div className="w-14 flex items-center justify-end gap-1">
+                              <button onClick={() => editItem(month.num, item)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                                <Pencil className="w-3 h-3" style={textPrimary} />
+                              </button>
+                              <button onClick={() => deleteItem(month.num, item.id)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
+                                <Trash2 className="w-3 h-3" style={textPrimary} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {hasMore && (
+                          <button onClick={() => loadMoreForMonth(month.num)} className="w-full py-3 mt-2 border-2 border-dashed rounded-xl text-sm font-medium transition-colors" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
+                            Voir plus ({remainingCount} restant{remainingCount > 1 ? 's' : ''})
+                          </button>
+                        )}
+
+                        {items.length > 0 && (
+                          <div className="pt-2 mt-2 flex justify-between items-center" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
+                            <span className="text-[10px]" style={textSecondary}>{checkedCount}/{items.length} complété(s){items.length > ITEMS_PER_PAGE && ` • ${displayedItems.length} sur ${items.length} affichés`}</span>
+                            <span className="text-xs font-semibold" style={textPrimary}>Total: {total.toFixed(2)} €</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* Total de l'année */}
-      <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4 text-center" style={cardStyle}>
-        <p className="text-xs" style={textSecondary}>Total prévu pour {selectedYear}</p>
-        <p className="text-2xl font-semibold mt-1" style={textPrimary}>{yearTotal.toFixed(2)} €</p>
-        <div className="flex justify-center gap-6 mt-3">
-          <div><p className="text-[10px]" style={textSecondary}>Éléments</p><p className="text-xs font-medium" style={textPrimary}>{totalItems}</p></div>
-          <div><p className="text-[10px]" style={textSecondary}>Complétés</p><p className="text-xs font-medium" style={textPrimary}>{checkedItems} / {totalItems}</p></div>
-        </div>
-      </div>
-
-      {/* Conseils */}
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50 mb-4">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-        <div className="space-y-2">
-          {totalItems === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos dépenses prévues pour mieux planifier votre budget</p>)}
-          {totalItems > 0 && checkedItems === totalItems && (<p className="text-[10px] text-[#7DD3A8]">🎉 Bravo ! Tous vos éléments sont complétés pour {selectedYear}</p>)}
-          {totalItems > 0 && checkedItems < totalItems && (<p className="text-[10px] text-[#7DD3A8]">📋 Il vous reste {totalItems - checkedItems} élément(s) à compléter</p>)}
-          {yearTotal > 5000 && (<p className="text-[10px] text-[#7DD3A8]">💰 Budget annuel conséquent ({yearTotal.toFixed(0)} €). Planifiez bien vos épargnes !</p>)}
-          {yearTotal > 0 && yearTotal <= 5000 && (<p className="text-[10px] text-[#7DD3A8]">✅ Budget annuel de {yearTotal.toFixed(0)} € prévu</p>)}
-        </div>
-      </div>
-
-      {/* Liste des mois */}
-      <div className="space-y-3">
-        {months.map((month) => {
-          const monthKey = getMonthKey(month.num);
-          const items = memoData[monthKey] || [];
-          const total = getMonthTotal(month.num);
-          const isExpanded = expandedMonth === month.num;
-          const checkedCount = items.filter(i => i.checked).length;
-          const displayCount = getDisplayCount(month.num);
-          const displayedItems = items.slice(0, displayCount);
-          const hasMore = displayCount < items.length;
-          const remainingCount = items.length - displayCount;
-
-          return (
-            <div key={month.id} className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden" style={cardStyle}>
-              <div className="px-4 py-3 flex items-center justify-between cursor-pointer" style={{ background: theme.colors.cardBackgroundLight, borderBottomWidth: 1, borderColor: theme.colors.cardBorder }} onClick={() => toggleMonth(month.num)}>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold" style={textPrimary}>{month.label}</span>
-                  <span className="text-[10px]" style={textSecondary}>({items.length} élément{items.length > 1 ? 's' : ''})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium" style={textPrimary}>{total.toFixed(2)} €</span>
-                  <button onClick={(e) => { e.stopPropagation(); openAddForm(month.num); }} className="w-7 h-7 rounded-full flex items-center justify-center transition-colors border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
-                    <Plus className="w-4 h-4" style={textPrimary} />
-                  </button>
-                  {isExpanded ? <ChevronUp className="w-4 h-4" style={textPrimary} /> : <ChevronDown className="w-4 h-4" style={textPrimary} />}
-                </div>
-              </div>
-
-              {isExpanded && (
-                <div className="p-3">
-                  {items.length === 0 ? (
-                    <p className="text-xs text-center py-4" style={textSecondary}>Aucun élément pour ce mois</p>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center px-2 pb-1" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
-                        <div className="w-6"></div>
-                        <div className="text-[10px] font-medium flex-1" style={textSecondary}>Description</div>
-                        <div className="text-[10px] font-medium w-20 text-right" style={textSecondary}>Montant</div>
-                        <div className="w-14"></div>
-                      </div>
-
-                      {displayedItems.map((item) => (
-                        <div key={item.id} className="flex items-center rounded-xl px-2 py-2 border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
-                          <button onClick={() => toggleCheck(month.num, item.id)} className="w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={item.checked ? { background: theme.colors.primary, borderColor: theme.colors.primary } : { borderColor: theme.colors.cardBorder, background: 'transparent' }}>
-                            {item.checked && <Check className="w-3 h-3" style={{ color: theme.colors.textOnPrimary }} />}
-                          </button>
-                          <div className={`flex-1 px-3 text-sm ${item.checked ? 'line-through opacity-50' : ''}`} style={textPrimary}>{item.description}</div>
-                          <div className={`w-20 text-right text-sm font-medium ${item.checked ? 'opacity-50' : ''}`} style={textPrimary}>{item.montant} €</div>
-                          <div className="w-14 flex items-center justify-end gap-1">
-                            <button onClick={() => editItem(month.num, item)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
-                              <Pencil className="w-3 h-3" style={textPrimary} />
-                            </button>
-                            <button onClick={() => deleteItem(month.num, item.id)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
-                              <Trash2 className="w-3 h-3" style={textPrimary} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-
-                      {hasMore && (
-                        <button onClick={() => loadMoreForMonth(month.num)} className="w-full py-3 mt-2 border-2 border-dashed rounded-xl text-sm font-medium transition-colors" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
-                          Voir plus ({remainingCount} restant{remainingCount > 1 ? 's' : ''})
-                        </button>
-                      )}
-
-                      {items.length > 0 && (
-                        <div className="pt-2 mt-2 flex justify-between items-center" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
-                          <span className="text-[10px]" style={textSecondary}>{checkedCount}/{items.length} complété(s){items.length > ITEMS_PER_PAGE && ` • ${displayedItems.length} sur ${items.length} affichés`}</span>
-                          <span className="text-xs font-semibold" style={textPrimary}>Total: {total.toFixed(2)} €</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal Formulaire */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl p-4 border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
@@ -291,6 +290,24 @@ export default function MemoPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
+  );
+}
+
+export default function MemoPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="memo" onNavigate={handleNavigate}>
+      <MemoContent />
+    </AppShell>
   );
 }

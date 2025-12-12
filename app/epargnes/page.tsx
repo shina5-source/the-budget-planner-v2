@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { PiggyBank, TrendingUp, Target, Wallet, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Lightbulb, BarChart3, Building, Clock, PieChart } from 'lucide-react';
-import { useTheme } from '../../contexts/theme-context';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell } from '@/components';
 
 interface Transaction {
   id: number;
@@ -37,8 +39,9 @@ const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 type TabType = 'resume' | 'mensuel' | 'analyse' | 'historique';
 const ITEMS_PER_PAGE = 50;
 
-export default function EpargnesPage() {
-  const { theme } = useTheme();
+function EpargnesContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -47,7 +50,6 @@ export default function EpargnesPage() {
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
   const [accordionState, setAccordionState] = useState<{ comptes: boolean; categories: boolean }>({ comptes: true, categories: false });
 
-  // Dynamic styles
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
@@ -85,16 +87,17 @@ export default function EpargnesPage() {
   }, {} as { [key: string]: number });
 
   const comptesBancairesOnly = parametres.comptesBancaires;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const categoriesEpargnesOnly = ((parametres as any).categoriesEpargnes || [])
     .filter((cat: string) => !parametres.comptesBancaires.some(c => c.nom === cat))
     .map((cat: string, index: number) => ({ id: 1000 + index, nom: cat, soldeDepart: 0, isEpargne: true }));
-  
+
   const comptesEpargne = [...comptesBancairesOnly.map(c => ({ id: c.id, nom: c.nom, soldeDepart: c.soldeDepart, isEpargne: c.isEpargne })), ...categoriesEpargnesOnly];
 
   const toggleAccordion = (section: 'comptes' | 'categories') => {
     setAccordionState(prev => ({ ...prev, [section]: !prev[section] }));
   };
-  
+
   const getSoldeCompte = (compteNom: string) => {
     const compte = parametres.comptesBancaires.find(c => c.nom === compteNom);
     const soldeDepart = compte?.soldeDepart || 0;
@@ -126,7 +129,7 @@ export default function EpargnesPage() {
     let meilleurMois = { mois: '', montant: 0 };
     let totalAnnee = 0;
     let moisAvecEpargne = 0;
-    
+
     for (let m = 0; m < 12; m++) {
       const monthKey = `${anneeActuelle}-${(m + 1).toString().padStart(2, '0')}`;
       const epargnes = transactions.filter(t => t.type === 'Épargnes' && t.date?.startsWith(monthKey)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -136,7 +139,7 @@ export default function EpargnesPage() {
       if (net > 0) moisAvecEpargne++;
       if (net > meilleurMois.montant) meilleurMois = { mois: monthsFull[m], montant: net };
     }
-    
+
     const moyenneAnnee = moisAvecEpargne > 0 ? totalAnnee / moisAvecEpargne : 0;
     const moisPrecedent = selectedMonth === 0 ? 11 : selectedMonth - 1;
     const anneePrecedent = selectedMonth === 0 ? selectedYear - 1 : selectedYear;
@@ -145,7 +148,7 @@ export default function EpargnesPage() {
     const reprisesPrecedent = transactions.filter(t => t.type === 'Reprise d\'épargne' && t.date?.startsWith(monthKeyPrecedent)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     const netPrecedent = epargnePrecedent - reprisesPrecedent;
     const evolutionVsMoisPrecedent = netPrecedent !== 0 ? (((netEpargneMois - netPrecedent) / Math.abs(netPrecedent)) * 100).toFixed(0) : netEpargneMois > 0 ? '+100' : '0';
-    
+
     return { meilleurMois, totalAnnee, moyenneAnnee, evolutionVsMoisPrecedent, moisAvecEpargne };
   };
 
@@ -208,7 +211,7 @@ export default function EpargnesPage() {
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold" style={textPrimary}>Taux d'épargne</p>
+          <p className="text-sm font-semibold" style={textPrimary}>Taux d&apos;épargne</p>
           <p className="text-lg font-semibold" style={textPrimary}>{tauxEpargne}%</p>
         </div>
         <div className="w-full rounded-full h-3" style={{ background: theme.colors.cardBackgroundLight }}>
@@ -225,8 +228,8 @@ export default function EpargnesPage() {
       <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
         <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils épargne</h4></div>
         <div className="space-y-2">
-          {Number(tauxEpargne) < 10 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">📌 Essayez d'atteindre un taux d'épargne de 10% minimum ({(totalRevenus * 0.1).toFixed(2)} {parametres.devise})</p>)}
-          {Number(tauxEpargne) >= 10 && Number(tauxEpargne) < 20 && (<p className="text-[10px] text-[#7DD3A8]">✅ Bon taux d'épargne ! Visez 20% pour plus de sécurité</p>)}
+          {Number(tauxEpargne) < 10 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">📌 Essayez d&apos;atteindre un taux d&apos;épargne de 10% minimum ({(totalRevenus * 0.1).toFixed(2)} {parametres.devise})</p>)}
+          {Number(tauxEpargne) >= 10 && Number(tauxEpargne) < 20 && (<p className="text-[10px] text-[#7DD3A8]">✅ Bon taux d&apos;épargne ! Visez 20% pour plus de sécurité</p>)}
           {Number(tauxEpargne) >= 20 && (<p className="text-[10px] text-[#7DD3A8]">🎉 Excellent ! Vous épargnez plus de 20% de vos revenus</p>)}
           {totalReprisesMois > totalEpargnesMois && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention, vos reprises dépassent vos versements ce mois</p>)}
           {filteredTransactions.filter(t => t.type === 'Épargnes').length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Aucune épargne ce mois. Pensez à mettre de côté !</p>)}
@@ -276,6 +279,7 @@ export default function EpargnesPage() {
 
   const renderAnalyse = () => {
     const totalComptes = comptesBancairesOnly.reduce((sum, c) => sum + getSoldeCompte(c.nom), 0);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const totalCategories = categoriesEpargnesOnly.reduce((sum: number, c: any) => sum + getSoldeCompte(c.nom), 0);
     const totalGlobal = totalComptes + totalCategories;
 
@@ -297,12 +301,13 @@ export default function EpargnesPage() {
 
         <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden p-0" style={cardStyle}>
           <button onClick={() => toggleAccordion('categories')} className="w-full flex items-center justify-between p-4 transition-colors">
-            <div className="flex items-center gap-2"><PiggyBank className="w-5 h-5" style={textPrimary} /><h3 className="text-sm font-semibold" style={textPrimary}>Catégories d'Épargnes</h3><span className="text-[10px]" style={textSecondary}>({categoriesEpargnesOnly.length})</span></div>
+            <div className="flex items-center gap-2"><PiggyBank className="w-5 h-5" style={textPrimary} /><h3 className="text-sm font-semibold" style={textPrimary}>Catégories d&apos;Épargnes</h3><span className="text-[10px]" style={textSecondary}>({categoriesEpargnesOnly.length})</span></div>
             <div className="flex items-center gap-2"><span className="text-xs font-semibold" style={textPrimary}>{totalCategories.toFixed(2)} {parametres.devise}</span>{accordionState.categories ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}</div>
           </button>
           {accordionState.categories && (
             <div className="px-4 pb-4" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
-              {categoriesEpargnesOnly.length === 0 ? (<div className="text-center py-4"><p className="text-xs" style={textSecondary}>Aucune catégorie d'épargne</p></div>) : (
+              {categoriesEpargnesOnly.length === 0 ? (<div className="text-center py-4"><p className="text-xs" style={textSecondary}>Aucune catégorie d&apos;épargne</p></div>) : (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 <div className="space-y-3 pt-4">{categoriesEpargnesOnly.map((categorie: any) => { const solde = getSoldeCompte(categorie.nom); const pourcentage = totalCategories > 0 ? (solde / totalCategories) * 100 : 0; return (<div key={categorie.id} className="space-y-1"><div className="flex justify-between items-center"><span className="text-xs font-medium" style={textPrimary}>{categorie.nom}</span><span className="text-xs font-semibold" style={textPrimary}>{solde.toFixed(2)} {parametres.devise}</span></div><div className="w-full rounded-full h-2" style={{ background: theme.colors.cardBackgroundLight }}><div className="bg-blue-400 h-2 rounded-full transition-all" style={{ width: `${Math.max(pourcentage, 0)}%` }} /></div></div>); })}</div>
               )}
             </div>
@@ -312,7 +317,7 @@ export default function EpargnesPage() {
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
           <p className="text-[10px]" style={textSecondary}>Total Global Épargnes</p>
           <p className="text-lg font-semibold" style={textPrimary}>{totalGlobal.toFixed(2)} {parametres.devise}</p>
-          <div className="flex justify-center gap-4 mt-2"><span className="text-[10px]" style={textSecondary}>🏦 Comptes: {totalComptes.toFixed(0)}{parametres.devise}</span><span className="text-[10px]" style={textSecondary}>🐷 Catégories: {totalCategories.toFixed(0)}{parametres.devise}</span></div>
+          <div className="flex justify-center gap-4 mt-2"><span className="text-[10px]" style={textSecondary}>🏦 Comptes: {totalComptes.toFixed(0)}{parametres.devise}</span><span className="text-[10px]" style={textSecondary}>🏷 Catégories: {totalCategories.toFixed(0)}{parametres.devise}</span></div>
         </div>
 
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
@@ -348,7 +353,7 @@ export default function EpargnesPage() {
           <div className="flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><span className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</span></div>
           <div className="space-y-2">
             {moyenneMensuelle > 0 && (<p className="text-[10px] text-[#7DD3A8]">📈 À ce rythme, vous aurez {projection12Mois.toFixed(0)}{parametres.devise} dans 1 an</p>)}
-            {moyenneMensuelle <= 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Votre épargne moyenne est négative. Essayez d'épargner régulièrement</p>)}
+            {moyenneMensuelle <= 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Votre épargne moyenne est négative. Essayez d&apos;épargner régulièrement</p>)}
             {comptesEpargne.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">🏦 Ajoutez vos comptes épargne dans Paramètres pour un suivi détaillé</p>)}
           </div>
         </div>
@@ -418,5 +423,23 @@ export default function EpargnesPage() {
       {activeTab === 'analyse' && renderAnalyse()}
       {activeTab === 'historique' && renderHistorique()}
     </div>
+  );
+}
+
+export default function EpargnesPage() {
+  const router = useRouter();
+
+  const handleNavigate = (page: string) => {
+    if (page === 'accueil') {
+      router.push('/');
+    } else {
+      router.push(`/${page}`);
+    }
+  };
+
+  return (
+    <AppShell currentPage="epargnes" onNavigate={handleNavigate}>
+      <EpargnesContent />
+    </AppShell>
   );
 }
