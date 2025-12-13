@@ -409,7 +409,7 @@ function TransactionsContent() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-          <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+          <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
               <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>

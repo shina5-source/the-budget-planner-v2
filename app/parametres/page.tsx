@@ -271,7 +271,7 @@ function ParametresContent() {
 
       {showCompteForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-2xl p-4 w-full max-w-sm border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
+          <div className="rounded-2xl p-4 w-full max-w-sm border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium" style={textPrimary}>{editingCompte ? 'Modifier' : 'Nouveau'} compte</h2>
               <button onClick={() => setShowCompteForm(false)} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>

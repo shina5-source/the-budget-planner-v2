@@ -21,6 +21,7 @@ import {
   frequenceLabels,
   joursSemaine,
 } from '../lib/recurring-transactions';
+import { useTheme } from '@/contexts/theme-context';
 
 interface RecurringTransactionsProps {
   isOpen: boolean;
@@ -32,12 +33,6 @@ interface RecurringTransactionsProps {
   onTransactionCreated?: () => void;
 }
 
-// Styles uniformisés avec l'app
-const inputStyle = "w-full bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-xl px-3 py-2.5 text-sm text-[#D4AF37] placeholder-[#D4AF37]/50 focus:outline-none focus:border-[#D4AF37]";
-const selectStyle = "w-full bg-[#722F37]/50 border border-[#D4AF37]/50 rounded-xl px-3 py-2.5 text-sm text-[#D4AF37] focus:outline-none focus:border-[#D4AF37]";
-const labelStyle = "text-xs font-medium text-[#D4AF37] mb-1 block";
-const smallTextStyle = "text-[10px] text-[#D4AF37]/60";
-
 export default function RecurringTransactions({
   isOpen,
   onClose,
@@ -47,6 +42,8 @@ export default function RecurringTransactions({
   comptes,
   onTransactionCreated,
 }: RecurringTransactionsProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [recurringList, setRecurringList] = useState<RecurringTransaction[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -60,6 +57,10 @@ export default function RecurringTransactions({
   const [frequence, setFrequence] = useState<RecurringTransaction['frequence']>('mensuel');
   const [jourDuMois, setJourDuMois] = useState(1);
   const [jourDeSemaine, setJourDeSemaine] = useState(1);
+
+  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  const textPrimary = { color: theme.colors.textPrimary };
+  const textSecondary = { color: theme.colors.textSecondary };
 
   useEffect(() => {
     if (isOpen) {
@@ -166,7 +167,7 @@ export default function RecurringTransactions({
       case 'depense':
         return 'bg-orange-500/20 text-orange-400';
       default:
-        return 'bg-[#D4AF37]/20 text-[#D4AF37]';
+        return 'bg-gray-500/20 text-gray-400';
     }
   };
 
@@ -211,28 +212,29 @@ export default function RecurringTransactions({
       />
 
       {/* Modal */}
-      <div className="relative bg-[#8B4557] rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border border-[#D4AF37]/40">
+      <div className="relative rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
         {/* Header */}
-        <div className="px-4 py-3 border-b border-[#D4AF37]/30 bg-[#722F37]">
+        <div className="px-4 py-3 border-b" style={{ borderColor: theme.colors.cardBorder, background: theme.colors.secondary }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#D4AF37]/20 flex items-center justify-center">
-                <RefreshCw className="w-4 h-4 text-[#D4AF37]" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${theme.colors.primary}20` }}>
+                <RefreshCw className="w-4 h-4" style={textPrimary} />
               </div>
               <div>
-                <h2 className="text-base font-semibold text-[#D4AF37]">
+                <h2 className="text-base font-semibold" style={textPrimary}>
                   Transactions récurrentes
                 </h2>
-                <p className="text-[10px] text-[#D4AF37]/70">
+                <p className="text-[10px]" style={textSecondary}>
                   {recurringList.length} configurée{recurringList.length > 1 ? 's' : ''}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[#D4AF37]/20 transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: theme.colors.textPrimary }}
             >
-              <X className="w-5 h-5 text-[#D4AF37]" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -243,32 +245,34 @@ export default function RecurringTransactions({
             /* Formulaire */
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className={labelStyle}>Nom de la transaction</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Nom de la transaction</label>
                 <input
                   type="text"
                   value={nom}
                   onChange={(e) => setNom(e.target.value)}
                   placeholder="Ex: Loyer, Salaire, Netflix..."
-                  className={inputStyle}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                  style={inputStyle}
                   required
                 />
               </div>
 
               <div>
-                <label className={labelStyle}>Montant (€)</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant (€)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={montant}
                   onChange={(e) => setMontant(e.target.value)}
                   placeholder="0.00"
-                  className={inputStyle}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                  style={inputStyle}
                   required
                 />
               </div>
 
               <div>
-                <label className={labelStyle}>Type</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Type</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['revenu', 'facture', 'depense'] as const).map((t) => (
                     <button
@@ -285,8 +289,9 @@ export default function RecurringTransactions({
                             : t === 'facture'
                             ? 'bg-red-500/30 text-red-400 border-red-500/50'
                             : 'bg-orange-500/30 text-orange-400 border-orange-500/50'
-                          : 'bg-[#722F37]/50 text-[#D4AF37]/70 border-[#D4AF37]/30 hover:bg-[#722F37]/70'
+                          : ''
                       }`}
+                      style={type !== t ? { background: theme.colors.cardBackgroundLight, color: theme.colors.textSecondary, borderColor: theme.colors.cardBorder } : {}}
                     >
                       {getTypeLabel(t)}
                     </button>
@@ -295,11 +300,12 @@ export default function RecurringTransactions({
               </div>
 
               <div>
-                <label className={labelStyle}>Catégorie</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégorie</label>
                 <select
                   value={categorie}
                   onChange={(e) => setCategorie(e.target.value)}
-                  className={selectStyle}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                  style={inputStyle}
                   required
                 >
                   <option value="">Sélectionner...</option>
@@ -312,11 +318,12 @@ export default function RecurringTransactions({
               </div>
 
               <div>
-                <label className={labelStyle}>Compte</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Compte</label>
                 <select
                   value={compte}
                   onChange={(e) => setCompte(e.target.value)}
-                  className={selectStyle}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                  style={inputStyle}
                   required
                 >
                   <option value="">Sélectionner...</option>
@@ -329,11 +336,12 @@ export default function RecurringTransactions({
               </div>
 
               <div>
-                <label className={labelStyle}>Fréquence</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Fréquence</label>
                 <select
                   value={frequence}
                   onChange={(e) => setFrequence(e.target.value as RecurringTransaction['frequence'])}
-                  className={selectStyle}
+                  className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                  style={inputStyle}
                 >
                   <option value="hebdomadaire">Chaque semaine</option>
                   <option value="bimensuel">Deux fois par mois (1er et 15)</option>
@@ -345,11 +353,12 @@ export default function RecurringTransactions({
 
               {frequence === 'hebdomadaire' && (
                 <div>
-                  <label className={labelStyle}>Jour de la semaine</label>
+                  <label className="text-xs font-medium mb-1 block" style={textPrimary}>Jour de la semaine</label>
                   <select
                     value={jourDeSemaine}
                     onChange={(e) => setJourDeSemaine(parseInt(e.target.value))}
-                    className={selectStyle}
+                    className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                    style={inputStyle}
                   >
                     {joursSemaine.map((jour, index) => (
                       <option key={index} value={index}>
@@ -362,11 +371,12 @@ export default function RecurringTransactions({
 
               {(frequence === 'mensuel' || frequence === 'trimestriel' || frequence === 'annuel') && (
                 <div>
-                  <label className={labelStyle}>Jour du mois</label>
+                  <label className="text-xs font-medium mb-1 block" style={textPrimary}>Jour du mois</label>
                   <select
                     value={jourDuMois}
                     onChange={(e) => setJourDuMois(parseInt(e.target.value))}
-                    className={selectStyle}
+                    className="w-full rounded-xl px-3 py-2.5 text-sm border focus:outline-none"
+                    style={inputStyle}
                   >
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((jour) => (
                       <option key={jour} value={jour}>
@@ -381,13 +391,15 @@ export default function RecurringTransactions({
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="flex-1 py-3 border border-[#D4AF37] text-[#D4AF37] rounded-xl font-medium text-sm hover:bg-[#D4AF37]/10 transition-colors"
+                  className="flex-1 py-3 border rounded-xl font-medium text-sm transition-colors"
+                  style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#D4AF37] text-[#722F37] rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[#D4AF37]/90 transition-colors"
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+                  style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
                 >
                   <Check className="w-4 h-4" />
                   {editingId ? 'Modifier' : 'Ajouter'}
@@ -399,9 +411,9 @@ export default function RecurringTransactions({
             <div className="space-y-3">
               {recurringList.length === 0 ? (
                 <div className="text-center py-8">
-                  <Clock className="w-12 h-12 text-[#D4AF37]/30 mx-auto mb-3" />
-                  <p className="text-[#D4AF37]/70 text-sm">Aucune transaction récurrente</p>
-                  <p className="text-[10px] text-[#D4AF37]/50 mt-1">
+                  <Clock className="w-12 h-12 mx-auto mb-3" style={{ color: theme.colors.textSecondary }} />
+                  <p className="text-sm" style={textSecondary}>Aucune transaction récurrente</p>
+                  <p className="text-[10px] mt-1" style={textSecondary}>
                     Ajoutez vos factures et revenus réguliers
                   </p>
                 </div>
@@ -409,16 +421,13 @@ export default function RecurringTransactions({
                 recurringList.map((recurring) => (
                   <div
                     key={recurring.id}
-                    className={`p-3 rounded-xl border transition-all ${
-                      recurring.actif
-                        ? 'bg-[#722F37]/40 border-[#D4AF37]/30'
-                        : 'bg-[#722F37]/20 border-[#D4AF37]/10 opacity-60'
-                    }`}
+                    className={`p-3 rounded-xl border transition-all ${!recurring.actif ? 'opacity-60' : ''}`}
+                    style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 cursor-pointer" onClick={() => handleEdit(recurring)}>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-[#D4AF37] text-sm">
+                          <span className="font-medium text-sm" style={textPrimary}>
                             {recurring.nom}
                           </span>
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${getTypeColor(recurring.type)}`}>
@@ -430,24 +439,24 @@ export default function RecurringTransactions({
                         }`}>
                           {recurring.type === 'revenu' ? '+' : '-'}{recurring.montant.toFixed(2)} €
                         </div>
-                        <div className="flex items-center gap-1 mt-1 text-[10px] text-[#D4AF37]/60">
+                        <div className="flex items-center gap-1 mt-1 text-[10px]" style={textSecondary}>
                           <Calendar className="w-3 h-3" />
                           {getFrequenceDetail(recurring)}
                         </div>
-                        <div className="text-[9px] text-[#D4AF37]/50 mt-0.5">
+                        <div className="text-[9px] mt-0.5" style={textSecondary}>
                           {recurring.categorie} • {recurring.compte}
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleToggleActive(recurring.id, recurring.actif)}
-                          className="p-1.5 rounded-lg hover:bg-[#D4AF37]/20 transition-colors"
+                          className="p-1.5 rounded-lg transition-colors"
                           title={recurring.actif ? 'Désactiver' : 'Activer'}
                         >
                           {recurring.actif ? (
                             <ToggleRight className="w-5 h-5 text-green-400" />
                           ) : (
-                            <ToggleLeft className="w-5 h-5 text-[#D4AF37]/40" />
+                            <ToggleLeft className="w-5 h-5" style={textSecondary} />
                           )}
                         </button>
                         <button
@@ -467,10 +476,11 @@ export default function RecurringTransactions({
 
         {/* Footer */}
         {!showForm && (
-          <div className="px-4 py-3 border-t border-[#D4AF37]/30 bg-[#722F37]/50">
+          <div className="px-4 py-3 border-t" style={{ borderColor: theme.colors.cardBorder, background: theme.colors.cardBackground }}>
             <button
               onClick={() => setShowForm(true)}
-              className="w-full py-3 rounded-xl bg-[#D4AF37] text-[#722F37] font-semibold text-sm hover:bg-[#D4AF37]/90 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+              style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
             >
               <Plus className="w-4 h-4" />
               Ajouter une récurrence

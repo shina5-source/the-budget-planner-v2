@@ -265,7 +265,7 @@ function MemoContent() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-2xl p-4 border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
+          <div className="w-full max-w-sm rounded-2xl p-4 border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Ajouter'} - {months.find(m => m.num === selectedMonth)?.label} {selectedYear}</h3>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={textPrimary} /></button>
