@@ -54,16 +54,6 @@ const types = ['Revenus', 'Factures', 'Dépenses', 'Épargnes', 'Reprise d\'épa
 
 const moyensPaiement = ['Prélèvement', 'Paiement CB', 'Virement', 'Chèque', 'Espèces', 'Paiement en ligne', 'Paiement mobile'];
 
-const comptesOptions = [
-  'Externe',
-  'CCP La Banque Postale',
-  'CCP BoursoBank',
-  'Livret A La Banque Postale',
-  'Livret A Kim La Banque Postale',
-  'Tirelire',
-  'Espèce',
-];
-
 const ITEMS_PER_PAGE = 50;
 
 function TransactionsContent() {
@@ -86,6 +76,13 @@ function TransactionsContent() {
   const [filterVers, setFilterVers] = useState('');
   const [filterMoyenPaiement, setFilterMoyenPaiement] = useState('');
 
+  // États pour l'ajout de catégorie/compte
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [showAddCompteDepuis, setShowAddCompteDepuis] = useState(false);
+  const [showAddCompteVers, setShowAddCompteVers] = useState(false);
+  const [newCompteName, setNewCompteName] = useState('');
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     montant: '',
@@ -107,7 +104,6 @@ function TransactionsContent() {
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
   
-  // Style spécifique pour les inputs dans la modale (fond secondaryLight, texte contrasté)
   const modalInputStyle = { 
     background: theme.colors.secondaryLight, 
     borderColor: theme.colors.cardBorder, 
@@ -119,11 +115,14 @@ function TransactionsContent() {
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
   };
 
-  useEffect(() => {
-    loadTransactions();
+  const loadParametres = () => {
     const savedParametres = localStorage.getItem('budget-parametres');
     if (savedParametres) setParametres({ ...defaultParametres, ...JSON.parse(savedParametres) });
+  };
 
+  useEffect(() => {
+    loadTransactions();
+    loadParametres();
     const created = processRecurringTransactions();
     if (created.length > 0) loadTransactions();
   }, []);
@@ -135,6 +134,11 @@ function TransactionsContent() {
   const saveTransactions = (newTransactions: Transaction[]) => {
     setTransactions(newTransactions);
     localStorage.setItem('budget-transactions', JSON.stringify(newTransactions));
+  };
+
+  const saveParametres = (newParametres: ParametresData) => {
+    setParametres(newParametres);
+    localStorage.setItem('budget-parametres', JSON.stringify(newParametres));
   };
 
   const getCategoriesForType = (type: string) => {
@@ -151,6 +155,76 @@ function TransactionsContent() {
     }
   };
 
+  const getTypeLabelForCategory = (type: string) => {
+    switch (type) {
+      case 'Revenus': return 'revenus';
+      case 'Factures': return 'factures';
+      case 'Dépenses': return 'dépenses';
+      default: return 'épargnes';
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) return;
+    const newCat = newCategoryName.trim();
+    const newParametres = { ...parametres };
+    
+    switch (formData.type) {
+      case 'Revenus':
+        if (!parametres.categoriesRevenus.includes(newCat)) {
+          newParametres.categoriesRevenus = [...parametres.categoriesRevenus, newCat];
+        }
+        break;
+      case 'Factures':
+        if (!parametres.categoriesFactures.includes(newCat)) {
+          newParametres.categoriesFactures = [...parametres.categoriesFactures, newCat];
+        }
+        break;
+      case 'Dépenses':
+        if (!parametres.categoriesDepenses.includes(newCat)) {
+          newParametres.categoriesDepenses = [...parametres.categoriesDepenses, newCat];
+        }
+        break;
+      default:
+        if (!parametres.categoriesEpargnes.includes(newCat)) {
+          newParametres.categoriesEpargnes = [...parametres.categoriesEpargnes, newCat];
+        }
+        break;
+    }
+    
+    saveParametres(newParametres);
+    setFormData({ ...formData, categorie: newCat });
+    setNewCategoryName('');
+    setShowAddCategory(false);
+  };
+
+  const handleAddCompte = (field: 'depuis' | 'vers') => {
+    if (!newCompteName.trim()) return;
+    const newCompte = newCompteName.trim();
+    
+    if (parametres.comptesBancaires.some(c => c.nom === newCompte)) {
+      setFormData({ ...formData, [field]: newCompte });
+      setNewCompteName('');
+      setShowAddCompteDepuis(false);
+      setShowAddCompteVers(false);
+      return;
+    }
+    
+    const maxId = parametres.comptesBancaires.reduce((max, c) => Math.max(max, c.id), 0);
+    const nouveauCompte = { id: maxId + 1, nom: newCompte };
+    
+    const newParametres = {
+      ...parametres,
+      comptesBancaires: [...parametres.comptesBancaires, nouveauCompte]
+    };
+    
+    saveParametres(newParametres);
+    setFormData({ ...formData, [field]: newCompte });
+    setNewCompteName('');
+    setShowAddCompteDepuis(false);
+    setShowAddCompteVers(false);
+  };
+
   const getAllCategories = () => {
     const all = [...parametres.categoriesRevenus, ...parametres.categoriesFactures, ...parametres.categoriesDepenses, ...parametres.categoriesEpargnes];
     return [...new Set(all)];
@@ -159,6 +233,11 @@ function TransactionsContent() {
   const getMonthKey = () => {
     if (selectedMonth === null) return null;
     return `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
+  };
+
+  const getComptesOptions = () => {
+    const comptes = parametres.comptesBancaires.map(c => c.nom);
+    return ['Externe', ...comptes];
   };
 
   const filteredTransactions = transactions.filter(t => {
@@ -186,6 +265,11 @@ function TransactionsContent() {
 
   const resetForm = () => {
     setFormData({ date: new Date().toISOString().split('T')[0], montant: '', type: 'Dépenses', categorie: '', depuis: '', vers: '', moyenPaiement: '', memo: '', isCredit: false, capitalTotal: '', tauxInteret: '', dureeMois: '', dateDebut: '' });
+    setShowAddCategory(false);
+    setShowAddCompteDepuis(false);
+    setShowAddCompteVers(false);
+    setNewCategoryName('');
+    setNewCompteName('');
   };
 
   const handleSubmit = () => {
@@ -218,7 +302,12 @@ function TransactionsContent() {
   };
 
   const clearFilters = () => {
-    setSearchQuery(''); setFilterType(''); setFilterCategorie(''); setFilterDepuis(''); setFilterVers(''); setFilterMoyenPaiement('');
+    setSearchQuery(''); 
+    setFilterType(''); 
+    setFilterCategorie(''); 
+    setFilterDepuis(''); 
+    setFilterVers(''); 
+    setFilterMoyenPaiement('');
   };
 
   const prevMonth = () => {
@@ -324,14 +413,14 @@ function TransactionsContent() {
                 <label className="text-xs font-medium mb-1 block" style={textPrimary}>Depuis</label>
                 <select value={filterDepuis} onChange={(e) => setFilterDepuis(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
                   <option value="">Tous les comptes</option>
-                  {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                  {getComptesOptions().map(compte => (<option key={compte} value={compte}>{compte}</option>))}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-medium mb-1 block" style={textPrimary}>Vers</label>
                 <select value={filterVers} onChange={(e) => setFilterVers(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
                   <option value="">Tous les comptes</option>
-                  {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                  {getComptesOptions().map(compte => (<option key={compte} value={compte}>{compte}</option>))}
                 </select>
               </div>
               <div>
@@ -419,7 +508,7 @@ function TransactionsContent() {
           <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
+              <button onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
 
             <div className="space-y-4">
@@ -430,7 +519,7 @@ function TransactionsContent() {
 
               <div>
                 <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Type</label>
-                <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value, categorie: '' })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
+                <select value={formData.type} onChange={(e) => { setFormData({ ...formData, type: e.target.value, categorie: '' }); setShowAddCategory(false); setNewCategoryName(''); }} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
                   {types.map(type => (<option key={type} value={type}>{type}</option>))}
                 </select>
               </div>
@@ -442,26 +531,62 @@ function TransactionsContent() {
 
               <div>
                 <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Catégorie</label>
-                <select value={formData.categorie} onChange={(e) => setFormData({ ...formData, categorie: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
-                  <option value="">Sélectionner...</option>
-                  {getCategoriesForType(formData.type).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
-                </select>
+                {!showAddCategory ? (
+                  <select value={formData.categorie} onChange={(e) => { if (e.target.value === '__ADD_NEW__') { setShowAddCategory(true); setFormData({ ...formData, categorie: '' }); } else { setFormData({ ...formData, categorie: e.target.value }); } }} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
+                    <option value="">Sélectionner...</option>
+                    {getCategoriesForType(formData.type).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                    <option value="__ADD_NEW__">➕ Ajouter une catégorie...</option>
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder={`Nouvelle catégorie ${getTypeLabelForCategory(formData.type)}...`} className="flex-1 rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} autoFocus />
+                      <button type="button" onClick={handleAddCategory} className="px-3 py-2 rounded-xl text-sm font-medium" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }} className="px-3 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><X className="w-4 h-4" /></button>
+                    </div>
+                    <p className="text-[10px]" style={{ color: theme.colors.textSecondary }}>La catégorie sera ajoutée aux {getTypeLabelForCategory(formData.type)} dans les paramètres</p>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Depuis</label>
-                <select value={formData.depuis} onChange={(e) => setFormData({ ...formData, depuis: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
-                  <option value="">Aucun</option>
-                  {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
-                </select>
+                {!showAddCompteDepuis ? (
+                  <select value={formData.depuis} onChange={(e) => { if (e.target.value === '__ADD_NEW__') { setShowAddCompteDepuis(true); setFormData({ ...formData, depuis: '' }); } else { setFormData({ ...formData, depuis: e.target.value }); } }} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
+                    <option value="">Aucun</option>
+                    {getComptesOptions().map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                    <option value="__ADD_NEW__">➕ Ajouter un compte...</option>
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input type="text" value={newCompteName} onChange={(e) => setNewCompteName(e.target.value)} placeholder="Nouveau compte bancaire..." className="flex-1 rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} autoFocus />
+                      <button type="button" onClick={() => handleAddCompte('depuis')} className="px-3 py-2 rounded-xl text-sm font-medium" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => { setShowAddCompteDepuis(false); setNewCompteName(''); }} className="px-3 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><X className="w-4 h-4" /></button>
+                    </div>
+                    <p className="text-[10px]" style={{ color: theme.colors.textSecondary }}>Le compte sera ajouté dans les paramètres</p>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Vers</label>
-                <select value={formData.vers} onChange={(e) => setFormData({ ...formData, vers: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
-                  <option value="">Aucun</option>
-                  {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
-                </select>
+                {!showAddCompteVers ? (
+                  <select value={formData.vers} onChange={(e) => { if (e.target.value === '__ADD_NEW__') { setShowAddCompteVers(true); setFormData({ ...formData, vers: '' }); } else { setFormData({ ...formData, vers: e.target.value }); } }} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
+                    <option value="">Aucun</option>
+                    {getComptesOptions().map(compte => (<option key={compte} value={compte}>{compte}</option>))}
+                    <option value="__ADD_NEW__">➕ Ajouter un compte...</option>
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input type="text" value={newCompteName} onChange={(e) => setNewCompteName(e.target.value)} placeholder="Nouveau compte bancaire..." className="flex-1 rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} autoFocus />
+                      <button type="button" onClick={() => handleAddCompte('vers')} className="px-3 py-2 rounded-xl text-sm font-medium" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => { setShowAddCompteVers(false); setNewCompteName(''); }} className="px-3 py-2 rounded-xl text-sm font-medium border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><X className="w-4 h-4" /></button>
+                    </div>
+                    <p className="text-[10px]" style={{ color: theme.colors.textSecondary }}>Le compte sera ajouté dans les paramètres</p>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -507,7 +632,7 @@ function TransactionsContent() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
+                <button onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
                   <Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Ajouter'}
                 </button>
@@ -525,7 +650,7 @@ function TransactionsContent() {
         categoriesDepenses={parametres.categoriesDepenses}
         categoriesEpargnes={parametres.categoriesEpargnes}
         comptes={parametres.comptesBancaires}
-        onTransactionCreated={loadTransactions}
+        onTransactionCreated={() => { loadTransactions(); loadParametres(); }}
       />
     </>
   );
