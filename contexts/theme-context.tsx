@@ -71,6 +71,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       root.style.setProperty(cssVar, resolvedColors[key as keyof typeof resolvedColors]);
     });
 
+    // NOUVEAU : Appliquer le fond dégradé sur le body
+    document.body.style.background = `linear-gradient(180deg, ${resolvedColors.backgroundGradientFrom} 0%, ${resolvedColors.backgroundGradientTo} 50%, ${resolvedColors.backgroundGradientFrom} 100%)`;
+    document.body.style.minHeight = '100vh';
+
     localStorage.setItem(STORAGE_KEY, themeKey);
   }, [themeKey, resolvedColors, mounted]);
 
