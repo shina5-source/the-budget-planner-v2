@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, TrendingUp, Home as HomeIcon, Mail, PiggyBank, FileText, RefreshCw, PieChart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Transaction {
   id: number;
@@ -196,31 +196,9 @@ function BudgetContent() {
           </div>
         </div>
       </div>
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <h4 className="text-xs font-semibold text-[#7DD3A8] mb-3">💡 Conseils</h4>
-        <div className="space-y-2">
-          {totalDepenses > budgetApresDepenses && (
-            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
-              <p className="text-[10px] text-[#7DD3A8]">⚠️ Vos dépenses variables dépassent votre budget de {(totalDepenses - budgetApresDepenses).toFixed(2)} €</p>
-            </div>
-          )}
-          {totalEpargnes === 0 && totalRevenus > 0 && (
-            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
-              <p className="text-[10px] text-[#7DD3A8]">💰 Pensez à épargner au moins 10% ({(totalRevenus * 0.1).toFixed(2)} €)</p>
-            </div>
-          )}
-          {solde >= 0 && totalEpargnes > 0 && (
-            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
-              <p className="text-[10px] text-[#7DD3A8]">✅ Bravo ! Solde positif et épargne active !</p>
-            </div>
-          )}
-          {filteredTransactions.length === 0 && (
-            <div className="bg-[#2E5A4C]/30 rounded-xl p-3 border border-[#7DD3A8]/30">
-              <p className="text-[10px] text-[#7DD3A8]">📝 Aucune transaction. Commencez à enregistrer !</p>
-            </div>
-          )}
-        </div>
-      </div>
+      
+      {/* SmartTips remplace l'ancienne carte conseils */}
+      <SmartTips page="budget" />
     </div>
   );
 

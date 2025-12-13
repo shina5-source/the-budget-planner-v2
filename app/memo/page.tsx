@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Plus, X, Check, Trash2, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
+import { Plus, X, Check, Trash2, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface MemoItem {
   id: number;
@@ -52,6 +52,7 @@ function MemoContent() {
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  const modalInputStyle = { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary };
 
   useEffect(() => {
     const saved = localStorage.getItem('budget-memo');
@@ -171,15 +172,9 @@ function MemoContent() {
           </div>
         </div>
 
-        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50 mb-4">
-          <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-          <div className="space-y-2">
-            {totalItems === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos dépenses prévues pour mieux planifier votre budget</p>)}
-            {totalItems > 0 && checkedItems === totalItems && (<p className="text-[10px] text-[#7DD3A8]">🎉 Bravo ! Tous vos éléments sont complétés pour {selectedYear}</p>)}
-            {totalItems > 0 && checkedItems < totalItems && (<p className="text-[10px] text-[#7DD3A8]">📋 Il vous reste {totalItems - checkedItems} élément(s) à compléter</p>)}
-            {yearTotal > 5000 && (<p className="text-[10px] text-[#7DD3A8]">💰 Budget annuel conséquent ({yearTotal.toFixed(0)} €). Planifiez bien vos épargnes !</p>)}
-            {yearTotal > 0 && yearTotal <= 5000 && (<p className="text-[10px] text-[#7DD3A8]">✅ Budget annuel de {yearTotal.toFixed(0)} € prévu</p>)}
-          </div>
+        {/* SmartTips remplace l'ancienne carte conseils */}
+        <div className="mb-4">
+          <SmartTips page="memo" />
         </div>
 
         <div className="space-y-3">
@@ -267,21 +262,21 @@ function MemoContent() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-2xl p-4 border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Ajouter'} - {months.find(m => m.num === selectedMonth)?.label} {selectedYear}</h3>
-              <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={textPrimary} /></button>
+              <h3 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Ajouter'} - {months.find(m => m.num === selectedMonth)?.label} {selectedYear}</h3>
+              <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Description</label>
-                <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyle} placeholder="Ex: Anniversaire de Maman" />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Description</label>
+                <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} placeholder="Ex: Anniversaire de Maman" />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant (€)</label>
-                <input type="text" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyle} placeholder="0,00" />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Montant (€)</label>
+                <input type="text" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} placeholder="0,00" />
               </div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowForm(false)} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={() => setShowForm(false)} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
                   <Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Ajouter'}
                 </button>

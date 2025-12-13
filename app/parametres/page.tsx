@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Trash2, Edit3, TrendingUp, FileText, ShoppingCart, PiggyBank, Building, Upload, RefreshCw, Database, Lightbulb, Settings, LogOut, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Edit3, TrendingUp, FileText, ShoppingCart, PiggyBank, Building, Upload, RefreshCw, Database, Settings, LogOut, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 import { supabase } from '@/lib/supabase';
 
 interface CompteBancaire {
@@ -151,6 +151,7 @@ function ParametresContent() {
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  const modalInputStyle = { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary };
 
   const renderCategorieSection = (title: string, type: 'categoriesRevenus' | 'categoriesFactures' | 'categoriesDepenses' | 'categoriesEpargnes', icon: React.ReactNode) => (
     <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-3" style={cardStyle}>
@@ -182,7 +183,7 @@ function ParametresContent() {
       <div className="pb-4">
         <div className="text-center mb-4">
           <h1 className="text-lg font-medium" style={textPrimary}>Paramètres</h1>
-          <p className="text-xs" style={textSecondary}>Configuration de l'application</p>
+          <p className="text-xs" style={textSecondary}>Configuration de l&apos;application</p>
         </div>
 
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
@@ -254,14 +255,8 @@ function ParametresContent() {
           </div>
         </div>
 
-        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-          <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-          <div className="space-y-2">
-            <p className="text-[10px] text-[#7DD3A8]">📦 Exportez régulièrement vos données pour les sauvegarder</p>
-            <p className="text-[10px] text-[#7DD3A8]">🏦 Ajoutez tous vos comptes pour un suivi complet</p>
-            <p className="text-[10px] text-[#7DD3A8]">📂 Personnalisez les catégories selon vos besoins</p>
-          </div>
-        </div>
+        {/* SmartTips remplace l'ancienne carte conseils */}
+        <SmartTips page="parametres" />
 
         <div className="backdrop-blur-sm rounded-2xl p-4 mt-4 text-center border" style={cardStyle}>
           <p className="text-[10px]" style={textSecondary}>The Budget Planner v1.0</p>
@@ -273,26 +268,26 @@ function ParametresContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="rounded-2xl p-4 w-full max-w-sm border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>{editingCompte ? 'Modifier' : 'Nouveau'} compte</h2>
-              <button onClick={() => setShowCompteForm(false)} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
+              <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingCompte ? 'Modifier' : 'Nouveau'} compte</h2>
+              <button onClick={() => setShowCompteForm(false)} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Nom du compte</label>
-                <input type="text" placeholder="Ex: CCP La Banque Postale" value={compteForm.nom} onChange={(e) => setCompteForm({ ...compteForm, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Nom du compte</label>
+                <input type="text" placeholder="Ex: CCP La Banque Postale" value={compteForm.nom} onChange={(e) => setCompteForm({ ...compteForm, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
               </div>
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Solde de départ ({parametres.devise})</label>
-                <input type="number" placeholder="0" value={compteForm.soldeDepart} onChange={(e) => setCompteForm({ ...compteForm, soldeDepart: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Solde de départ ({parametres.devise})</label>
+                <input type="number" placeholder="0" value={compteForm.soldeDepart} onChange={(e) => setCompteForm({ ...compteForm, soldeDepart: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
               </div>
               <div className="flex items-center justify-between">
-                <label className="text-xs font-medium" style={textPrimary}>Compte épargne</label>
-                <button onClick={() => setCompteForm({ ...compteForm, isEpargne: !compteForm.isEpargne })} className="w-12 h-6 rounded-full transition-colors" style={{ background: compteForm.isEpargne ? theme.colors.primary : theme.colors.cardBackgroundLight }}>
+                <label className="text-xs font-medium" style={{ color: theme.colors.textOnSecondary }}>Compte épargne</label>
+                <button onClick={() => setCompteForm({ ...compteForm, isEpargne: !compteForm.isEpargne })} className="w-12 h-6 rounded-full transition-colors" style={{ background: compteForm.isEpargne ? theme.colors.primary : theme.colors.secondaryLight }}>
                   <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${compteForm.isEpargne ? 'translate-x-6' : 'translate-x-0.5'}`} />
                 </button>
               </div>
               <div className="flex gap-3">
-                <button onClick={() => setShowCompteForm(false)} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={() => setShowCompteForm(false)} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={handleCompteSubmit} className="flex-1 py-3 rounded-xl font-semibold" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>{editingCompte ? 'Modifier' : 'Créer'}</button>
               </div>
             </div>

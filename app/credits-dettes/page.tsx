@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { TrendingDown, Lightbulb, Calendar, Percent, Wallet, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { TrendingDown, Calendar, Percent, Wallet, Clock, CheckCircle, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Transaction {
   id: number;
@@ -330,21 +330,8 @@ function CreditsDettesContent() {
         </div>
       )}
 
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3">
-          <Lightbulb className="w-4 h-4 text-[#7DD3A8]" />
-          <h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4>
-        </div>
-        <div className="space-y-2">
-          {tauxEndettement > 35 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Votre taux d&apos;endettement ({Math.round(tauxEndettement)}%) dépasse le seuil de 35%</p>)}
-          {tauxEndettement > 0 && tauxEndettement <= 35 && (<p className="text-[10px] text-[#7DD3A8]">✅ Taux d&apos;endettement dans la norme ({Math.round(tauxEndettement)}%)</p>)}
-          {credits.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos crédits dans Transactions pour un suivi automatique</p>)}
-          {nbCreditsTermines > 0 && (<p className="text-[10px] text-[#7DD3A8]">🎉 Félicitations ! {nbCreditsTermines} crédit(s) terminé(s)</p>)}
-          {credits.some(c => getRemboursements(c).moisRestants <= 3 && !getRemboursements(c).estTermine) && (<p className="text-[10px] text-[#7DD3A8]">🏁 Certains crédits sont presque terminés !</p>)}
-          {revenusMensuels === 0 && credits.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Ajoutez vos revenus pour calculer le taux d&apos;endettement</p>)}
-          {credits.length > 0 && totalMensualites > 0 && (<p className="text-[10px] text-[#7DD3A8]">📊 Vous remboursez {totalMensualites.toFixed(2)} {parametres.devise}/mois</p>)}
-        </div>
-      </div>
+      {/* SmartTips remplace l'ancienne carte conseils */}
+      <SmartTips page="credits" />
     </div>
   );
 }

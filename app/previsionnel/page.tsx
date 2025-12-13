@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, PiggyBank, Lightbulb, Plus, Trash2, Edit3, Check, X, Home as HomeIcon, ShoppingBag } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, PiggyBank, Plus, Trash2, Edit3, Check, X, Home as HomeIcon, ShoppingBag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Transaction {
   id: number;
@@ -221,16 +221,9 @@ function PrevisionnelContent() {
         </div>
         <div className="mt-3 pt-3" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}><p className="text-[10px]" style={textSecondary}>Écart</p><p className={`text-2xl font-semibold ${(soldeReel - soldePrevu) >= 0 ? 'text-green-400' : 'text-red-400'}`}>{(soldeReel - soldePrevu) >= 0 ? '+' : ''}{(soldeReel - soldePrevu).toFixed(2)} €</p></div>
       </div>
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils du mois</h4></div>
-        <div className="space-y-2">
-          {totalRevenusPrev === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Ajoutez vos revenus prévus dans l&apos;onglet &quot;Revenus&quot;</p>)}
-          {totalFacturesPrev === 0 && totalRevenusPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 N&apos;oubliez pas d&apos;ajouter vos factures prévues</p>)}
-          {totalRevenusReel < totalRevenusPrev && totalRevenusPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Revenus inférieurs de {(totalRevenusPrev - totalRevenusReel).toFixed(2)} € au prévu</p>)}
-          {totalDepensesReel > totalDepensesPrev && totalDepensesPrev > 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Dépenses supérieures de {(totalDepensesReel - totalDepensesPrev).toFixed(2)} € au prévu</p>)}
-          {soldeReel > soldePrevu && soldePrevu !== 0 && (<p className="text-[10px] text-[#7DD3A8]">✅ Excellent ! Vous êtes au-dessus de vos prévisions !</p>)}
-        </div>
-      </div>
+      
+      {/* SmartTips remplace l'ancienne carte conseils */}
+      <SmartTips page="previsionnel" />
     </div>
   );
 
@@ -281,14 +274,14 @@ function PrevisionnelContent() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="rounded-2xl p-4 w-full max-w-md border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Ajouter'} {addFormType === 'revenus' ? 'un revenu' : addFormType === 'factures' ? 'une facture' : addFormType === 'depenses' ? 'une dépense' : 'une épargne'}</h2>
-              <button onClick={() => { setShowAddForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
+              <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Ajouter'} {addFormType === 'revenus' ? 'un revenu' : addFormType === 'factures' ? 'une facture' : addFormType === 'depenses' ? 'une dépense' : 'une épargne'}</h2>
+              <button onClick={() => { setShowAddForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
             <div className="space-y-4">
-              <div><label className="text-xs mb-1 block" style={textSecondary}>Catégorie</label><select value={newCategorie} onChange={(e) => setNewCategorie(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyle}><option value="">Sélectionner...</option>{getCategoriesForType(addFormType).map(cat => (<option key={cat} value={cat}>{cat}</option>))}</select></div>
-              <div><label className="text-xs mb-1 block" style={textSecondary}>Montant prévu (€)</label><input type="number" placeholder="0.00" value={newMontant} onChange={(e) => setNewMontant(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyle} /></div>
+              <div><label className="text-xs mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Catégorie</label><select value={newCategorie} onChange={(e) => setNewCategorie(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={{ background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><option value="">Sélectionner...</option>{getCategoriesForType(addFormType).map(cat => (<option key={cat} value={cat}>{cat}</option>))}</select></div>
+              <div><label className="text-xs mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Montant prévu (€)</label><input type="number" placeholder="0.00" value={newMontant} onChange={(e) => setNewMontant(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={{ background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }} /></div>
               <div className="flex gap-3 pt-2">
-                <button onClick={() => { setShowAddForm(false); setEditingId(null); }} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={() => { setShowAddForm(false); setEditingId(null); }} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={() => handleAddPrevision(addFormType)} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Ajouter'}</button>
               </div>
             </div>

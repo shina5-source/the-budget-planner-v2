@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, Lightbulb } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Transaction {
   id: number;
@@ -53,6 +53,10 @@ function StatistiquesContent() {
   };
   const tooltipLabelStyle = { fontSize: '10px', fontWeight: 'bold', color: theme.colors.textPrimary };
 
+  // Marges uniformes pour tous les graphiques
+  const chartMargin = { top: 10, right: 10, left: 10, bottom: 10 };
+  const chartMarginWithLegend = { top: 10, right: 10, left: 10, bottom: 30 };
+
   useEffect(() => {
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
@@ -75,6 +79,56 @@ function StatistiquesContent() {
   const totalSorties = totalFactures + totalDepenses + totalEpargnes;
   const solde = totalRevenus - totalSorties;
   const resteAVivre = totalRevenus - totalFactures - totalDepenses;
+
+  // === COMPARAISON MOIS PRÉCÉDENT ===
+  const getPreviousMonthTransactions = () => {
+    if (selectedMonth === null) {
+      // Si vue annuelle, comparer avec année précédente
+      return transactions.filter(t => t.date?.startsWith(`${selectedYear - 1}`));
+    }
+    let prevYear = selectedYear;
+    let prevMonth = selectedMonth - 1;
+    if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+    const prevMonthKey = `${prevYear}-${(prevMonth + 1).toString().padStart(2, '0')}`;
+    return transactions.filter(t => t.date?.startsWith(prevMonthKey));
+  };
+
+  const prevMonthTransactions = getPreviousMonthTransactions();
+  const prevRevenus = prevMonthTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const prevFactures = prevMonthTransactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const prevDepenses = prevMonthTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const prevEpargnes = prevMonthTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const prevSolde = prevRevenus - prevFactures - prevDepenses - prevEpargnes;
+  const prevResteAVivre = prevRevenus - prevFactures - prevDepenses;
+
+  // Calcul des variations en pourcentage
+  const calcVariation = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const variationRevenus = calcVariation(totalRevenus, prevRevenus);
+  const variationFactures = calcVariation(totalFactures, prevFactures);
+  const variationDepenses = calcVariation(totalDepenses, prevDepenses);
+  const variationEpargnes = calcVariation(totalEpargnes, prevEpargnes);
+  const variationSolde = calcVariation(solde, prevSolde);
+  const variationResteAVivre = calcVariation(resteAVivre, prevResteAVivre);
+
+  // Composant Badge de variation
+  const VariationBadge = ({ variation, inverse = false }: { variation: number; inverse?: boolean }) => {
+    if (Math.abs(variation) < 1) {
+      return <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-500/20 text-gray-400">=</span>;
+    }
+    // Pour les dépenses/factures, une baisse est positive (inverse=true)
+    const isPositive = inverse ? variation < 0 : variation > 0;
+    const color = isPositive ? 'text-green-400 bg-green-500/20' : 'text-red-400 bg-red-500/20';
+    const arrow = variation > 0 ? '▲' : '▼';
+    return (
+      <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${color}`}>
+        {arrow} {Math.abs(variation).toFixed(1)}%
+      </span>
+    );
+  };
 
   const getDataByCategorie = (type: string) => {
     const data: { [key: string]: number } = {};
@@ -113,44 +167,227 @@ function StatistiquesContent() {
   const prevMonth = () => { if (selectedMonth === null) { setSelectedMonth(11); } else if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear(selectedYear - 1); } else { setSelectedMonth(selectedMonth - 1); } };
   const nextMonth = () => { if (selectedMonth === null) { setSelectedMonth(0); } else if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear(selectedYear + 1); } else { setSelectedMonth(selectedMonth + 1); } };
 
+  // Taux d'épargne
+  const tauxEpargne = totalRevenus > 0 ? (totalEpargnes / totalRevenus) * 100 : 0;
+  const prevTauxEpargne = prevRevenus > 0 ? (prevEpargnes / prevRevenus) * 100 : 0;
+  const variationTauxEpargne = tauxEpargne - prevTauxEpargne; // Différence en points
+
+  // Couleur du taux d'épargne selon le niveau
+  const getTauxEpargneColor = (taux: number) => {
+    if (taux >= 20) return 'text-green-400';
+    if (taux >= 10) return 'text-yellow-400';
+    if (taux > 0) return 'text-orange-400';
+    return 'text-gray-400';
+  };
+
+  // === MOYENNES MENSUELLES SUR L'ANNÉE ===
+  const getYearAverages = () => {
+    const yearTransactions = transactions.filter(t => t.date?.startsWith(`${selectedYear}`));
+    const monthsWithData = new Set(yearTransactions.map(t => t.date?.substring(0, 7))).size;
+    const nbMois = monthsWithData || 1;
+
+    const totalRevYear = yearTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalFacYear = yearTransactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalDepYear = yearTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalEpaYear = yearTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+
+    return {
+      revenus: totalRevYear / nbMois,
+      factures: totalFacYear / nbMois,
+      depenses: totalDepYear / nbMois,
+      epargnes: totalEpaYear / nbMois,
+      nbMois
+    };
+  };
+
+  const moyennes = getYearAverages();
+
+  // Comparaison vs moyenne
+  const getVsMoyenne = (current: number, moyenne: number) => {
+    if (moyenne === 0) return 0;
+    return ((current - moyenne) / moyenne) * 100;
+  };
+
+  // === PRÉVISION FIN DE MOIS ===
+  const now = new Date();
+  const currentDay = now.getDate();
+  const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const isCurrentMonth = selectedMonth === now.getMonth() && selectedYear === now.getFullYear();
+  
+  // Projection des dépenses jusqu'à fin du mois
+  const projectionDepenses = currentDay > 0 ? (totalDepenses / currentDay) * daysInCurrentMonth : 0;
+  const projectionFactures = currentDay > 0 ? (totalFactures / currentDay) * daysInCurrentMonth : 0;
+  const projectionSorties = projectionDepenses + projectionFactures + totalEpargnes;
+  const projectionSolde = totalRevenus - projectionSorties;
+  const joursRestants = daysInCurrentMonth - currentDay;
+
   const renderResume = () => (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
-          <Wallet className="w-6 h-6 mx-auto mb-2" style={textPrimary} />
-          <p className="text-[10px]" style={textSecondary}>Solde période</p>
-          <p className={`text-xl font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</p>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
+          <Wallet className="w-5 h-5 mx-auto mb-1" style={textPrimary} />
+          <p className="text-[9px]" style={textSecondary}>Solde</p>
+          <p className={`text-lg font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(0)} €</p>
+          <div className="mt-1"><VariationBadge variation={variationSolde} /></div>
+          {/* Prévision fin de mois - uniquement si mois en cours */}
+          {isCurrentMonth && joursRestants > 0 && totalDepenses > 0 && (
+            <div className="mt-2 pt-2" style={{ borderTopWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+              <p className="text-[8px]" style={textSecondary}>Prévu fin mois</p>
+              <p className={`text-xs font-semibold ${projectionSolde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {projectionSolde >= 0 ? '+' : ''}{projectionSolde.toFixed(0)} €
+              </p>
+            </div>
+          )}
         </div>
-        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
-          <TrendingUp className="w-6 h-6 mx-auto mb-2" style={textPrimary} />
-          <p className="text-[10px]" style={textSecondary}>Reste à vivre</p>
-          <p className={`text-xl font-bold ${resteAVivre >= 0 ? 'text-green-400' : 'text-red-400'}`}>{resteAVivre.toFixed(2)} €</p>
+        <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
+          <TrendingUp className="w-5 h-5 mx-auto mb-1" style={textPrimary} />
+          <p className="text-[9px]" style={textSecondary}>Reste à vivre</p>
+          <p className={`text-lg font-bold ${resteAVivre >= 0 ? 'text-green-400' : 'text-red-400'}`}>{resteAVivre.toFixed(0)} €</p>
+          <div className="mt-1"><VariationBadge variation={variationResteAVivre} /></div>
+          {/* Jours restants - uniquement si mois en cours */}
+          {isCurrentMonth && joursRestants > 0 && (
+            <div className="mt-2 pt-2" style={{ borderTopWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+              <p className="text-[8px]" style={textSecondary}>{joursRestants}j restants</p>
+              <p className="text-xs font-semibold" style={textPrimary}>
+                {resteAVivre > 0 ? (resteAVivre / joursRestants).toFixed(0) : 0} €/j
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
+          <PiggyBank className="w-5 h-5 mx-auto mb-1" style={textPrimary} />
+          <p className="text-[9px]" style={textSecondary}>Taux épargne</p>
+          <p className={`text-lg font-bold ${getTauxEpargneColor(tauxEpargne)}`}>{tauxEpargne.toFixed(1)}%</p>
+          <div className="mt-1">
+            {Math.abs(variationTauxEpargne) < 0.5 ? (
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-500/20 text-gray-400">=</span>
+            ) : (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${variationTauxEpargne > 0 ? 'text-green-400 bg-green-500/20' : 'text-red-400 bg-red-500/20'}`}>
+                {variationTauxEpargne > 0 ? '▲' : '▼'} {Math.abs(variationTauxEpargne).toFixed(1)}pts
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><BarChart3 className="w-4 h-4" /> Mon Budget</h3>
+        <h3 className="text-sm font-semibold mb-3 flex items-center justify-between" style={textPrimary}>
+          <span className="flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Mon Budget</span>
+          <span className="text-[9px] font-normal" style={textSecondary}>vs {selectedMonth === null ? selectedYear - 1 : 'mois préc.'}</span>
+        </h3>
         <div className="space-y-2">
-          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Revenus</span><span className="text-sm font-semibold text-green-400">+{totalRevenus.toFixed(2)} €</span></div>
-          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Factures</span><span className="text-sm font-semibold text-red-400">-{totalFactures.toFixed(2)} €</span></div>
-          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Dépenses</span><span className="text-sm font-semibold text-orange-400">-{totalDepenses.toFixed(2)} €</span></div>
-          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="text-xs font-medium" style={textPrimary}>Épargnes</span><span className="text-sm font-semibold text-blue-400">-{totalEpargnes.toFixed(2)} €</span></div>
-          <div className="flex justify-between items-center py-2 rounded-lg px-2 mt-2" style={{ background: `${theme.colors.primary}10` }}><span className="text-xs font-bold" style={textPrimary}>Balance</span><span className={`text-sm font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</span></div> 
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs font-medium" style={textPrimary}>Revenus</span>
+            <div className="flex items-center gap-2">
+              {moyennes.nbMois > 1 && totalRevenus < moyennes.revenus * 0.8 && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" /> Bas
+                </span>
+              )}
+              <VariationBadge variation={variationRevenus} />
+              <span className="text-sm font-semibold text-green-400">+{totalRevenus.toFixed(2)} €</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs font-medium" style={textPrimary}>Factures</span>
+            <div className="flex items-center gap-2">
+              {moyennes.nbMois > 1 && totalFactures > moyennes.factures * 1.2 && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" /> +20%
+                </span>
+              )}
+              <VariationBadge variation={variationFactures} inverse />
+              <span className="text-sm font-semibold text-red-400">-{totalFactures.toFixed(2)} €</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs font-medium" style={textPrimary}>Dépenses</span>
+            <div className="flex items-center gap-2">
+              {moyennes.nbMois > 1 && totalDepenses > moyennes.depenses * 1.2 && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" /> +20%
+                </span>
+              )}
+              <VariationBadge variation={variationDepenses} inverse />
+              <span className="text-sm font-semibold text-orange-400">-{totalDepenses.toFixed(2)} €</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-xs font-medium" style={textPrimary}>Épargnes</span>
+            <div className="flex items-center gap-2">
+              {moyennes.nbMois > 1 && totalEpargnes < moyennes.epargnes * 0.5 && totalEpargnes < moyennes.epargnes && (
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 flex items-center gap-0.5">
+                  <AlertTriangle className="w-2.5 h-2.5" /> Faible
+                </span>
+              )}
+              <VariationBadge variation={variationEpargnes} />
+              <span className="text-sm font-semibold text-blue-400">-{totalEpargnes.toFixed(2)} €</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center py-2 rounded-lg mt-2 -mx-2 px-2" style={{ background: `${theme.colors.primary}10` }}>
+            <span className="text-xs font-bold" style={textPrimary}>Balance</span>
+            <div className="flex items-center gap-2">
+              <VariationBadge variation={variationSolde} />
+              <span className={`text-sm font-bold ${solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{solde >= 0 ? '+' : ''}{solde.toFixed(2)} €</span>
+            </div>
+          </div> 
         </div>
       </div>
+
+      {/* Moyennes mensuelles */}
+      {selectedMonth !== null && moyennes.nbMois > 1 && (
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center justify-between" style={textPrimary}>
+            <span className="flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Moyennes {selectedYear}</span>
+            <span className="text-[9px] font-normal px-2 py-0.5 rounded-full" style={{ background: `${theme.colors.primary}20`, color: theme.colors.textSecondary }}>{moyennes.nbMois} mois</span>
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Moy. Revenus</p>
+              <p className="text-sm font-semibold text-green-400">{moyennes.revenus.toFixed(0)} €</p>
+              <p className={`text-[8px] ${totalRevenus >= moyennes.revenus ? 'text-green-400' : 'text-red-400'}`}>
+                {totalRevenus >= moyennes.revenus ? '▲' : '▼'} {Math.abs(getVsMoyenne(totalRevenus, moyennes.revenus)).toFixed(0)}% vs moy.
+              </p>
+            </div>
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Moy. Factures</p>
+              <p className="text-sm font-semibold text-red-400">{moyennes.factures.toFixed(0)} €</p>
+              <p className={`text-[8px] ${totalFactures <= moyennes.factures ? 'text-green-400' : 'text-red-400'}`}>
+                {totalFactures <= moyennes.factures ? '▼' : '▲'} {Math.abs(getVsMoyenne(totalFactures, moyennes.factures)).toFixed(0)}% vs moy.
+              </p>
+            </div>
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Moy. Dépenses</p>
+              <p className="text-sm font-semibold text-orange-400">{moyennes.depenses.toFixed(0)} €</p>
+              <p className={`text-[8px] ${totalDepenses <= moyennes.depenses ? 'text-green-400' : 'text-red-400'}`}>
+                {totalDepenses <= moyennes.depenses ? '▼' : '▲'} {Math.abs(getVsMoyenne(totalDepenses, moyennes.depenses)).toFixed(0)}% vs moy.
+              </p>
+            </div>
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Moy. Épargnes</p>
+              <p className="text-sm font-semibold text-blue-400">{moyennes.epargnes.toFixed(0)} €</p>
+              <p className={`text-[8px] ${totalEpargnes >= moyennes.epargnes ? 'text-green-400' : 'text-red-400'}`}>
+                {totalEpargnes >= moyennes.epargnes ? '▲' : '▼'} {Math.abs(getVsMoyenne(totalEpargnes, moyennes.epargnes)).toFixed(0)}% vs moy.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><PieChart className="w-4 h-4" /> Répartition des sorties</h3>
         {repartitionData.length > 0 ? (
-          <div style={{ width: '100%', height: 200 }}>
-            <ResponsiveContainer width="100%" height={200}>
-              <RechartsPie>
-                <Pie data={repartitionData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={5} dataKey="value" label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
-                  {repartitionData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
-                </Pie>
-                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-              </RechartsPie>
-            </ResponsiveContainer>
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: 280, height: 200 }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <RechartsPie>
+                  <Pie data={repartitionData} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={5} dataKey="value" label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
+                    {repartitionData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
           </div>
         ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
         <div className="flex justify-center gap-4 mt-2">{repartitionData.map((item, i) => (<div key={i} className="flex items-center gap-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-[10px]" style={textSecondary}>{item.name}</span></div>))}</div>
@@ -158,15 +395,17 @@ function StatistiquesContent() {
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><BarChart3 className="w-4 h-4" /> Bilan du budget</h3>
-        <div style={{ width: '100%', height: 200 }}>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={bilanData} layout="vertical">
-              <XAxis type="number" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <YAxis dataKey="name" type="category" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} width={70} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-              <Bar dataKey="montant" radius={[0, 4, 4, 0]}>{bilanData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}</Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="flex justify-center">
+          <div style={{ width: '100%', maxWidth: 350, height: 180 }}>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={bilanData} layout="vertical" margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <XAxis type="number" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis dataKey="name" type="category" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} width={65} axisLine={false} tickLine={false} />
+                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                <Bar dataKey="montant" radius={[0, 6, 6, 0]} barSize={20}>{bilanData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}</Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -177,14 +416,7 @@ function StatistiquesContent() {
         ) : (<p className="text-xs text-center py-4" style={textSecondary}>Aucune dépense</p>)}
       </div>
 
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Analyse</h4></div>
-        <div className="space-y-2">
-          {solde >= 0 ? (<p className="text-[10px] text-[#7DD3A8]">✅ Budget équilibré ! Solde positif de {solde.toFixed(2)} €</p>) : (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Déficit de {Math.abs(solde).toFixed(2)} €</p>)}
-          {totalEpargnes > 0 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">💰 Taux d&apos;épargne : {((totalEpargnes / totalRevenus) * 100).toFixed(1)}%</p>)}  
-          {totalDepenses > totalFactures && (<p className="text-[10px] text-[#7DD3A8]">📊 Dépenses variables supérieures aux charges fixes</p>)}
-        </div>
-      </div>
+      <SmartTips page="statistiques" />
     </div>
   );
 
@@ -202,15 +434,17 @@ function StatistiquesContent() {
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
           <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Répartition</h3>
           {data.length > 0 ? (
-            <div style={{ width: '100%', height: 200 }}>
-              <ResponsiveContainer width="100%" height={200}>
-                <RechartsPie>
-                  <Pie data={data} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
-                    {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-                </RechartsPie>
-              </ResponsiveContainer>
+            <div className="flex justify-center">
+              <div style={{ width: '100%', maxWidth: 280, height: 200 }}>
+                <ResponsiveContainer width="100%" height={200}>
+                  <RechartsPie>
+                    <Pie data={data} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
+                      {data.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  </RechartsPie>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
         </div>
@@ -233,53 +467,59 @@ function StatistiquesContent() {
     <div className="space-y-4">
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution mensuelle {selectedYear}</h3>
-        <div style={{ width: '100%', height: 250 }}>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={evolutionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.primary} opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-              <Legend wrapperStyle={{ fontSize: '10px' }} />
-              <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={2} dot={{ r: 3 }} name="Revenus" />
-              <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={2} dot={{ r: 3 }} name="Factures" />
-              <Line type="monotone" dataKey="depenses" stroke={COLORS_TYPE.depenses} strokeWidth={2} dot={{ r: 3 }} name="Dépenses" />
-              <Line type="monotone" dataKey="epargnes" stroke={COLORS_TYPE.epargnes} strokeWidth={2} dot={{ r: 3 }} name="Épargnes" />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="flex justify-center">
+          <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
+                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
+                <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={2} dot={{ r: 2 }} name="Revenus" />
+                <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={2} dot={{ r: 2 }} name="Factures" />
+                <Line type="monotone" dataKey="depenses" stroke={COLORS_TYPE.depenses} strokeWidth={2} dot={{ r: 2 }} name="Dépenses" />
+                <Line type="monotone" dataKey="epargnes" stroke={COLORS_TYPE.epargnes} strokeWidth={2} dot={{ r: 2 }} name="Épargnes" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution du solde {selectedYear}</h3>
-        <div style={{ width: '100%', height: 200 }}>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={evolutionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.primary} opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-              <Line type="monotone" dataKey="solde" stroke={theme.colors.primary} strokeWidth={3} dot={{ r: 4 }} name="Solde" />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="flex justify-center">
+          <div style={{ width: '100%', maxWidth: 380, height: 200 }}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
+                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                <Line type="monotone" dataKey="solde" stroke={theme.colors.primary} strokeWidth={3} dot={{ r: 3, fill: theme.colors.primary }} name="Solde" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Revenus vs Dépenses par mois</h3>
-        <div style={{ width: '100%', height: 250 }}>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={evolutionData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.primary} opacity={0.2} />
-              <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 10 }} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-              <Legend wrapperStyle={{ fontSize: '10px' }} />
-              <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="depenses" fill={COLORS_TYPE.depenses} name="Dépenses" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="flex justify-center">
+          <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
+                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
+                <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="depenses" fill={COLORS_TYPE.depenses} name="Dépenses" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -319,6 +559,8 @@ function StatistiquesContent() {
           </table>
         </div>
       </div>
+
+      <SmartTips page="statistiques" />
     </div>
   );
 

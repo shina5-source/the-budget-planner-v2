@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Check, X, ChevronLeft, ChevronRight, Plus, Trash2, Edit3, Mail, ShoppingCart, Utensils, Fuel, ShoppingBag, Film, Heart, Gift, Plane, Coffee, Smartphone, Car, Zap, ChevronDown, ChevronUp, Building, Lightbulb, Settings } from 'lucide-react';
-import { useTheme } from '../contexts/theme-context';
-import { Theme, ThemeKey } from '../lib/themes';
-import { ParametresData, useParametres } from './page'; // Assuming useParametres is in page.tsx
+import { Check, X, ChevronLeft, ChevronRight, Plus, Trash2, Edit3, Mail, ShoppingCart, Utensils, Fuel, ShoppingBag, Film, Heart, Gift, Plane, Coffee, Smartphone, Car, Zap, Star, Lock, Unlock, Eye, TrendingUp, TrendingDown, Calendar, BarChart3, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp, Home, Briefcase, GraduationCap, Baby, PawPrint, Dumbbell, Music, Gamepad2, Book, Scissors, Wrench, Wifi } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/theme-context';
+import { AppShell, SmartTips } from '@/components';
 
 interface Enveloppe {
   id: number;
@@ -13,6 +13,10 @@ interface Enveloppe {
   couleur: string;
   icone: string;
   categories: string[];
+  favorite?: boolean;
+  locked?: boolean;
+  reportReste?: boolean;
+  budgetVariable?: { [mois: string]: number };
 }
 
 interface Transaction {
@@ -21,253 +25,277 @@ interface Transaction {
   montant: string;
   type: string;
   categorie: string;
+  memo?: string;
 }
+
+interface ParametresData {
+  devise: string;
+  categoriesDepenses: string[];
+  categoriesRevenus: string[];
+  categoriesFactures: string[];
+  categoriesEpargnes: string[];
+  comptesBancaires: { id: number; nom: string }[];
+}
+
+const defaultParametres: ParametresData = {
+  devise: '€',
+  categoriesDepenses: ['Courses', 'Restaurant', 'Essence', 'Shopping', 'Loisirs', 'Santé', 'Cadeaux', 'Autres'],
+  categoriesRevenus: ['Salaire', 'Revenus Secondaires', 'Allocations', 'Aides', 'Remboursement', 'Autres Revenus'],
+  categoriesFactures: ['Loyer', 'Électricité', 'Eau', 'Assurances', 'Internet', 'Mobile', 'Abonnements', 'Crédits', 'Impôts'],
+  categoriesEpargnes: ['Livret A', 'Épargne', 'Tirelire', 'Vacances', 'Projets'],
+  comptesBancaires: [{ id: 1, nom: 'Compte Principal' }, { id: 2, nom: 'Livret A' }]
+};
 
 const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
 
-function EnveloppesPage() {
-  const { theme } = useTheme();
+const couleursDisponibles = [
+  { id: 'pastel-green', nom: 'Vert', bg: 'bg-green-200 dark:bg-green-900', border: 'border-green-400 dark:border-green-700', text: 'text-green-700 dark:text-green-300', progress: 'bg-green-400 dark:bg-green-500', hex: '#4ade80' },
+  { id: 'pastel-blue', nom: 'Bleu', bg: 'bg-blue-200 dark:bg-blue-900', border: 'border-blue-400 dark:border-blue-700', text: 'text-blue-700 dark:text-blue-300', progress: 'bg-blue-400 dark:bg-blue-500', hex: '#60a5fa' },
+  { id: 'pastel-pink', nom: 'Rose', bg: 'bg-pink-200 dark:bg-pink-900', border: 'border-pink-400 dark:border-pink-700', text: 'text-pink-700 dark:text-pink-300', progress: 'bg-pink-400 dark:bg-pink-500', hex: '#f472b6' },
+  { id: 'pastel-purple', nom: 'Violet', bg: 'bg-purple-200 dark:bg-purple-900', border: 'border-purple-400 dark:border-purple-700', text: 'text-purple-700 dark:text-purple-300', progress: 'bg-purple-400 dark:bg-purple-500', hex: '#a78bfa' },
+  { id: 'pastel-orange', nom: 'Orange', bg: 'bg-orange-200 dark:bg-orange-900', border: 'border-orange-400 dark:border-orange-700', text: 'text-orange-700 dark:text-orange-300', progress: 'bg-orange-400 dark:bg-orange-500', hex: '#fb923c' },
+  { id: 'pastel-yellow', nom: 'Jaune', bg: 'bg-yellow-200 dark:bg-yellow-900', border: 'border-yellow-400 dark:border-yellow-700', text: 'text-yellow-700 dark:text-yellow-300', progress: 'bg-yellow-400 dark:bg-yellow-500', hex: '#facc15' },
+  { id: 'pastel-teal', nom: 'Turquoise', bg: 'bg-teal-200 dark:bg-teal-900', border: 'border-teal-400 dark:border-teal-700', text: 'text-teal-700 dark:text-teal-300', progress: 'bg-teal-400 dark:bg-teal-500', hex: '#2dd4bf' },
+  { id: 'pastel-red', nom: 'Rouge', bg: 'bg-red-200 dark:bg-red-900', border: 'border-red-400 dark:border-red-700', text: 'text-red-700 dark:text-red-300', progress: 'bg-red-400 dark:bg-red-500', hex: '#f87171' },
+  { id: 'pastel-indigo', nom: 'Indigo', bg: 'bg-indigo-200 dark:bg-indigo-900', border: 'border-indigo-400 dark:border-indigo-700', text: 'text-indigo-700 dark:text-indigo-300', progress: 'bg-indigo-400 dark:bg-indigo-500', hex: '#818cf8' },
+  { id: 'pastel-cyan', nom: 'Cyan', bg: 'bg-cyan-200 dark:bg-cyan-900', border: 'border-cyan-400 dark:border-cyan-700', text: 'text-cyan-700 dark:text-cyan-300', progress: 'bg-cyan-400 dark:bg-cyan-500', hex: '#22d3ee' },
+  { id: 'pastel-lime', nom: 'Lime', bg: 'bg-lime-200 dark:bg-lime-900', border: 'border-lime-400 dark:border-lime-700', text: 'text-lime-700 dark:text-lime-300', progress: 'bg-lime-400 dark:bg-lime-500', hex: '#a3e635' },
+  { id: 'pastel-amber', nom: 'Ambre', bg: 'bg-amber-200 dark:bg-amber-900', border: 'border-amber-400 dark:border-amber-700', text: 'text-amber-700 dark:text-amber-300', progress: 'bg-amber-400 dark:bg-amber-500', hex: '#fbbf24' },
+];
+
+const iconesDisponibles = [
+  { id: 'shopping-cart', nom: 'Courses', icon: ShoppingCart },
+  { id: 'utensils', nom: 'Restaurant', icon: Utensils },
+  { id: 'fuel', nom: 'Essence', icon: Fuel },
+  { id: 'shopping-bag', nom: 'Shopping', icon: ShoppingBag },
+  { id: 'film', nom: 'Loisirs', icon: Film },
+  { id: 'heart', nom: 'Santé', icon: Heart },
+  { id: 'gift', nom: 'Cadeaux', icon: Gift },
+  { id: 'plane', nom: 'Voyages', icon: Plane },
+  { id: 'coffee', nom: 'Café', icon: Coffee },
+  { id: 'smartphone', nom: 'Tech', icon: Smartphone },
+  { id: 'car', nom: 'Auto', icon: Car },
+  { id: 'zap', nom: 'Énergie', icon: Zap },
+  { id: 'home', nom: 'Maison', icon: Home },
+  { id: 'briefcase', nom: 'Travail', icon: Briefcase },
+  { id: 'graduation', nom: 'Études', icon: GraduationCap },
+  { id: 'baby', nom: 'Bébé', icon: Baby },
+  { id: 'pet', nom: 'Animaux', icon: PawPrint },
+  { id: 'fitness', nom: 'Sport', icon: Dumbbell },
+  { id: 'music', nom: 'Musique', icon: Music },
+  { id: 'gaming', nom: 'Jeux', icon: Gamepad2 },
+  { id: 'book', nom: 'Livres', icon: Book },
+  { id: 'beauty', nom: 'Beauté', icon: Scissors },
+  { id: 'repair', nom: 'Réparations', icon: Wrench },
+  { id: 'internet', nom: 'Internet', icon: Wifi },
+];
+
+function EnveloppesContent() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
   const [enveloppes, setEnveloppes] = useState<Enveloppe[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [parametres, setParametres] = useState<ParametresData>(defaultParametres);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const { parametres } = useParametres();
-  const [formData, setFormData] = useState({ nom: '', budget: '', couleur: 'pastel-green', icone: 'shopping-cart', categories: [] as string[] });
+  const [viewMode, setViewMode] = useState<'normal' | 'compact'>('normal');
+  const [expandedEnveloppe, setExpandedEnveloppe] = useState<number | null>(null);
+  const [showTransactions, setShowTransactions] = useState<number | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  
+  const [formData, setFormData] = useState<{
+    nom: string;
+    budget: string;
+    couleur: string;
+    icone: string;
+    categories: string[];
+    favorite: boolean;
+    locked: boolean;
+    reportReste: boolean;
+    budgetVariable: boolean;
+    budgetsMensuels: { [mois: string]: string };
+  }>({
+    nom: '',
+    budget: '',
+    couleur: 'pastel-green',
+    icone: 'shopping-cart',
+    categories: [],
+    favorite: false,
+    locked: false,
+    reportReste: false,
+    budgetVariable: false,
+    budgetsMensuels: {}
+  });
 
-  const couleursDisponibles = [
-    { id: 'pastel-green', nom: 'Vert', bg: 'bg-green-200 dark:bg-green-900', border: 'border-green-400 dark:border-green-700', text: 'text-green-700 dark:text-green-300', progress: 'bg-green-400 dark:bg-green-500' },
-    { id: 'pastel-blue', nom: 'Bleu', bg: 'bg-blue-200 dark:bg-blue-900', border: 'border-blue-400 dark:border-blue-700', text: 'text-blue-700 dark:text-blue-300', progress: 'bg-blue-400 dark:bg-blue-500' },
-    { id: 'pastel-pink', nom: 'Rose', bg: 'bg-pink-200 dark:bg-pink-900', border: 'border-pink-400 dark:border-pink-700', text: 'text-pink-700 dark:text-pink-300', progress: 'bg-pink-400 dark:bg-pink-500' },
-    { id: 'pastel-purple', nom: 'Violet', bg: 'bg-purple-200 dark:bg-purple-900', border: 'border-purple-400 dark:border-purple-700', text: 'text-purple-700 dark:text-purple-300', progress: 'bg-purple-400 dark:bg-purple-500' },
-    { id: 'pastel-orange', nom: 'Orange', bg: 'bg-orange-200 dark:bg-orange-900', border: 'border-orange-400 dark:border-orange-700', text: 'text-orange-700 dark:text-orange-300', progress: 'bg-orange-400 dark:bg-orange-500' },
-    { id: 'pastel-yellow', nom: 'Jaune', bg: 'bg-yellow-200 dark:bg-yellow-900', border: 'border-yellow-400 dark:border-yellow-700', text: 'text-yellow-700 dark:text-yellow-300', progress: 'bg-yellow-400 dark:bg-yellow-500' },
-    { id: 'pastel-teal', nom: 'Turquoise', bg: 'bg-teal-200 dark:bg-teal-900', border: 'border-teal-400 dark:border-teal-700', text: 'text-teal-700 dark:text-teal-300', progress: 'bg-teal-400 dark:bg-teal-500' },
-    { id: 'pastel-red', nom: 'Rouge', bg: 'bg-red-200 dark:bg-red-900', border: 'border-red-400 dark:border-red-700', text: 'text-red-700 dark:text-red-300', progress: 'bg-red-400 dark:bg-red-500' },
-  ];
+  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
+  const textPrimary = { color: theme.colors.textPrimary };
+  const textSecondary = { color: theme.colors.textSecondary };
+  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  const modalInputStyle = { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary };
 
-  const iconesDisponibles = [
-    { id: 'shopping-cart', nom: 'Courses', icon: ShoppingCart },
-    { id: 'utensils', nom: 'Restaurant', icon: Utensils },
-    { id: 'fuel', nom: 'Essence', icon: Fuel },
-    { id: 'shopping-bag', nom: 'Shopping', icon: ShoppingBag },
-    { id: 'film', nom: 'Loisirs', icon: Film },
-    { id: 'heart', nom: 'Santé', icon: Heart },
-    { id: 'gift', nom: 'Cadeaux', icon: Gift },
-    { id: 'plane', nom: 'Voyages', icon: Plane },
-    { id: 'coffee', nom: 'Café', icon: Coffee },
-    { id: 'smartphone', nom: 'Tech', icon: Smartphone },
-    { id: 'car', nom: 'Auto', icon: Car },
-    { id: 'zap', nom: 'Énergie', icon: Zap },
-  ];
+  useEffect(() => { loadData(); }, []);
 
-  useEffect(() => {
+  const loadData = () => {
     const savedEnveloppes = localStorage.getItem('budget-enveloppes');
     if (savedEnveloppes) setEnveloppes(JSON.parse(savedEnveloppes));
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
-  }, []);
-
-  const saveEnveloppes = (newEnveloppes: Enveloppe[]) => {
-    setEnveloppes(newEnveloppes);
-    localStorage.setItem('budget-enveloppes', JSON.stringify(newEnveloppes));
+    const savedParametres = localStorage.getItem('budget-parametres');
+    if (savedParametres) setParametres({ ...defaultParametres, ...JSON.parse(savedParametres) });
   };
 
-  const getMonthKey = () => `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
-  const getDepensesEnveloppe = (enveloppe: Enveloppe) => transactions.filter(t => t.type === 'Dépenses' && t.date?.startsWith(getMonthKey()) && enveloppe.categories.includes(t.categorie)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const saveEnveloppes = (newEnveloppes: Enveloppe[]) => { setEnveloppes(newEnveloppes); localStorage.setItem('budget-enveloppes', JSON.stringify(newEnveloppes)); };
+  const saveParametres = (newParametres: ParametresData) => { setParametres(newParametres); localStorage.setItem('budget-parametres', JSON.stringify(newParametres)); };
+
+  const getMonthKey = (year?: number, month?: number) => { const y = year ?? selectedYear; const m = month ?? selectedMonth; return `${y}-${(m + 1).toString().padStart(2, '0')}`; };
+  const getPreviousMonthKey = () => { let y = selectedYear; let m = selectedMonth - 1; if (m < 0) { m = 11; y--; } return getMonthKey(y, m); };
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const getCurrentDay = () => new Date().getDate();
+
+  const getDepensesEnveloppe = (enveloppe: Enveloppe, monthKey?: string) => {
+    const mk = monthKey || getMonthKey();
+    return transactions.filter(t => t.type === 'Dépenses' && t.date?.startsWith(mk) && enveloppe.categories.includes(t.categorie)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  };
+
+  const getTransactionsEnveloppe = (enveloppe: Enveloppe) => transactions.filter(t => t.type === 'Dépenses' && t.date?.startsWith(getMonthKey()) && enveloppe.categories.includes(t.categorie)).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const getResteEnveloppeMoisPrecedent = (enveloppe: Enveloppe) => { const prevKey = getPreviousMonthKey(); const budgetPrec = getBudgetEnveloppe(enveloppe, prevKey); const depensePrec = getDepensesEnveloppe(enveloppe, prevKey); return Math.max(0, budgetPrec - depensePrec); };
+
+  const getBudgetEnveloppe = (enveloppe: Enveloppe, monthKey?: string) => { const mk = monthKey || getMonthKey(); if (enveloppe.budgetVariable && enveloppe.budgetVariable[mk]) return enveloppe.budgetVariable[mk]; return enveloppe.budget; };
+
+  const getBudgetEffectif = (enveloppe: Enveloppe) => { let budget = getBudgetEnveloppe(enveloppe); if (enveloppe.reportReste) budget += getResteEnveloppeMoisPrecedent(enveloppe); return budget; };
+
+  const getMoyenne3Mois = (enveloppe: Enveloppe) => { const mois: number[] = []; for (let i = 1; i <= 3; i++) { let y = selectedYear; let m = selectedMonth - i; while (m < 0) { m += 12; y--; } mois.push(getDepensesEnveloppe(enveloppe, getMonthKey(y, m))); } return mois.reduce((a, b) => a + b, 0) / 3; };
+
+  const getProjectionFinMois = (enveloppe: Enveloppe) => { const depenseActuelle = getDepensesEnveloppe(enveloppe); const jourActuel = getCurrentDay(); const joursTotal = getDaysInMonth(selectedYear, selectedMonth); if (jourActuel === 0) return 0; return (depenseActuelle / jourActuel) * joursTotal; };
+
+  const getHistorique6Mois = (enveloppe: Enveloppe) => { const historique: { mois: string; depense: number; budget: number }[] = []; for (let i = 5; i >= 0; i--) { let y = selectedYear; let m = selectedMonth - i; while (m < 0) { m += 12; y--; } const mk = getMonthKey(y, m); historique.push({ mois: monthsShort[m], depense: getDepensesEnveloppe(enveloppe, mk), budget: getBudgetEnveloppe(enveloppe, mk) }); } return historique; };
+
   const getCouleur = (couleurId: string) => couleursDisponibles.find(c => c.id === couleurId) || couleursDisponibles[0];
   const getIcone = (iconeId: string) => iconesDisponibles.find(i => i.id === iconeId) || iconesDisponibles[0];
-  const resetForm = () => setFormData({ nom: '', budget: '', couleur: 'pastel-green', icone: 'shopping-cart', categories: [] });
+
+  const resetForm = () => { setFormData({ nom: '', budget: '', couleur: 'pastel-green', icone: 'shopping-cart', categories: [], favorite: false, locked: false, reportReste: false, budgetVariable: false, budgetsMensuels: {} }); setShowAddCategory(false); setNewCategoryName(''); };
+
+  const handleAddCategory = () => { if (!newCategoryName.trim()) return; const newCat = newCategoryName.trim(); if (!parametres.categoriesDepenses.includes(newCat)) { saveParametres({ ...parametres, categoriesDepenses: [...parametres.categoriesDepenses, newCat] }); } setFormData({ ...formData, categories: [...formData.categories, newCat] }); setNewCategoryName(''); setShowAddCategory(false); };
 
   const handleSubmit = () => {
     if (!formData.nom || !formData.budget) return;
-    if (editingId !== null) {
-      saveEnveloppes(enveloppes.map(e => e.id === editingId ? { ...formData, id: editingId, budget: parseFloat(formData.budget) } : e));
-      setEditingId(null);
-    } else {
-      saveEnveloppes([...enveloppes, { ...formData, id: Date.now(), budget: parseFloat(formData.budget) }]);
-    }
-    resetForm();
-    setShowForm(false);
+    const enveloppeData: Enveloppe = { id: editingId || Date.now(), nom: formData.nom, budget: parseFloat(formData.budget), couleur: formData.couleur, icone: formData.icone, categories: formData.categories, favorite: formData.favorite, locked: formData.locked, reportReste: formData.reportReste, budgetVariable: formData.budgetVariable ? Object.fromEntries(Object.entries(formData.budgetsMensuels).filter(([, v]) => v !== '').map(([k, v]) => [k, parseFloat(v)])) : undefined };
+    if (editingId !== null) { saveEnveloppes(enveloppes.map(e => e.id === editingId ? enveloppeData : e)); setEditingId(null); } else { saveEnveloppes([...enveloppes, enveloppeData]); }
+    resetForm(); setShowForm(false);
   };
 
-  const handleEdit = (enveloppe: Enveloppe) => {
-    setFormData({ nom: enveloppe.nom, budget: enveloppe.budget.toString(), couleur: enveloppe.couleur, icone: enveloppe.icone, categories: enveloppe.categories });
-    setEditingId(enveloppe.id);
-    setShowForm(true);
-  };
+  const handleEdit = (enveloppe: Enveloppe) => { setFormData({ nom: enveloppe.nom, budget: enveloppe.budget.toString(), couleur: enveloppe.couleur, icone: enveloppe.icone, categories: enveloppe.categories, favorite: enveloppe.favorite || false, locked: enveloppe.locked || false, reportReste: enveloppe.reportReste || false, budgetVariable: !!enveloppe.budgetVariable, budgetsMensuels: enveloppe.budgetVariable ? Object.fromEntries(Object.entries(enveloppe.budgetVariable).map(([k, v]) => [k, v.toString()])) : {} }); setEditingId(enveloppe.id); setShowForm(true); };
+  const handleDelete = (id: number) => { if (confirm('Supprimer cette enveloppe ?')) saveEnveloppes(enveloppes.filter(e => e.id !== id)); };
+  const toggleFavorite = (id: number) => { saveEnveloppes(enveloppes.map(e => e.id === id ? { ...e, favorite: !e.favorite } : e)); };
+  const toggleLocked = (id: number) => { saveEnveloppes(enveloppes.map(e => e.id === id ? { ...e, locked: !e.locked } : e)); };
+  const toggleCategorie = (cat: string) => { setFormData({ ...formData, categories: formData.categories.includes(cat) ? formData.categories.filter(c => c !== cat) : [...formData.categories, cat] }); };
 
-  const handleDelete = (id: number) => saveEnveloppes(enveloppes.filter(e => e.id !== id));
-  const toggleCategorie = (cat: string) => setFormData({ ...formData, categories: formData.categories.includes(cat) ? formData.categories.filter(c => c !== cat) : [...formData.categories, cat] });
-
-  const totalBudget = enveloppes.reduce((sum, e) => sum + e.budget, 0);
+  const sortedEnveloppes = [...enveloppes].sort((a, b) => { if (a.favorite && !b.favorite) return -1; if (!a.favorite && b.favorite) return 1; return 0; });
+  const totalBudget = enveloppes.reduce((sum, e) => sum + getBudgetEffectif(e), 0);
   const totalDepense = enveloppes.reduce((sum, e) => sum + getDepensesEnveloppe(e), 0);
   const totalReste = totalBudget - totalDepense;
 
   const prevMonth = () => { if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear(selectedYear - 1); } else setSelectedMonth(selectedMonth - 1); };
   const nextMonth = () => { if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear(selectedYear + 1); } else setSelectedMonth(selectedMonth + 1); };
-
-  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
-  const textPrimary = { color: theme.colors.textPrimary };
-  const textSecondary = { color: theme.colors.textSecondary };
-  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  const getAlertLevel = (pourcentage: number) => { if (pourcentage >= 100) return { level: 'danger', icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-500' }; if (pourcentage >= 80) return { level: 'warning', icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-500' }; if (pourcentage >= 50) return { level: 'info', icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500' }; return { level: 'success', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500' }; };
 
   return (
     <div className="pb-4">
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-medium" style={textPrimary}>Enveloppes</h1>
-        <p className="text-xs" style={textSecondary}>Gestion des enveloppes budgétaires</p>
-      </div>
+      <div className="text-center mb-4"><h1 className="text-lg font-medium" style={textPrimary}>Enveloppes</h1><p className="text-xs" style={textSecondary}>Gestion des enveloppes budgétaires</p></div>
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold" style={textPrimary}>{monthsFull[selectedMonth]}</span>
-            <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
-              {years.map(year => (<option key={year} value={year}>{year}</option>))}
-            </select>
-          </div>
-          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
-        </div>
-        <div className="flex flex-wrap gap-2 justify-center">
-          {monthsShort.map((month, index) => (
-            <button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
-          ))}
-        </div>
+        <div className="flex items-center justify-between mb-4"><button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button><div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{monthsFull[selectedMonth]}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div><button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button></div>
+        <div className="flex flex-wrap gap-2 justify-center">{monthsShort.map((month, index) => (<button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>))}</div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
-          <p className="text-[10px]" style={textSecondary}>Budget</p>
-          <p className="text-xs font-semibold" style={textPrimary}>{totalBudget.toFixed(0)}{parametres.devise}</p>
-        </div>
-        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
-          <p className="text-[10px]" style={textSecondary}>Dépensé</p>
-          <p className="text-xs font-semibold" style={textPrimary}>{totalDepense.toFixed(0)}{parametres.devise}</p>
-        </div>
-        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}>
-          <p className="text-[10px]" style={textSecondary}>Reste</p>
-          <p className={`text-xs font-semibold ${totalReste >= 0 ? 'text-green-400' : 'text-red-400'}`}>{totalReste.toFixed(0)}{parametres.devise}</p>
-        </div>
+        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}><p className="text-[10px]" style={textSecondary}>Budget</p><p className="text-xs font-semibold" style={textPrimary}>{totalBudget.toFixed(0)}{parametres.devise}</p></div>
+        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}><p className="text-[10px]" style={textSecondary}>Dépensé</p><p className="text-xs font-semibold text-red-400">{totalDepense.toFixed(0)}{parametres.devise}</p></div>
+        <div className="backdrop-blur-sm rounded-2xl text-center p-3 border" style={cardStyle}><p className="text-[10px]" style={textSecondary}>Reste</p><p className={`text-xs font-semibold ${totalReste >= 0 ? 'text-green-400' : 'text-red-400'}`}>{totalReste.toFixed(0)}{parametres.devise}</p></div>
       </div>
 
-      <button onClick={() => { resetForm(); setShowForm(true); }} className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
-        <Plus className="w-4 h-4" />Nouvelle enveloppe
-      </button>
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => { resetForm(); setShowForm(true); }} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Plus className="w-4 h-4" />Nouvelle enveloppe</button>
+        <button onClick={() => setViewMode(viewMode === 'normal' ? 'compact' : 'normal')} className="px-3 py-3 rounded-xl border flex items-center gap-1 text-xs font-medium" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>{viewMode === 'normal' ? (<><BarChart3 className="w-4 h-4" /> Compacte</>) : (<><Eye className="w-4 h-4" /> Détaillée</>)}</button>
+      </div>
 
-      {enveloppes.length > 0 ? (
+      {sortedEnveloppes.length > 0 ? (
         <div className="space-y-3 mb-4">
-          {enveloppes.map((enveloppe) => {
+          {sortedEnveloppes.map((enveloppe) => {
             const couleur = getCouleur(enveloppe.couleur);
             const icone = getIcone(enveloppe.icone);
             const IconComponent = icone.icon;
+            const budgetEffectif = getBudgetEffectif(enveloppe);
             const depense = getDepensesEnveloppe(enveloppe);
-            const reste = enveloppe.budget - depense;
-            const pourcentage = enveloppe.budget > 0 ? (depense / enveloppe.budget) * 100 : 0;
-            const isOverBudget = pourcentage > 100;
-            const isWarning = pourcentage >= 80 && pourcentage <= 100;
+            const reste = budgetEffectif - depense;
+            const pourcentage = budgetEffectif > 0 ? (depense / budgetEffectif) * 100 : 0;
+            const alert = getAlertLevel(pourcentage);
+            const AlertIcon = alert.icon;
+            const moyenne3Mois = getMoyenne3Mois(enveloppe);
+            const projection = getProjectionFinMois(enveloppe);
+            const isExpanded = expandedEnveloppe === enveloppe.id;
+            const transactionsLiees = getTransactionsEnveloppe(enveloppe);
+            const historique = getHistorique6Mois(enveloppe);
+            const reportMoisPrec = enveloppe.reportReste ? getResteEnveloppeMoisPrecedent(enveloppe) : 0;
+
+            if (viewMode === 'compact') {
+              return (<div key={enveloppe.id} className={`${couleur.bg} rounded-xl p-3 border ${couleur.border} flex items-center justify-between`}><div className="flex items-center gap-2">{enveloppe.favorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}{enveloppe.locked && <Lock className="w-3 h-3 text-gray-500" />}<IconComponent className={`w-4 h-4 ${couleur.text}`} /><span className={`text-sm font-medium ${couleur.text}`}>{enveloppe.nom}</span></div><div className="flex items-center gap-2"><span className={`text-sm font-semibold ${reste >= 0 ? couleur.text : 'text-red-600'}`}>{reste.toFixed(0)}{parametres.devise}</span><span className={`text-xs px-2 py-0.5 rounded-full ${alert.bg} text-white`}>{Math.round(pourcentage)}%</span></div></div>);
+            }
+
             return (
-              <div key={enveloppe.id} className={`${couleur.bg} rounded-2xl p-4 shadow-sm border ${couleur.border}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${couleur.bg} border ${couleur.border}`}>
-                      <IconComponent className={`w-5 h-5 ${couleur.text}`} />
-                    </div>
-                    <div>
-                      <p className={`text-sm font-semibold ${couleur.text}`}>{enveloppe.nom}</p>
-                      <p className={`text-[10px] ${couleur.text} opacity-70`}>{enveloppe.categories.length} catégorie(s)</p>
-                    </div>
+              <div key={enveloppe.id} className={`${couleur.bg} rounded-2xl shadow-sm border ${couleur.border} overflow-hidden`}>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3"><div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-white/30 border ${couleur.border}`}><IconComponent className={`w-5 h-5 ${couleur.text}`} /></div><div><div className="flex items-center gap-2">{enveloppe.favorite && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}{enveloppe.locked && <Lock className="w-3 h-3 text-gray-500" />}<p className={`text-sm font-semibold ${couleur.text}`}>{enveloppe.nom}</p></div><p className={`text-[10px] ${couleur.text} opacity-70`}>{enveloppe.categories.length} catégorie(s)</p></div></div>
+                    <div className="flex items-center gap-1"><button onClick={() => toggleFavorite(enveloppe.id)} className="p-1.5 hover:bg-white/30 rounded-lg"><Star className={`w-4 h-4 ${enveloppe.favorite ? 'text-yellow-500 fill-yellow-500' : couleur.text}`} /></button><button onClick={() => toggleLocked(enveloppe.id)} className="p-1.5 hover:bg-white/30 rounded-lg">{enveloppe.locked ? <Lock className={`w-4 h-4 ${couleur.text}`} /> : <Unlock className={`w-4 h-4 ${couleur.text}`} />}</button><button onClick={() => handleEdit(enveloppe)} className="p-1.5 hover:bg-white/30 rounded-lg"><Edit3 className={`w-4 h-4 ${couleur.text}`} /></button><button onClick={() => handleDelete(enveloppe.id)} className="p-1.5 hover:bg-white/30 rounded-lg"><Trash2 className={`w-4 h-4 ${couleur.text}`} /></button></div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => handleEdit(enveloppe)} className="p-1.5 hover:bg-white/30 rounded-lg"><Edit3 className={`w-4 h-4 ${couleur.text}`} /></button>
-                    <button onClick={() => handleDelete(enveloppe.id)} className="p-1.5 hover:bg-white/30 rounded-lg"><Trash2 className={`w-4 h-4 ${couleur.text}`} /></button>
+                  {pourcentage >= 50 && (<div className={`flex items-center gap-2 mb-3 px-2 py-1 rounded-lg bg-white/30`}><AlertIcon className={`w-4 h-4 ${alert.color}`} /><span className={`text-[10px] font-medium ${alert.color}`}>{pourcentage >= 100 ? 'Budget dépassé !' : pourcentage >= 80 ? 'Attention, bientôt à court !' : '50% du budget utilisé'}</span></div>)}
+                  <div className="h-3 bg-white/50 rounded-full overflow-hidden mb-2"><div className={`h-full transition-all duration-500 ${pourcentage >= 100 ? 'bg-red-500' : pourcentage >= 80 ? 'bg-orange-400' : couleur.progress}`} style={{ width: `${Math.min(pourcentage, 100)}%` }} /></div>
+                  <div className="flex justify-between items-center mb-2"><div className="flex gap-4"><div><p className={`text-[10px] ${couleur.text} opacity-60`}>Budget</p><p className={`text-xs font-medium ${couleur.text}`}>{budgetEffectif.toFixed(0)}{parametres.devise}{reportMoisPrec > 0 && <span className="text-[9px] opacity-70"> (+{reportMoisPrec.toFixed(0)})</span>}</p></div><div><p className={`text-[10px] ${couleur.text} opacity-60`}>Dépensé</p><p className={`text-xs font-medium ${couleur.text}`}>{depense.toFixed(0)}{parametres.devise}</p></div><div><p className={`text-[10px] ${couleur.text} opacity-60`}>Reste</p><p className={`text-xs font-medium ${reste >= 0 ? couleur.text : 'text-red-600'}`}>{reste.toFixed(0)}{parametres.devise}</p></div></div><div className={`px-2 py-1 rounded-full text-[10px] font-medium ${pourcentage >= 100 ? 'bg-red-500 text-white' : pourcentage >= 80 ? 'bg-orange-400 text-white' : 'bg-white/50 ' + couleur.text}`}>{Math.round(pourcentage)}%</div></div>
+                  <button onClick={() => setExpandedEnveloppe(isExpanded ? null : enveloppe.id)} className={`w-full flex items-center justify-center gap-1 py-1 rounded-lg bg-white/20 ${couleur.text}`}>{isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}<span className="text-[10px]">{isExpanded ? 'Moins' : 'Plus de détails'}</span></button>
+                </div>
+                {isExpanded && (
+                  <div className="px-4 pb-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-2"><div className="bg-white/20 rounded-xl p-2"><div className="flex items-center gap-1 mb-1"><TrendingDown className={`w-3 h-3 ${couleur.text}`} /><span className={`text-[9px] ${couleur.text} opacity-70`}>Moyenne 3 mois</span></div><p className={`text-xs font-semibold ${couleur.text}`}>{moyenne3Mois.toFixed(0)}{parametres.devise}</p></div><div className="bg-white/20 rounded-xl p-2"><div className="flex items-center gap-1 mb-1"><Calendar className={`w-3 h-3 ${couleur.text}`} /><span className={`text-[9px] ${couleur.text} opacity-70`}>Projection fin mois</span></div><p className={`text-xs font-semibold ${projection > budgetEffectif ? 'text-red-600' : couleur.text}`}>{projection.toFixed(0)}{parametres.devise}</p></div></div>
+                    <div className="bg-white/20 rounded-xl p-3"><div className="flex items-center gap-1 mb-2"><BarChart3 className={`w-3 h-3 ${couleur.text}`} /><span className={`text-[10px] font-medium ${couleur.text}`}>Historique 6 mois</span></div><div className="flex justify-between items-end h-16">{historique.map((h, i) => { const maxVal = Math.max(...historique.map(x => Math.max(x.depense, x.budget))); const heightPct = maxVal > 0 ? (h.depense / maxVal) * 100 : 0; const isOver = h.depense > h.budget; return (<div key={i} className="flex flex-col items-center gap-1 flex-1"><div className="w-full px-0.5"><div className={`w-full rounded-t ${isOver ? 'bg-red-400' : couleur.progress}`} style={{ height: `${Math.max(heightPct, 4)}%`, minHeight: '4px' }} /></div><span className={`text-[8px] ${couleur.text}`}>{h.mois}</span></div>); })}</div></div>
+                    <div className="bg-white/20 rounded-xl p-3"><button onClick={() => setShowTransactions(showTransactions === enveloppe.id ? null : enveloppe.id)} className="w-full flex items-center justify-between"><span className={`text-[10px] font-medium ${couleur.text}`}>Transactions ({transactionsLiees.length})</span>{showTransactions === enveloppe.id ? <ChevronUp className={`w-4 h-4 ${couleur.text}`} /> : <ChevronDown className={`w-4 h-4 ${couleur.text}`} />}</button>{showTransactions === enveloppe.id && (<div className="mt-2 space-y-1 max-h-32 overflow-y-auto">{transactionsLiees.length > 0 ? transactionsLiees.map(t => (<div key={t.id} className="flex justify-between items-center py-1 border-b border-white/20 last:border-0"><div><p className={`text-[10px] font-medium ${couleur.text}`}>{t.categorie}</p><p className={`text-[8px] ${couleur.text} opacity-60`}>{t.date}</p></div><span className={`text-[10px] font-semibold ${couleur.text}`}>-{parseFloat(t.montant).toFixed(2)}{parametres.devise}</span></div>)) : (<p className={`text-[10px] ${couleur.text} opacity-60 text-center py-2`}>Aucune transaction ce mois</p>)}</div>)}</div>
                   </div>
-                </div>
-                <div className="h-3 bg-white/50 rounded-full overflow-hidden mb-2">
-                  <div className={`h-full transition-all duration-500 ${isOverBudget ? 'bg-red-500' : isWarning ? 'bg-orange-400' : couleur.progress}`} style={{ width: `${Math.min(pourcentage, 100)}%` }} />
-                </div>
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-4">
-                    <div><p className={`text-[10px] ${couleur.text} opacity-60`}>Budget</p><p className={`text-xs font-medium ${couleur.text}`}>{enveloppe.budget.toFixed(0)}{parametres.devise}</p></div>
-                    <div><p className={`text-[10px] ${couleur.text} opacity-60`}>Dépensé</p><p className={`text-xs font-medium ${couleur.text}`}>{depense.toFixed(0)}{parametres.devise}</p></div>
-                    <div><p className={`text-[10px] ${couleur.text} opacity-60`}>Reste</p><p className={`text-xs font-medium ${reste >= 0 ? couleur.text : 'text-red-600'}`}>{reste.toFixed(0)}{parametres.devise}</p></div>
-                  </div>
-                  <div className={`px-2 py-1 rounded-full text-[10px] font-medium ${isOverBudget ? 'bg-red-500 text-white' : isWarning ? 'bg-orange-400 text-white' : 'bg-white/50 ' + couleur.text}`}>{Math.round(pourcentage)}%</div>
-                </div>
+                )}
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="backdrop-blur-sm rounded-2xl text-center py-8 mb-4 border" style={cardStyle}>
-          <Mail className="w-12 h-12 mx-auto mb-3" style={textSecondary} />
-          <p className="text-xs mb-2" style={textSecondary}>Aucune enveloppe</p>
-          <p className="text-[10px]" style={textSecondary}>Créez votre première enveloppe</p>
-        </div>
+        <div className="backdrop-blur-sm rounded-2xl text-center py-8 mb-4 border" style={cardStyle}><Mail className="w-12 h-12 mx-auto mb-3" style={textSecondary} /><p className="text-xs mb-2" style={textSecondary}>Aucune enveloppe</p><p className="text-[10px]" style={textSecondary}>Créez votre première enveloppe</p></div>
       )}
 
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-        <div className="space-y-2">
-          {enveloppes.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Créez des enveloppes pour mieux gérer vos dépenses</p>)}
-          {totalReste < 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention ! Vous avez dépassé votre budget</p>)}
-          {totalReste > 0 && enveloppes.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">✅ Il vous reste {totalReste.toFixed(0)}{parametres.devise} sur vos enveloppes</p>)}
-        </div>
-      </div>
+      {/* SmartTips remplace l'ancienne carte conseils */}
+      <SmartTips page="enveloppes" />
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
           <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Nouvelle'} enveloppe</h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
-            </div>
+            <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Nouvelle'} enveloppe</h2><button onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button></div>
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Nom de l'enveloppe</label>
-                <input type="text" placeholder="Ex: Courses, Restaurant..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Nom de l&apos;enveloppe</label><input type="text" placeholder="Ex: Courses, Restaurant..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} /></div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Budget mensuel ({parametres.devise})</label><input type="number" placeholder="0" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} /></div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-xl" style={{ background: theme.colors.secondaryLight }}><div className="flex items-center gap-2"><Star className="w-4 h-4" style={{ color: theme.colors.textOnSecondary }} /><span className="text-xs" style={{ color: theme.colors.textOnSecondary }}>Favorite</span></div><button onClick={() => setFormData({ ...formData, favorite: !formData.favorite })} className={`w-10 h-5 rounded-full transition-colors ${formData.favorite ? 'bg-yellow-500' : 'bg-gray-400'}`}><div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${formData.favorite ? 'translate-x-5' : 'translate-x-0.5'}`} /></button></div>
+                <div className="flex items-center justify-between p-2 rounded-xl" style={{ background: theme.colors.secondaryLight }}><div className="flex items-center gap-2"><Lock className="w-4 h-4" style={{ color: theme.colors.textOnSecondary }} /><span className="text-xs" style={{ color: theme.colors.textOnSecondary }}>Verrouillable à 100%</span></div><button onClick={() => setFormData({ ...formData, locked: !formData.locked })} className={`w-10 h-5 rounded-full transition-colors ${formData.locked ? 'bg-red-500' : 'bg-gray-400'}`}><div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${formData.locked ? 'translate-x-5' : 'translate-x-0.5'}`} /></button></div>
+                <div className="flex items-center justify-between p-2 rounded-xl" style={{ background: theme.colors.secondaryLight }}><div className="flex items-center gap-2"><TrendingUp className="w-4 h-4" style={{ color: theme.colors.textOnSecondary }} /><span className="text-xs" style={{ color: theme.colors.textOnSecondary }}>Reporter le reste</span></div><button onClick={() => setFormData({ ...formData, reportReste: !formData.reportReste })} className={`w-10 h-5 rounded-full transition-colors ${formData.reportReste ? 'bg-green-500' : 'bg-gray-400'}`}><div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${formData.reportReste ? 'translate-x-5' : 'translate-x-0.5'}`} /></button></div>
+                <div className="flex items-center justify-between p-2 rounded-xl" style={{ background: theme.colors.secondaryLight }}><div className="flex items-center gap-2"><Calendar className="w-4 h-4" style={{ color: theme.colors.textOnSecondary }} /><span className="text-xs" style={{ color: theme.colors.textOnSecondary }}>Budget variable par mois</span></div><button onClick={() => setFormData({ ...formData, budgetVariable: !formData.budgetVariable })} className={`w-10 h-5 rounded-full transition-colors ${formData.budgetVariable ? 'bg-blue-500' : 'bg-gray-400'}`}><div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${formData.budgetVariable ? 'translate-x-5' : 'translate-x-0.5'}`} /></button></div>
               </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Budget mensuel ({parametres.devise})</label>
-                <input type="number" placeholder="0" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Couleur</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {couleursDisponibles.map((couleur) => (
-                    <button key={couleur.id} onClick={() => setFormData({ ...formData, couleur: couleur.id })} className={`h-10 rounded-xl ${couleur.bg} border-2 ${formData.couleur === couleur.id ? 'ring-2 ring-offset-2' : couleur.border}`} style={formData.couleur === couleur.id ? { borderColor: theme.colors.primary } : {}} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Icône</label>
-                <div className="grid grid-cols-6 gap-2">
-                  {iconesDisponibles.map((icone) => {
-                    const IconComp = icone.icon;
-                    return (
-                      <button key={icone.id} onClick={() => setFormData({ ...formData, icone: icone.id })} className="h-10 rounded-xl flex items-center justify-center border" style={formData.icone === icone.id ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
-                        <IconComp className="w-5 h-5" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégories liées ({formData.categories.length})</label>
-                <div className="max-h-40 overflow-y-auto rounded-xl p-2 space-y-1" style={{ background: theme.colors.cardBackground }}>
-                  {parametres.categoriesDepenses.map((cat) => (
-                    <button key={cat} onClick={() => toggleCategorie(cat)} className="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors" style={formData.categories.includes(cat) ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, fontWeight: 500 } : { color: theme.colors.textPrimary }}>{cat}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
-                <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Créer'}</button>
-              </div>
+              {formData.budgetVariable && (<div className="p-3 rounded-xl border" style={{ background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder }}><p className="text-[10px] mb-2" style={{ color: theme.colors.textOnSecondary }}>Budget par mois (laissez vide pour le budget par défaut)</p><div className="grid grid-cols-3 gap-2">{monthsShort.map((m, i) => { const key = `${selectedYear}-${(i + 1).toString().padStart(2, '0')}`; return (<div key={i}><label className="text-[9px]" style={{ color: theme.colors.textOnSecondary }}>{m}</label><input type="number" placeholder={formData.budget || '0'} value={formData.budgetsMensuels[key] || ''} onChange={(e) => setFormData({ ...formData, budgetsMensuels: { ...formData.budgetsMensuels, [key]: e.target.value } })} className="w-full rounded-lg px-2 py-1 text-xs border" style={modalInputStyle} /></div>); })}</div></div>)}
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Couleur</label><div className="grid grid-cols-6 gap-2">{couleursDisponibles.map((couleur) => (<button key={couleur.id} onClick={() => setFormData({ ...formData, couleur: couleur.id })} className={`h-8 rounded-lg ${couleur.bg} border-2 ${formData.couleur === couleur.id ? 'ring-2 ring-offset-1' : couleur.border}`} style={formData.couleur === couleur.id ? { borderColor: theme.colors.primary } : {}} />))}</div></div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Icône</label><div className="grid grid-cols-8 gap-1">{iconesDisponibles.map((icone) => { const IconComp = icone.icon; return (<button key={icone.id} onClick={() => setFormData({ ...formData, icone: icone.id })} className="h-8 rounded-lg flex items-center justify-center border" style={formData.icone === icone.id ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><IconComp className="w-4 h-4" /></button>); })}</div></div>
+              <div><div className="flex items-center justify-between mb-1"><label className="text-xs font-medium" style={{ color: theme.colors.textOnSecondary }}>Catégories liées ({formData.categories.length})</label></div>{!showAddCategory ? (<button onClick={() => setShowAddCategory(true)} className="w-full mb-2 flex items-center justify-center gap-1 py-2 rounded-lg border border-dashed text-xs" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><Plus className="w-3 h-3" /> Ajouter une catégorie</button>) : (<div className="flex gap-2 mb-2"><input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Nouvelle catégorie..." className="flex-1 rounded-lg px-3 py-2 text-sm border" style={modalInputStyle} autoFocus /><button onClick={handleAddCategory} className="px-3 py-2 rounded-lg" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-4 h-4" /></button><button onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }} className="px-3 py-2 rounded-lg border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><X className="w-4 h-4" /></button></div>)}<div className="max-h-40 overflow-y-auto rounded-xl p-2 space-y-1" style={{ background: theme.colors.secondaryLight }}>{parametres.categoriesDepenses.map((cat) => (<button key={cat} onClick={() => toggleCategorie(cat)} className="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors" style={formData.categories.includes(cat) ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, fontWeight: 500 } : { color: theme.colors.textOnSecondary }}>{cat}</button>))}</div></div>
+              <div className="flex gap-3 pt-2"><button onClick={() => { setShowForm(false); setEditingId(null); resetForm(); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button><button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Créer'}</button></div>
             </div>
           </div>
         </div>
@@ -276,342 +304,8 @@ function EnveloppesPage() {
   );
 }
 
-function ParametresPage() {
-  const { theme } = useTheme();
-  const { parametres, saveParametres } = useParametres();
-  const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [newCategorie, setNewCategorie] = useState('');
-  const [editingCompte, setEditingCompte] = useState<CompteBancaire | null>(null);
-  const [showCompteForm, setShowCompteForm] = useState(false);
-  const [compteForm, setCompteForm] = useState({ nom: '', soldeDepart: '', isEpargne: false });
-
-  const toggleSection = (section: string) => setActiveSection(activeSection === section ? null : section);
-
-  const addCategorie = (type: 'categoriesRevenus' | 'categoriesFactures' | 'categoriesDepenses' | 'categoriesEpargnes') => {
-    if (!newCategorie.trim()) return;
-    saveParametres({ ...parametres, [type]: [...parametres[type], newCategorie.trim()] });
-    setNewCategorie('');
-  };
-
-  const removeCategorie = (type: 'categoriesRevenus' | 'categoriesFactures' | 'categoriesDepenses' | 'categoriesEpargnes', index: number) => {
-    saveParametres({ ...parametres, [type]: parametres[type].filter((_, i) => i !== index) });
-  };
-
-  const handleCompteSubmit = () => {
-    if (!compteForm.nom) return;
-    if (editingCompte) {
-      const updated = parametres.comptesBancaires.map(c => c.id === editingCompte.id ? { ...editingCompte, nom: compteForm.nom, soldeDepart: parseFloat(compteForm.soldeDepart) || 0, isEpargne: compteForm.isEpargne } : c);
-      saveParametres({ ...parametres, comptesBancaires: updated });
-    } else {
-      const newCompte: CompteBancaire = { id: Date.now(), nom: compteForm.nom, soldeDepart: parseFloat(compteForm.soldeDepart) || 0, isEpargne: compteForm.isEpargne };
-      saveParametres({ ...parametres, comptesBancaires: [...parametres.comptesBancaires, newCompte] });
-    }
-    setCompteForm({ nom: '', soldeDepart: '', isEpargne: false });
-    setEditingCompte(null);
-    setShowCompteForm(false);
-  };
-
-  const editCompte = (compte: CompteBancaire) => {
-    setEditingCompte(compte);
-    setCompteForm({ nom: compte.nom, soldeDepart: compte.soldeDepart.toString(), isEpargne: compte.isEpargne });
-    setShowCompteForm(true);
-  };
-
-  const deleteCompte = (id: number) => saveParametres({ ...parametres, comptesBancaires: parametres.comptesBancaires.filter(c => c.id !== id) });
-
-  const exportData = () => {
-    const data = {
-      parametres,
-      transactions: JSON.parse(localStorage.getItem('budget-transactions') || '[]'),
-      enveloppes: JSON.parse(localStorage.getItem('budget-enveloppes') || '[]'),
-      objectifs: JSON.parse(localStorage.getItem('budget-objectifs') || '[]'),
-      memo: JSON.parse(localStorage.getItem('budget-memo') || '[]'),
-      userName: localStorage.getItem('budget-user-name') || 'Utilisateur'
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `budget-planner-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        if (data.parametres) saveParametres(data.parametres);
-        if (data.transactions) localStorage.setItem('budget-transactions', JSON.stringify(data.transactions));
-        if (data.enveloppes) localStorage.setItem('budget-enveloppes', JSON.stringify(data.enveloppes));
-        if (data.objectifs) localStorage.setItem('budget-objectifs', JSON.stringify(data.objectifs));
-        if (data.memo) localStorage.setItem('budget-memo', JSON.stringify(data.memo));
-        if (data.userName) localStorage.setItem('budget-user-name', data.userName);
-        alert('Données importées avec succès ! Rechargez la page.');
-      } catch {
-        alert("Erreur lors de l'importation.");
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const resetAllData = () => {
-    if (confirm('⚠️ Supprimer TOUTES les données ? Cette action est irréversible.')) {
-      localStorage.removeItem('budget-transactions');
-      localStorage.removeItem('budget-enveloppes');
-      localStorage.removeItem('budget-objectifs');
-      localStorage.removeItem('budget-memo');
-      localStorage.removeItem('budget-parametres');
-      localStorage.removeItem('budget-user-name');
-      window.location.reload();
-    }
-  };
-
-  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
-  const textPrimary = { color: theme.colors.textPrimary };
-  const textSecondary = { color: theme.colors.textSecondary };
-  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
-
-  const renderCategorieSection = (title: string, type: 'categoriesRevenus' | 'categoriesFactures' | 'categoriesDepenses' | 'categoriesEpargnes', icon: React.ReactNode) => (
-    <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-3" style={cardStyle}>
-      <button onClick={() => toggleSection(type)} className="w-full flex items-center justify-between">
-        <div className="flex items-center gap-3">{icon}<span className="text-sm font-semibold" style={textPrimary}>{title}</span><span className="text-[10px]" style={textSecondary}>({parametres[type].length})</span></div>
-        {activeSection === type ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}
-      </button>
-      {activeSection === type && (
-        <div className="mt-4 space-y-3">
-          <div className="flex gap-2">
-            <input type="text" placeholder="Nouvelle catégorie..." value={newCategorie} onChange={(e) => setNewCategorie(e.target.value)} className="flex-1 rounded-xl px-3 py-2 text-sm border" style={inputStyle} onKeyDown={(e) => { if (e.key === 'Enter') addCategorie(type); }} />
-            <button onClick={() => addCategorie(type)} className="px-4 py-2 rounded-xl" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Plus className="w-5 h-5" /></button>
-          </div>
-          <div className="max-h-48 overflow-y-auto space-y-1">
-            {parametres[type].map((cat, index) => (
-              <div key={index} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: theme.colors.cardBackgroundLight }}>
-                <span className="text-xs font-medium" style={textPrimary}>{cat}</span>
-                <button onClick={() => removeCategorie(type, index)} className="p-1 hover:bg-red-500/20 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="pb-4">
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-medium" style={textPrimary}>Paramètres</h1>
-        <p className="text-xs" style={textSecondary}>Configuration de l'application</p>
-      </div>
-
-      {/* Général */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Settings className="w-5 h-5" />Général</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Devise</label>
-            <select value={parametres.devise} onChange={(e) => saveParametres({ ...parametres, devise: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
-              <option value="€">€ Euro</option>
-              <option value="$">$ Dollar</option>
-              <option value="£">£ Livre</option>
-              <option value="CHF">CHF Franc Suisse</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date de départ</label>
-            <input type="date" value={parametres.dateDepart} onChange={(e) => saveParametres({ ...parametres, dateDepart: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
-          </div>
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-medium" style={textPrimary}>Budget avant le 1er du mois</label>
-            <button onClick={() => saveParametres({ ...parametres, budgetAvantPremier: !parametres.budgetAvantPremier })} className="w-12 h-6 rounded-full transition-colors" style={{ background: parametres.budgetAvantPremier ? theme.colors.primary : theme.colors.cardBackgroundLight }}>
-              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${parametres.budgetAvantPremier ? 'translate-x-6' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Comptes bancaires */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <button onClick={() => toggleSection('comptes')} className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-3"><Building className="w-5 h-5" style={textPrimary} /><span className="text-sm font-semibold" style={textPrimary}>Comptes bancaires</span><span className="text-[10px]" style={textSecondary}>({parametres.comptesBancaires.length})</span></div>
-          {activeSection === 'comptes' ? <ChevronUp className="w-5 h-5" style={textPrimary} /> : <ChevronDown className="w-5 h-5" style={textPrimary} />}
-        </button>
-        {activeSection === 'comptes' && (
-          <div className="mt-4 space-y-3">
-            <button onClick={() => { setCompteForm({ nom: '', soldeDepart: '', isEpargne: false }); setEditingCompte(null); setShowCompteForm(true); }} className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Plus className="w-4 h-4" />Ajouter un compte</button>
-            <div className="space-y-2">
-              {parametres.comptesBancaires.map((compte) => (
-                <div key={compte.id} className="flex items-center justify-between px-3 py-2 rounded-xl" style={{ background: theme.colors.cardBackgroundLight }}>
-                  <div>
-                    <p className="text-xs font-medium" style={textPrimary}>{compte.nom}</p>
-                    <p className="text-[10px]" style={textSecondary}>{compte.isEpargne ? '💰 Épargne' : '🏦 Courant'} • Solde: {compte.soldeDepart}{parametres.devise}</p>
-                  </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => editCompte(compte)} className="p-1.5 rounded-lg"><Edit3 className="w-4 h-4" style={textPrimary} /></button>
-                    <button onClick={() => deleteCompte(compte.id)} className="p-1.5 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {renderCategorieSection('Catégories Revenus', 'categoriesRevenus', <TrendingUp className="w-5 h-5 text-green-400" />)}
-      {renderCategorieSection('Catégories Factures', 'categoriesFactures', <FileText className="w-5 h-5 text-red-400" />)}
-      {renderCategorieSection('Catégories Dépenses', 'categoriesDepenses', <ShoppingCart className="w-5 h-5 text-orange-400" />)}
-      {renderCategorieSection('Catégories Épargnes', 'categoriesEpargnes', <PiggyBank className="w-5 h-5 text-blue-400" />)}
-
-      {/* Données */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Database className="w-5 h-5" />Données</h3>
-        <div className="space-y-3">
-          <button onClick={exportData} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Upload className="w-5 h-5" />Exporter les données</button>
-          <label className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium cursor-pointer border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
-            <RefreshCw className="w-5 h-5" />Importer des données
-            <input type="file" accept=".json" onChange={importData} className="hidden" />
-          </label>
-          <button onClick={resetAllData} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 border border-red-500/50 text-red-400 rounded-xl font-medium"><Trash2 className="w-5 h-5" />Réinitialiser toutes les données</button>
-          <button onClick={async () => { document.cookie = 'auth-session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; await supabase.auth.signOut(); window.location.href = '/auth'; }} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}><LogOut className="w-5 h-5" />Se déconnecter</button>
-        </div>
-      </div>
-
-      {/* Conseils */}
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-        <div className="space-y-2">
-          <p className="text-[10px] text-[#7DD3A8]">📦 Exportez régulièrement vos données pour les sauvegarder</p>
-          <p className="text-[10px] text-[#7DD3A8]">🏦 Ajoutez tous vos comptes pour un suivi complet</p>
-          <p className="text-[10px] text-[#7DD3A8]">📂 Personnalisez les catégories selon vos besoins</p>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="backdrop-blur-sm rounded-2xl p-4 mt-4 text-center border" style={cardStyle}>
-        <p className="text-[10px]" style={textSecondary}>The Budget Planner v1.0</p>
-        <p className="text-[10px]" style={textSecondary}>Créé avec ❤️ par Shina5</p>
-      </div>
-
-      {/* Modal compte */}
-      {showCompteForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-2xl p-4 w-full max-w-sm border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>{editingCompte ? 'Modifier' : 'Nouveau'} compte</h2>
-              <button onClick={() => setShowCompteForm(false)} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Nom du compte</label>
-                <input type="text" placeholder="Ex: CCP La Banque Postale" value={compteForm.nom} onChange={(e) => setCompteForm({ ...compteForm, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Solde de départ ({parametres.devise})</label>
-                <input type="number" placeholder="0" value={compteForm.soldeDepart} onChange={(e) => setCompteForm({ ...compteForm, soldeDepart: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium" style={{ color: theme.colors.textOnSecondary }}>Compte épargne</label>
-                <button onClick={() => setCompteForm({ ...compteForm, isEpargne: !compteForm.isEpargne })} className="w-12 h-6 rounded-full transition-colors" style={{ background: compteForm.isEpargne ? theme.colors.primary : theme.colors.cardBackgroundLight }}>
-                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${compteForm.isEpargne ? 'translate-x-6' : 'translate-x-0.5'}`} />
-                </button>
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setShowCompteForm(false)} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
-                <button onClick={handleCompteSubmit} className="flex-1 py-3 rounded-xl font-semibold" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>{editingCompte ? 'Modifier' : 'Créer'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HomePageContent() {
-  const { theme } = useTheme();
-  const [currentPage, setCurrentPage] = useState('accueil');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [themeModalOpen, setThemeModalOpen] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = '/auth';
-      } else {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-      }
-    };
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        window.location.href = '/auth';
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: `linear-gradient(180deg, ${theme.colors.backgroundGradientFrom} 0%, ${theme.colors.backgroundGradientTo} 50%, ${theme.colors.backgroundGradientFrom} 100%)` }}>
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderLeftColor: theme.colors.primary, borderRightColor: theme.colors.primary, borderBottomColor: theme.colors.primary, borderTopColor: 'transparent' }}></div>
-          <p className="font-medium" style={{ color: theme.colors.textPrimary }}>Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleNavigate = (page: string) => {
-    setSidebarOpen(false);
-    if (page === 'accueil') {
-      setCurrentPage('accueil');
-      } else {
-        window.location.href = `/${page}`;
-        }
-  };
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'accueil': return <AccueilPage onNavigate={handleNavigate} />;
-      case 'transactions': return <TransactionsPage />;
-      case 'budget': return <BudgetPage />;
-      case 'previsionnel': return <PrevisionnelPage />;
-      case 'epargnes': return <EpargnesPage />;
-      case 'credits-dettes': return <CreditsDettesPageFull />;
-      case 'memo': return <MemoPage />;
-      case 'enveloppes': return <EnveloppesPage />;
-      case 'objectifs': return <ObjectifsPageFull />;
-      case 'parametres': return <ParametresPage />;
-      case 'statistiques': return <StatistiquesPage />;
-      case 'plus': return <PlusPage />;
-      default: return <AccueilPage onNavigate={handleNavigate} />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen" style={{ background: `linear-gradient(180deg, ${theme.colors.backgroundGradientFrom} 0%, ${theme.colors.backgroundGradientTo} 50%, ${theme.colors.backgroundGradientFrom} 100%)` }}>
-      <Header onMenuClick={() => setSidebarOpen(true)} onThemeClick={() => setThemeModalOpen(true)} />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} currentPage={currentPage} onNavigate={handleNavigate} />
-      <main className="px-4 pt-20 pb-24 max-w-md mx-auto">
-        {renderPage()}
-      </main>
-      <BottomNav currentPage={currentPage} onNavigate={handleNavigate} />
-      <ThemeModal isOpen={themeModalOpen} onClose={() => setThemeModalOpen(false)} />
-    </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <HomePageContent />
-  );
+export default function EnveloppesPage() {
+  const router = useRouter();
+  const handleNavigate = (page: string) => { if (page === 'accueil') router.push('/'); else router.push(`/${page}`); };
+  return (<AppShell currentPage="enveloppes" onNavigate={handleNavigate}><EnveloppesContent /></AppShell>);
 }

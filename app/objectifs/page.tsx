@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Target, Plus, Edit3, Trash2, X, Check, Lightbulb, RefreshCw, Palmtree, Car, Home, Wallet, Gift, Smartphone, GraduationCap, PartyPopper, Gem, Baby, Heart, ShoppingBasket } from 'lucide-react';
+import { Target, Plus, Edit3, Trash2, X, Check, RefreshCw, Palmtree, Car, Home, Wallet, Gift, Smartphone, GraduationCap, PartyPopper, Gem, Baby, Heart, ShoppingBasket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Objectif {
   id: number;
@@ -54,6 +54,7 @@ function ObjectifsContent() {
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyleDynamic = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  const modalInputStyle = { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary };
 
   const couleursDisponibles = [
     { id: 'rose-pale', nom: 'Rose pâle', bg: 'bg-[#F8E8E8]', border: 'border-[#E8B4B8]', text: 'text-[#8B4557]', progress: 'bg-[#E8B4B8]' },
@@ -78,7 +79,6 @@ function ObjectifsContent() {
   useEffect(() => {
     const savedObjectifs = localStorage.getItem('budget-objectifs');
     if (savedObjectifs) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const parsed = JSON.parse(savedObjectifs);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const migrated = parsed.map((o: any) => ({ ...o, type: o.type || 'court', recurrence: o.recurrence || undefined }));
@@ -277,73 +277,64 @@ function ObjectifsContent() {
           </div>
         )}
 
-        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-          <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
-          <div className="space-y-2">
-            {objectifs.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Créez des objectifs pour mieux épargner</p>)}
-            {objectifs.some(o => (o.montantActuel / o.montantCible) * 100 >= 100) && (<p className="text-[10px] text-[#7DD3A8]">🎉 Félicitations ! Vous avez atteint au moins un objectif</p>)}
-            {objectifs.filter(o => o.priorite === 'haute' && (o.montantActuel / o.montantCible) * 100 < 50).length > 0 && (<p className="text-[10px] text-[#7DD3A8]">🔴 Vos objectifs prioritaires ont besoin d&apos;attention</p>)}
-            {progressionGlobale > 0 && progressionGlobale < 100 && (<p className="text-[10px] text-[#7DD3A8]">💪 Continuez ! Vous êtes à {Math.round(progressionGlobale)}% de vos objectifs</p>)}
-            {objectifsAvecRecurrence > 0 && (<p className="text-[10px] text-[#7DD3A8]">🔄 {objectifsAvecRecurrence} objectif(s) avec versement automatique actif</p>)}
-            {objectifs.length > 0 && objectifsAvecRecurrence === 0 && (<p className="text-[10px] text-[#7DD3A8]">💡 Activez les récurrences pour épargner automatiquement</p>)}
-          </div>
-        </div>
+        {/* SmartTips remplace l'ancienne carte conseils */}
+        <SmartTips page="objectifs" />
       </div>
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
           <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Nouvel'} objectif</h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
+              <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Nouvel'} objectif</h2>
+              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
 
             <div className="space-y-4">
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Nom de l&apos;objectif</label><input type="text" placeholder="Ex: Voyage Japon, iPhone..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyleDynamic} /></div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Nom de l&apos;objectif</label><input type="text" placeholder="Ex: Voyage Japon, iPhone..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} /></div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant cible ({parametres.devise})</label><input type="number" placeholder="0" value={formData.montantCible} onChange={(e) => setFormData({ ...formData, montantCible: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyleDynamic} /></div>
-                <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Déjà épargné ({parametres.devise})</label><input type="number" placeholder="0" value={formData.montantActuel} onChange={(e) => setFormData({ ...formData, montantActuel: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyleDynamic} /></div>
+                <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Montant cible ({parametres.devise})</label><input type="number" placeholder="0" value={formData.montantCible} onChange={(e) => setFormData({ ...formData, montantCible: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} /></div>
+                <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Déjà épargné ({parametres.devise})</label><input type="number" placeholder="0" value={formData.montantActuel} onChange={(e) => setFormData({ ...formData, montantActuel: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} /></div>
               </div>
 
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Date d&apos;échéance (optionnel)</label><input type="date" value={formData.dateEcheance} onChange={(e) => setFormData({ ...formData, dateEcheance: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyleDynamic} /></div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Date d&apos;échéance (optionnel)</label><input type="date" value={formData.dateEcheance} onChange={(e) => setFormData({ ...formData, dateEcheance: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} /></div>
 
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Type d&apos;objectif</label>
-                <div className="grid grid-cols-2 gap-2">{(['court', 'long'] as const).map((t) => (<button key={t} onClick={() => setFormData({ ...formData, type: t })} className="py-2 rounded-xl text-xs font-medium border" style={formData.type === t ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>{t === 'court' ? '🎯 Court terme' : '🏔️ Long terme'}</button>))}</div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Type d&apos;objectif</label>
+                <div className="grid grid-cols-2 gap-2">{(['court', 'long'] as const).map((t) => (<button key={t} onClick={() => setFormData({ ...formData, type: t })} className="py-2 rounded-xl text-xs font-medium border" style={formData.type === t ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}>{t === 'court' ? '🎯 Court terme' : '🏔️ Long terme'}</button>))}</div>
               </div>
 
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Priorité</label>
-                <div className="grid grid-cols-3 gap-2">{(['haute', 'moyenne', 'basse'] as const).map((p) => (<button key={p} onClick={() => setFormData({ ...formData, priorite: p })} className="py-2 rounded-xl text-xs font-medium border" style={formData.priorite === p ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>{p === 'haute' ? '🔴 Haute' : p === 'moyenne' ? '🟠 Moyenne' : '🟢 Basse'}</button>))}</div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Priorité</label>
+                <div className="grid grid-cols-3 gap-2">{(['haute', 'moyenne', 'basse'] as const).map((p) => (<button key={p} onClick={() => setFormData({ ...formData, priorite: p })} className="py-2 rounded-xl text-xs font-medium border" style={formData.priorite === p ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}>{p === 'haute' ? '🔴 Haute' : p === 'moyenne' ? '🟠 Moyenne' : '🟢 Basse'}</button>))}</div>
               </div>
 
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Couleur</label>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Couleur</label>
                 <div className="grid grid-cols-4 gap-2">{couleursDisponibles.map((couleur) => (<button key={couleur.id} onClick={() => setFormData({ ...formData, couleur: couleur.id })} className={`h-10 rounded-xl border-2 ${formData.couleur === couleur.id ? 'ring-2' : ''} ${couleur.border}`} style={formData.couleur === couleur.id ? { borderColor: theme.colors.primary, boxShadow: `0 0 0 2px ${theme.colors.primary}` } : {}}><div className={`w-full h-full rounded-lg ${couleur.bg}`} /></button>))}</div>
               </div>
 
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Icône</label>
-                <div className="grid grid-cols-6 gap-2">{iconesDisponibles.map((icone) => { const IconComp = icone.icon; return (<button key={icone.id} onClick={() => setFormData({ ...formData, icone: icone.id })} className="h-10 rounded-xl flex items-center justify-center border" style={formData.icone === icone.id ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}><IconComp className="w-5 h-5" /></button>); })}</div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Icône</label>
+                <div className="grid grid-cols-6 gap-2">{iconesDisponibles.map((icone) => { const IconComp = icone.icon; return (<button key={icone.id} onClick={() => setFormData({ ...formData, icone: icone.id })} className="h-10 rounded-xl flex items-center justify-center border" style={formData.icone === icone.id ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}><IconComp className="w-5 h-5" /></button>); })}</div>
               </div>
 
-              <div className="p-3 rounded-xl border" style={formData.recurrenceActif ? { borderColor: theme.colors.primary, background: `${theme.colors.primary}10` } : { borderColor: theme.colors.cardBorder, background: theme.colors.cardBackgroundLight }}>
+              <div className="p-3 rounded-xl border" style={formData.recurrenceActif ? { borderColor: theme.colors.primary, background: `${theme.colors.primary}10` } : { borderColor: theme.colors.cardBorder, background: theme.colors.secondaryLight }}>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-medium flex items-center gap-2" style={textPrimary}><RefreshCw className="w-4 h-4" />Versement récurrent</label>
+                  <label className="text-xs font-medium flex items-center gap-2" style={{ color: theme.colors.textOnSecondary }}><RefreshCw className="w-4 h-4" />Versement récurrent</label>
                   <button onClick={() => setFormData({ ...formData, recurrenceActif: !formData.recurrenceActif })} className={`w-12 h-6 rounded-full transition-colors ${formData.recurrenceActif ? 'bg-green-500' : ''}`} style={!formData.recurrenceActif ? { background: theme.colors.cardBackgroundLight } : {}}><div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${formData.recurrenceActif ? 'translate-x-6' : 'translate-x-0.5'}`} /></button>
                 </div>
                 {formData.recurrenceActif && (
                   <div className="space-y-3">
-                    <div><label className="text-[10px] block mb-1" style={textSecondary}>Fréquence</label>
-                      <div className="grid grid-cols-3 gap-2">{(['mensuel', 'bimensuel', 'hebdomadaire'] as const).map((f) => (<button key={f} onClick={() => setFormData({ ...formData, recurrenceFrequence: f, recurrenceJour: '1' })} className="py-1.5 rounded-lg text-[10px] font-medium border" style={formData.recurrenceFrequence === f ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>{f === 'mensuel' ? 'Mensuel' : f === 'bimensuel' ? '2x/mois' : 'Hebdo'}</button>))}</div>
+                    <div><label className="text-[10px] block mb-1" style={{ color: theme.colors.textOnSecondary }}>Fréquence</label>
+                      <div className="grid grid-cols-3 gap-2">{(['mensuel', 'bimensuel', 'hebdomadaire'] as const).map((f) => (<button key={f} onClick={() => setFormData({ ...formData, recurrenceFrequence: f, recurrenceJour: '1' })} className="py-1.5 rounded-lg text-[10px] font-medium border" style={formData.recurrenceFrequence === f ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } : { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}>{f === 'mensuel' ? 'Mensuel' : f === 'bimensuel' ? '2x/mois' : 'Hebdo'}</button>))}</div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      <div><label className="text-[10px] block mb-1" style={textSecondary}>Montant ({parametres.devise})</label><input type="number" placeholder="0" value={formData.recurrenceMontant} onChange={(e) => setFormData({ ...formData, recurrenceMontant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none" style={inputStyleDynamic} /></div>
-                      <div><label className="text-[10px] block mb-1" style={textSecondary}>{formData.recurrenceFrequence === 'hebdomadaire' ? 'Jour semaine' : 'Jour du mois'}</label><select value={formData.recurrenceJour} onChange={(e) => setFormData({ ...formData, recurrenceJour: e.target.value })} className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none" style={inputStyleDynamic}>{formData.recurrenceFrequence === 'hebdomadaire' ? joursSemaine.map((jour, i) => (<option key={i} value={i}>{jour}</option>)) : Array.from({ length: 31 }, (_, i) => (<option key={i + 1} value={i + 1}>{i + 1}</option>))}</select></div>
+                      <div><label className="text-[10px] block mb-1" style={{ color: theme.colors.textOnSecondary }}>Montant ({parametres.devise})</label><input type="number" placeholder="0" value={formData.recurrenceMontant} onChange={(e) => setFormData({ ...formData, recurrenceMontant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none" style={modalInputStyle} /></div>
+                      <div><label className="text-[10px] block mb-1" style={{ color: theme.colors.textOnSecondary }}>{formData.recurrenceFrequence === 'hebdomadaire' ? 'Jour semaine' : 'Jour du mois'}</label><select value={formData.recurrenceJour} onChange={(e) => setFormData({ ...formData, recurrenceJour: e.target.value })} className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none" style={modalInputStyle}>{formData.recurrenceFrequence === 'hebdomadaire' ? joursSemaine.map((jour, i) => (<option key={i} value={i}>{jour}</option>)) : Array.from({ length: 31 }, (_, i) => (<option key={i + 1} value={i + 1}>{i + 1}</option>))}</select></div>
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Créer'}</button>
               </div>
             </div>
@@ -353,15 +344,15 @@ function ObjectifsContent() {
 
       {showVersementModal && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
-          <div className="rounded-2xl p-4 w-full max-w-sm border mt-20" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
+          <div className="rounded-2xl p-4 w-full max-w-sm border mt-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>Ajouter un versement</h2>
-              <button onClick={() => setShowVersementModal(false)} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
+              <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>Ajouter un versement</h2>
+              <button onClick={() => setShowVersementModal(false)} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
             <div className="space-y-4">
-              <div><label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant ({parametres.devise})</label><input type="number" placeholder="0" value={versementMontant} onChange={(e) => setVersementMontant(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={inputStyleDynamic} autoFocus /></div>
+              <div><label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Montant ({parametres.devise})</label><input type="number" placeholder="0" value={versementMontant} onChange={(e) => setVersementMontant(e.target.value)} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} autoFocus /></div>
               <div className="flex gap-3">
-                <button onClick={() => setShowVersementModal(false)} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={() => setShowVersementModal(false)} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={handleVersement} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}><Plus className="w-5 h-5" />Ajouter</button>
               </div>
             </div>

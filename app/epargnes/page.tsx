@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { PiggyBank, TrendingUp, Target, Wallet, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Lightbulb, BarChart3, Building, Clock, PieChart } from 'lucide-react';
+import { PiggyBank, TrendingUp, Target, Wallet, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, BarChart3, Building, Clock, PieChart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Transaction {
   id: number;
@@ -225,16 +225,8 @@ function EpargnesContent() {
         <p className={`text-2xl font-semibold mt-1 ${netEpargneMois >= 0 ? 'text-green-400' : 'text-red-400'}`}>{netEpargneMois >= 0 ? '+' : ''}{netEpargneMois.toFixed(2)} {parametres.devise}</p>
       </div>
 
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils épargne</h4></div>
-        <div className="space-y-2">
-          {Number(tauxEpargne) < 10 && totalRevenus > 0 && (<p className="text-[10px] text-[#7DD3A8]">📌 Essayez d&apos;atteindre un taux d&apos;épargne de 10% minimum ({(totalRevenus * 0.1).toFixed(2)} {parametres.devise})</p>)}
-          {Number(tauxEpargne) >= 10 && Number(tauxEpargne) < 20 && (<p className="text-[10px] text-[#7DD3A8]">✅ Bon taux d&apos;épargne ! Visez 20% pour plus de sécurité</p>)}
-          {Number(tauxEpargne) >= 20 && (<p className="text-[10px] text-[#7DD3A8]">🎉 Excellent ! Vous épargnez plus de 20% de vos revenus</p>)}
-          {totalReprisesMois > totalEpargnesMois && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Attention, vos reprises dépassent vos versements ce mois</p>)}
-          {filteredTransactions.filter(t => t.type === 'Épargnes').length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Aucune épargne ce mois. Pensez à mettre de côté !</p>)}
-        </div>
-      </div>
+      {/* SmartTips remplace l'ancienne carte conseils */}
+      <SmartTips page="epargnes" />
     </div>
   );
 
@@ -269,10 +261,8 @@ function EpargnesContent() {
           )}
         </div>
 
-        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-          <div className="flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><span className="text-xs font-semibold text-[#7DD3A8]">Conseil</span></div>
-          {netEpargneMois >= 0 ? (<p className="text-[10px] text-[#7DD3A8]">✅ Bonne gestion ! Vous avez épargné {netEpargneMois.toFixed(2)} {parametres.devise} net ce mois</p>) : (<p className="text-[10px] text-[#7DD3A8]">⚠️ Solde négatif : vous avez repris plus que versé ce mois</p>)}
-        </div>
+        {/* SmartTips */}
+        <SmartTips page="epargnes" />
       </div>
     );
   };
@@ -349,14 +339,8 @@ function EpargnesContent() {
           )}
         </div>
 
-        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-          <div className="flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><span className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</span></div>
-          <div className="space-y-2">
-            {moyenneMensuelle > 0 && (<p className="text-[10px] text-[#7DD3A8]">📈 À ce rythme, vous aurez {projection12Mois.toFixed(0)}{parametres.devise} dans 1 an</p>)}
-            {moyenneMensuelle <= 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Votre épargne moyenne est négative. Essayez d&apos;épargner régulièrement</p>)}
-            {comptesEpargne.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">🏦 Ajoutez vos comptes épargne dans Paramètres pour un suivi détaillé</p>)}
-          </div>
-        </div>
+        {/* SmartTips */}
+        <SmartTips page="epargnes" />
       </div>
     );
   };
@@ -390,14 +374,8 @@ function EpargnesContent() {
         )}
       </div>
 
-      <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
-        <div className="flex items-center gap-2 mb-2"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><span className="text-xs font-semibold text-[#7DD3A8]">💡 Bilan annuel</span></div>
-        <div className="space-y-2">
-          {netAnnee > 0 && (<p className="text-[10px] text-[#7DD3A8]">🎉 Bravo ! Vous avez épargné {netAnnee.toFixed(0)}{parametres.devise} net cette année</p>)}
-          {netAnnee < 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Solde annuel négatif. Essayez de limiter les reprises</p>)}
-          {statsAnnee.moisAvecEpargne >= 6 && (<p className="text-[10px] text-[#7DD3A8]">✅ Régularité : vous avez épargné {statsAnnee.moisAvecEpargne} mois sur 12</p>)}
-        </div>
-      </div>
+      {/* SmartTips */}
+      <SmartTips page="epargnes" />
     </div>
   );
 

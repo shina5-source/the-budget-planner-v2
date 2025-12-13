@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, X, Check, ChevronDown, ChevronUp, Trash2, Edit3, Lightbulb, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Search, Plus, X, Check, ChevronDown, ChevronUp, Trash2, Edit3, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import RecurringTransactions from '@/components/RecurringTransactions';
 import { processRecurringTransactions } from '@/lib/recurring-transactions';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, SmartTips } from '@/components';
 
 interface Transaction {
   id: number;
@@ -114,7 +114,6 @@ function TransactionsContent() {
   const totalDepenses = filteredTransactions.filter(t => ['Factures', 'Dépenses'].includes(t.type)).reduce((s, t) => s + parseFloat(t.montant || '0'), 0);
   const totalEpargnes = filteredTransactions.filter(t => t.type === 'Épargnes').reduce((s, t) => s + parseFloat(t.montant || '0'), 0);
   const solde = totalRevenus - totalDepenses - totalEpargnes;
-  const nbCredits = transactions.filter(t => t.isCredit).length;
 
   const resetForm = () => { setFormData({ date: new Date().toISOString().split('T')[0], montant: '', type: 'Dépenses', categorie: '', depuis: '', vers: '', moyenPaiement: '', memo: '', isCredit: false, capitalTotal: '', tauxInteret: '', dureeMois: '', dateDebut: '' }); setShowAddCategory(false); setShowAddCompteDepuis(false); setShowAddCompteVers(false); setShowAddMoyenPaiement(false); setNewCategoryName(''); setNewCompteName(''); setNewMoyenPaiement(''); };
   const handleSubmit = () => { if (!formData.montant || !formData.categorie) return; if (editingId !== null) { saveTransactions(transactions.map(t => t.id === editingId ? { ...formData, id: editingId } : t)); setEditingId(null); } else { saveTransactions([...transactions, { ...formData, id: Date.now() }]); } resetForm(); setShowForm(false); };
@@ -148,7 +147,9 @@ function TransactionsContent() {
           <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-semibold" style={textPrimary}>Historique</h3>{filteredTransactions.length > 0 && (<span className="text-[10px]" style={textSecondary}>{displayedTransactions.length} sur {filteredTransactions.length}</span>)}</div>
           {displayedTransactions.length > 0 ? (<div className="space-y-2">{displayedTransactions.map((t) => (<div key={t.id} className="p-3 rounded-xl border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}><div className="flex items-center justify-between mb-2"><div className="flex-1 min-w-0"><div className="flex items-center gap-2"><p className="text-xs font-medium truncate" style={textPrimary}>{t.categorie}</p>{t.isCredit && (<span className="px-1.5 py-0.5 bg-purple-500/30 text-purple-300 rounded text-[9px]">Crédit</span>)}{t.memo?.includes('🔄') && (<span className="px-1.5 py-0.5 bg-indigo-500/30 text-indigo-300 rounded text-[9px]">Auto</span>)}</div><p className="text-[10px]" style={textSecondary}>{t.date} • {t.type}{t.moyenPaiement ? ` • ${t.moyenPaiement}` : ''}</p>{t.depuis && <p className="text-[10px]" style={textSecondary}>De: {t.depuis} → {t.vers || '-'}</p>}</div><div className="text-right"><p className={`text-sm font-semibold ${getTypeColor(t.type)}`}>{t.type === 'Revenus' ? '+' : '-'}{parseFloat(t.montant).toFixed(2)} {parametres.devise}</p></div></div>{t.memo && <p className="text-[10px] italic mt-1" style={textSecondary}>&quot;{t.memo}&quot;</p>}<div className="flex justify-end gap-2 mt-2"><button onClick={() => handleEdit(t)} className="p-1.5 rounded-lg" style={{ color: theme.colors.textPrimary }}><Edit3 className="w-4 h-4" /></button><button onClick={() => handleDelete(t.id)} className="p-1.5 rounded-lg text-red-400"><Trash2 className="w-4 h-4" /></button></div></div>))}{hasMore && (<button onClick={() => setDisplayCount(p => p + ITEMS_PER_PAGE)} className="w-full py-3 mt-3 border-2 border-dashed rounded-xl text-sm font-medium" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>Voir plus ({remainingCount} restante{remainingCount > 1 ? 's' : ''})</button>)}</div>) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune transaction trouvée</p>)}
         </div>
-        <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50"><div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div><div className="space-y-2">{filteredTransactions.length === 0 && (<p className="text-[10px] text-[#7DD3A8]">📝 Commencez à enregistrer vos transactions</p>)}{solde < 0 && (<p className="text-[10px] text-[#7DD3A8]">⚠️ Solde négatif de {Math.abs(solde).toFixed(2)} {parametres.devise}</p>)}{solde >= 0 && solde < 100 && filteredTransactions.length > 0 && (<p className="text-[10px] text-[#7DD3A8]">💡 Solde serré</p>)}{solde >= 100 && (<p className="text-[10px] text-[#7DD3A8]">✅ Bon solde !</p>)}{nbCredits > 0 && (<p className="text-[10px] text-[#7DD3A8]">💳 {nbCredits} crédit(s)</p>)}</div></div>
+        
+        {/* SmartTips remplace l'ancienne carte conseils */}
+        <SmartTips page="transactions" />
       </div>
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
