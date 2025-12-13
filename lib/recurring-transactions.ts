@@ -6,6 +6,7 @@ export interface RecurringTransaction {
   type: 'revenu' | 'facture' | 'depense' | 'epargne';
   categorie: string;
   compte: string;
+  moyenPaiement?: string;
   frequence: 'mensuel' | 'hebdomadaire' | 'bimensuel' | 'trimestriel' | 'annuel';
   jourDuMois?: number;
   jourDeSemaine?: number;
