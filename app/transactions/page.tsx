@@ -106,6 +106,13 @@ function TransactionsContent() {
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
+  
+  // Style spécifique pour les inputs dans la modale (fond secondaryLight, texte contrasté)
+  const modalInputStyle = { 
+    background: theme.colors.secondaryLight, 
+    borderColor: theme.colors.cardBorder, 
+    color: theme.colors.textOnSecondary 
+  };
 
   const loadTransactions = () => {
     const savedTransactions = localStorage.getItem('budget-transactions');
@@ -231,7 +238,7 @@ function TransactionsContent() {
       case 'Revenus': return 'text-green-400';
       case 'Factures': return 'text-red-400';
       case 'Dépenses': return 'text-orange-400';
-      case 'Épargnes': return 'text-blue-400';
+      case 'Épargnes': return 'text-violet-400';
       case 'Reprise d\'épargne': return 'text-purple-400';
       case 'Remboursement': return 'text-teal-400';
       case 'Transfert de fond': return 'text-yellow-400';
@@ -411,55 +418,55 @@ function TransactionsContent() {
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
           <div className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium" style={textPrimary}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
-              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={textPrimary} /></button>
+              <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Nouvelle'} transaction</h2>
+              <button onClick={() => { setShowForm(false); setEditingId(null); }} className="p-1"><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date</label>
-                <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Date</label>
+                <input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Type</label>
-                <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value, categorie: '' })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Type</label>
+                <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value, categorie: '' })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
                   {types.map(type => (<option key={type} value={type}>{type}</option>))}
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Montant ({parametres.devise})</label>
-                <input type="number" placeholder="0.00" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Montant ({parametres.devise})</label>
+                <input type="number" placeholder="0.00" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Catégorie</label>
-                <select value={formData.categorie} onChange={(e) => setFormData({ ...formData, categorie: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Catégorie</label>
+                <select value={formData.categorie} onChange={(e) => setFormData({ ...formData, categorie: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
                   <option value="">Sélectionner...</option>
                   {getCategoriesForType(formData.type).map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Depuis</label>
-                <select value={formData.depuis} onChange={(e) => setFormData({ ...formData, depuis: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Depuis</label>
+                <select value={formData.depuis} onChange={(e) => setFormData({ ...formData, depuis: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
                   <option value="">Aucun</option>
                   {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Vers</label>
-                <select value={formData.vers} onChange={(e) => setFormData({ ...formData, vers: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Vers</label>
+                <select value={formData.vers} onChange={(e) => setFormData({ ...formData, vers: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
                   <option value="">Aucun</option>
                   {comptesOptions.map(compte => (<option key={compte} value={compte}>{compte}</option>))}
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Moyen de paiement</label>
-                <select value={formData.moyenPaiement} onChange={(e) => setFormData({ ...formData, moyenPaiement: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle}>
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Moyen de paiement</label>
+                <select value={formData.moyenPaiement} onChange={(e) => setFormData({ ...formData, moyenPaiement: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle}>
                   <option value="">Sélectionner...</option>
                   {moyensPaiement.map(moyen => (<option key={moyen} value={moyen}>{moyen}</option>))}
                 </select>
@@ -467,40 +474,40 @@ function TransactionsContent() {
 
               <div className="flex items-center gap-3">
                 <input type="checkbox" id="isCredit" checked={formData.isCredit} onChange={(e) => setFormData({ ...formData, isCredit: e.target.checked })} className="w-5 h-5 rounded" />
-                <label htmlFor="isCredit" className="text-xs font-medium" style={textPrimary}>C&apos;est un crédit</label>
+                <label htmlFor="isCredit" className="text-xs font-medium" style={{ color: theme.colors.textOnSecondary }}>C&apos;est un crédit</label>
               </div>
 
               {formData.isCredit && (
-                <div className="space-y-3 p-3 rounded-xl border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
-                  <p className="text-[10px] text-center" style={textSecondary}>Informations du crédit</p>
+                <div className="space-y-3 p-3 rounded-xl border" style={{ background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder }}>
+                  <p className="text-[10px] text-center" style={{ color: theme.colors.textOnSecondary }}>Informations du crédit</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium mb-1 block" style={textPrimary}>Capital total</label>
-                      <input type="number" placeholder="0" value={formData.capitalTotal} onChange={(e) => setFormData({ ...formData, capitalTotal: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                      <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Capital total</label>
+                      <input type="number" placeholder="0" value={formData.capitalTotal} onChange={(e) => setFormData({ ...formData, capitalTotal: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium mb-1 block" style={textPrimary}>Taux (%)</label>
-                      <input type="number" placeholder="0" step="0.1" value={formData.tauxInteret} onChange={(e) => setFormData({ ...formData, tauxInteret: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                      <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Taux (%)</label>
+                      <input type="number" placeholder="0" step="0.1" value={formData.tauxInteret} onChange={(e) => setFormData({ ...formData, tauxInteret: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium mb-1 block" style={textPrimary}>Durée (mois)</label>
-                      <input type="number" placeholder="0" value={formData.dureeMois} onChange={(e) => setFormData({ ...formData, dureeMois: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                      <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Durée (mois)</label>
+                      <input type="number" placeholder="0" value={formData.dureeMois} onChange={(e) => setFormData({ ...formData, dureeMois: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium mb-1 block" style={textPrimary}>Date début</label>
-                      <input type="date" value={formData.dateDebut} onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
+                      <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Date début</label>
+                      <input type="date" value={formData.dateDebut} onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={modalInputStyle} />
                     </div>
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Description (optionnel)</label>
-                <textarea placeholder="Ajouter une note..." value={formData.memo} onChange={(e) => setFormData({ ...formData, memo: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border resize-none" style={inputStyle} rows={3} />
+                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Description (optionnel)</label>
+                <textarea placeholder="Ajouter une note..." value={formData.memo} onChange={(e) => setFormData({ ...formData, memo: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border resize-none" style={modalInputStyle} rows={3} />
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.primary, color: theme.colors.textPrimary }}>Annuler</button>
+                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-medium border" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
                 <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
                   <Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Ajouter'}
                 </button>
@@ -516,6 +523,7 @@ function TransactionsContent() {
         categoriesRevenus={parametres.categoriesRevenus}
         categoriesFactures={parametres.categoriesFactures}
         categoriesDepenses={parametres.categoriesDepenses}
+        categoriesEpargnes={parametres.categoriesEpargnes}
         comptes={parametres.comptesBancaires}
         onTransactionCreated={loadTransactions}
       />

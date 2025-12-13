@@ -189,7 +189,7 @@ function AccueilPage({ onNavigate }: { onNavigate: (page: string) => void }) {
       </div>
 
       <div className="space-y-3 mb-6">
-        {[
+        {[ 
           { title: 'Revenus prévus', amount: totalRevenus, sub: `Reçus : ${totalRevenus.toFixed(2)} ${parametres.devise}`, icon: TrendingUp },
           { title: 'Dépenses fixes', amount: totalFactures, sub: `Payées : ${totalFactures.toFixed(2)} ${parametres.devise}`, icon: HomeIcon },
           { title: 'Enveloppes budgétaires', amount: budgetPrevu, sub: `Dépensé : ${totalDepenses.toFixed(2)} ${parametres.devise}`, icon: Mail },
@@ -217,7 +217,7 @@ function AccueilPage({ onNavigate }: { onNavigate: (page: string) => void }) {
       </div>
 
       <div className="space-y-3 mb-4">
-        {[
+        {[ 
           { page: 'budget', title: 'Mon budget', sub: 'Vue d\'ensemble', icon: PieChart },
           { page: 'objectifs', title: 'Mes Objectifs', sub: 'Économiseur', icon: Target },
           { page: 'enveloppes', title: 'Mes enveloppes', sub: 'Gérer mes enveloppes', icon: Mail },
@@ -449,7 +449,7 @@ function EnveloppesPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Nom de l'enveloppe</label>
+                <label className="text-xs font-medium mb-1 block" style={textPrimary}>Nom de l\'enveloppe</label>
                 <input type="text" placeholder="Ex: Courses, Restaurant..." value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border" style={inputStyle} />
               </div>
               <div>
@@ -625,10 +625,10 @@ function ParametresPage() {
     <div className="pb-4">
       <div className="text-center mb-4">
         <h1 className="text-lg font-medium" style={textPrimary}>Paramètres</h1>
-        <p className="text-xs" style={textSecondary}>Configuration de l'application</p>
+        <p className="text-xs" style={textSecondary}>Configuration de l\'application</p>
       </div>
 
-      {/* Général */}
+      {/* Général */} 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Settings className="w-5 h-5" />Général</h3>
         <div className="space-y-3">
@@ -654,7 +654,7 @@ function ParametresPage() {
         </div>
       </div>
 
-      {/* Comptes bancaires */}
+      {/* Comptes bancaires */} 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <button onClick={() => toggleSection('comptes')} className="w-full flex items-center justify-between">
           <div className="flex items-center gap-3"><Building className="w-5 h-5" style={textPrimary} /><span className="text-sm font-semibold" style={textPrimary}>Comptes bancaires</span><span className="text-[10px]" style={textSecondary}>({parametres.comptesBancaires.length})</span></div>
@@ -686,7 +686,7 @@ function ParametresPage() {
       {renderCategorieSection('Catégories Dépenses', 'categoriesDepenses', <ShoppingCart className="w-5 h-5 text-orange-400" />)}
       {renderCategorieSection('Catégories Épargnes', 'categoriesEpargnes', <PiggyBank className="w-5 h-5 text-blue-400" />)}
 
-      {/* Données */}
+      {/* Données */} 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><Database className="w-5 h-5" />Données</h3>
         <div className="space-y-3">
@@ -700,7 +700,7 @@ function ParametresPage() {
         </div>
       </div>
 
-      {/* Conseils */}
+      {/* Conseils */} 
       <div className="bg-[#2E5A4C]/40 backdrop-blur-sm rounded-2xl p-4 shadow-sm border border-[#7DD3A8]/50">
         <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-[#7DD3A8]" /><h4 className="text-xs font-semibold text-[#7DD3A8]">💡 Conseils</h4></div>
         <div className="space-y-2">
@@ -710,13 +710,13 @@ function ParametresPage() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer */} 
       <div className="backdrop-blur-sm rounded-2xl p-4 mt-4 text-center border" style={cardStyle}>
         <p className="text-[10px]" style={textSecondary}>The Budget Planner v1.0</p>
         <p className="text-[10px]" style={textSecondary}>Créé avec ❤️ par Shina5</p>
       </div>
 
-      {/* Modal compte */}
+      {/* Modal compte */} 
       {showCompteForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="rounded-2xl p-4 w-full max-w-sm border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>

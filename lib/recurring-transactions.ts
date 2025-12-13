@@ -3,7 +3,7 @@ export interface RecurringTransaction {
   id: string;
   nom: string;
   montant: number;
-  type: 'revenu' | 'facture' | 'depense';
+  type: 'revenu' | 'facture' | 'depense' | 'epargne';
   categorie: string;
   compte: string;
   frequence: 'mensuel' | 'hebdomadaire' | 'bimensuel' | 'trimestriel' | 'annuel';
@@ -167,6 +167,7 @@ const typeMapping: Record<string, string> = {
   'revenu': 'Revenus',
   'facture': 'Factures',
   'depense': 'Dépenses',
+  'epargne': 'Épargnes',
 };
 
 // Créer une transaction à partir d'une récurrente
