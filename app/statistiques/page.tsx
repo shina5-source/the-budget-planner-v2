@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle, Filter, X, Download, Maximize2, X as XIcon } from 'lucide-react';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
+import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle, Filter, X, Download, Maximize2, X as XIcon, Calendar, GitBranch } from 'lucide-react';
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid, Sankey, Layer, Rectangle } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
 import { AppShell, SmartTips } from '@/components';
@@ -26,6 +26,7 @@ interface ParametresData {
 const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
+const daysOfWeek = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 const COLORS = ['#D4AF37', '#8B4557', '#7DD3A8', '#5C9EAD', '#E8A87C', '#C38D9E', '#41B3A3', '#E27D60', '#85DCB8', '#E8A87C'];
 const COLORS_TYPE = {
@@ -35,7 +36,7 @@ const COLORS_TYPE = {
   epargnes: '#2196F3'
 };
 
-type TabType = 'resume' | 'revenus' | 'factures' | 'depenses' | 'epargnes' | 'evolution';
+type TabType = 'resume' | 'revenus' | 'factures' | 'depenses' | 'epargnes' | 'evolution' | 'calendrier' | 'flux';
 
 function StatistiquesContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -833,9 +834,330 @@ function StatistiquesContent() {
     </div>
   );
 
+  // === HEATMAP CALENDRIER ===
+  const renderCalendrier = () => {
+    // Calculer les dépenses par jour pour le mois sélectionné
+    const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+    const getFirstDayOfMonth = (year: number, month: number) => {
+      const day = new Date(year, month, 1).getDay();
+      return day === 0 ? 6 : day - 1; // Lundi = 0, Dimanche = 6
+    };
+
+    const currentMonth = selectedMonth ?? new Date().getMonth();
+    const daysInMonth = getDaysInMonth(selectedYear, currentMonth);
+    const firstDay = getFirstDayOfMonth(selectedYear, currentMonth);
+
+    // Calculer les dépenses par jour
+    const depensesParJour: { [key: number]: number } = {};
+    let maxDepense = 0;
+
+    filteredTransactions
+      .filter(t => t.type === 'Dépenses' || t.type === 'Factures')
+      .forEach(t => {
+        const day = parseInt(t.date?.split('-')[2] || '0');
+        if (day > 0) {
+          depensesParJour[day] = (depensesParJour[day] || 0) + parseFloat(t.montant || '0');
+          if (depensesParJour[day] > maxDepense) maxDepense = depensesParJour[day];
+        }
+      });
+
+    // Fonction pour obtenir la couleur selon l'intensité
+    const getHeatColor = (amount: number) => {
+      if (amount === 0) return `${theme.colors.cardBorder}30`;
+      const intensity = Math.min(amount / (maxDepense || 1), 1);
+      if (intensity < 0.25) return '#4CAF5050';
+      if (intensity < 0.5) return '#FFC10780';
+      if (intensity < 0.75) return '#FF980090';
+      return '#F44336A0';
+    };
+
+    // Générer les cellules du calendrier
+    const cells = [];
+    
+    // Jours vides avant le premier jour
+    for (let i = 0; i < firstDay; i++) {
+      cells.push(<div key={`empty-${i}`} className="aspect-square" />);
+    }
+    
+    // Jours du mois
+    for (let day = 1; day <= daysInMonth; day++) {
+      const depense = depensesParJour[day] || 0;
+      cells.push(
+        <div
+          key={day}
+          className="aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] cursor-pointer hover:scale-105 transition-transform"
+          style={{ backgroundColor: getHeatColor(depense) }}
+          title={`${day} ${monthsFull[currentMonth]}: ${depense.toFixed(2)} €`}
+        >
+          <span style={textPrimary}>{day}</span>
+          {depense > 0 && (
+            <span className="text-[8px] font-semibold" style={{ color: depense > maxDepense * 0.5 ? '#fff' : theme.colors.textSecondary }}>
+              {depense >= 1000 ? `${(depense/1000).toFixed(1)}k` : depense.toFixed(0)}
+            </span>
+          )}
+        </div>
+      );
+    }
+
+    const totalDepensesMois = Object.values(depensesParJour).reduce((a, b) => a + b, 0);
+    const moyenneJour = totalDepensesMois / daysInMonth;
+    const joursAvecDepenses = Object.keys(depensesParJour).length;
+
+    return (
+      <div className="space-y-4">
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}>
+            <Calendar className="w-4 h-4" /> Calendrier des dépenses - {monthsFull[currentMonth]} {selectedYear}
+          </h3>
+          
+          {/* En-tête jours de la semaine */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {daysOfWeek.map(day => (
+              <div key={day} className="text-center text-[9px] font-medium py-1" style={textSecondary}>
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          {/* Grille calendrier */}
+          <div className="grid grid-cols-7 gap-1">
+            {cells}
+          </div>
+
+          {/* Légende */}
+          <div className="flex items-center justify-center gap-2 mt-4 pt-3" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
+            <span className="text-[9px]" style={textSecondary}>Moins</span>
+            <div className="flex gap-1">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: `${theme.colors.cardBorder}30` }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#4CAF5050' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FFC10780' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#FF980090' }} />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F44336A0' }} />
+            </div>
+            <span className="text-[9px]" style={textSecondary}>Plus</span>
+          </div>
+        </div>
+
+        {/* Statistiques du mois */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
+            <p className="text-[9px]" style={textSecondary}>Total sorties</p>
+            <p className="text-lg font-bold text-orange-400">{totalDepensesMois.toFixed(0)} €</p>
+          </div>
+          <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
+            <p className="text-[9px]" style={textSecondary}>Moyenne/jour</p>
+            <p className="text-lg font-bold" style={textPrimary}>{moyenneJour.toFixed(0)} €</p>
+          </div>
+          <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border text-center" style={cardStyle}>
+            <p className="text-[9px]" style={textSecondary}>Jours actifs</p>
+            <p className="text-lg font-bold" style={textPrimary}>{joursAvecDepenses}/{daysInMonth}</p>
+          </div>
+        </div>
+
+        {/* Top 5 jours les plus dépensiers */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>🔥 Top 5 jours les plus dépensiers</h3>
+          {Object.entries(depensesParJour).length > 0 ? (
+            <div className="space-y-2">
+              {Object.entries(depensesParJour)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5)
+                .map(([day, amount], i) => (
+                  <div key={day} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: `${theme.colors.primary}20`, color: theme.colors.textPrimary }}>{i + 1}</span>
+                      <span className="text-xs" style={textPrimary}>{day} {monthsFull[currentMonth]}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-orange-400">{amount.toFixed(2)} €</span>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className="text-xs text-center py-4" style={textSecondary}>Aucune dépense ce mois</p>
+          )}
+        </div>
+
+        <SmartTips page="statistiques" />
+      </div>
+    );
+  };
+
+  // === GRAPHIQUE SANKEY (Flux d'argent) ===
+  const renderFlux = () => {
+    // Préparer les données pour le Sankey
+    const sankeyData = {
+      nodes: [
+        { name: 'Revenus' },
+        { name: 'Factures' },
+        { name: 'Dépenses' },
+        { name: 'Épargnes' },
+        { name: 'Reste' }
+      ],
+      links: [] as { source: number; target: number; value: number }[]
+    };
+
+    // Ajouter les liens si les montants sont > 0
+    if (totalFactures > 0) {
+      sankeyData.links.push({ source: 0, target: 1, value: totalFactures });
+    }
+    if (totalDepenses > 0) {
+      sankeyData.links.push({ source: 0, target: 2, value: totalDepenses });
+    }
+    if (totalEpargnes > 0) {
+      sankeyData.links.push({ source: 0, target: 3, value: totalEpargnes });
+    }
+    if (resteAVivre > 0) {
+      sankeyData.links.push({ source: 0, target: 4, value: resteAVivre });
+    }
+
+    const nodeColors = [COLORS_TYPE.revenus, COLORS_TYPE.factures, COLORS_TYPE.depenses, COLORS_TYPE.epargnes, theme.colors.primary];
+
+    // Calculer les pourcentages
+    const pctFactures = totalRevenus > 0 ? (totalFactures / totalRevenus * 100).toFixed(1) : '0';
+    const pctDepenses = totalRevenus > 0 ? (totalDepenses / totalRevenus * 100).toFixed(1) : '0';
+    const pctEpargnes = totalRevenus > 0 ? (totalEpargnes / totalRevenus * 100).toFixed(1) : '0';
+    const pctReste = totalRevenus > 0 ? (Math.max(0, resteAVivre) / totalRevenus * 100).toFixed(1) : '0';
+
+    return (
+      <div className="space-y-4">
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}>
+            <GitBranch className="w-4 h-4" /> Flux d'argent - {selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'} {selectedYear}
+          </h3>
+          
+          {totalRevenus > 0 ? (
+            <div className="space-y-4">
+              {/* Visualisation simplifiée du flux */}
+              <div className="relative py-4">
+                {/* Source: Revenus */}
+                <div className="flex items-center justify-center mb-4">
+                  <div className="px-4 py-2 rounded-xl text-center" style={{ backgroundColor: `${COLORS_TYPE.revenus}30` }}>
+                    <p className="text-xs font-semibold text-green-400">Revenus</p>
+                    <p className="text-lg font-bold text-green-400">{totalRevenus.toFixed(0)} €</p>
+                  </div>
+                </div>
+
+                {/* Flèche centrale */}
+                <div className="flex justify-center mb-2">
+                  <div className="w-0.5 h-8" style={{ backgroundColor: theme.colors.cardBorder }} />
+                </div>
+
+                {/* Destinations */}
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="p-2 rounded-xl text-center" style={{ backgroundColor: `${COLORS_TYPE.factures}20` }}>
+                    <p className="text-[9px]" style={textSecondary}>Factures</p>
+                    <p className="text-sm font-bold text-red-400">{totalFactures.toFixed(0)} €</p>
+                    <p className="text-[8px] text-red-400">{pctFactures}%</p>
+                  </div>
+                  <div className="p-2 rounded-xl text-center" style={{ backgroundColor: `${COLORS_TYPE.depenses}20` }}>
+                    <p className="text-[9px]" style={textSecondary}>Dépenses</p>
+                    <p className="text-sm font-bold text-orange-400">{totalDepenses.toFixed(0)} €</p>
+                    <p className="text-[8px] text-orange-400">{pctDepenses}%</p>
+                  </div>
+                  <div className="p-2 rounded-xl text-center" style={{ backgroundColor: `${COLORS_TYPE.epargnes}20` }}>
+                    <p className="text-[9px]" style={textSecondary}>Épargnes</p>
+                    <p className="text-sm font-bold text-blue-400">{totalEpargnes.toFixed(0)} €</p>
+                    <p className="text-[8px] text-blue-400">{pctEpargnes}%</p>
+                  </div>
+                  <div className="p-2 rounded-xl text-center" style={{ backgroundColor: `${theme.colors.primary}20` }}>
+                    <p className="text-[9px]" style={textSecondary}>Reste</p>
+                    <p className={`text-sm font-bold ${resteAVivre >= 0 ? 'text-green-400' : 'text-red-400'}`}>{resteAVivre.toFixed(0)} €</p>
+                    <p className="text-[8px]" style={textSecondary}>{pctReste}%</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Barres de progression */}
+              <div className="space-y-3 pt-4" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
+                <div>
+                  <div className="flex justify-between text-[10px] mb-1">
+                    <span style={textSecondary}>Factures</span>
+                    <span className="text-red-400">{pctFactures}%</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.colors.cardBorder}50` }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pctFactures}%`, backgroundColor: COLORS_TYPE.factures }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] mb-1">
+                    <span style={textSecondary}>Dépenses</span>
+                    <span className="text-orange-400">{pctDepenses}%</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.colors.cardBorder}50` }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pctDepenses}%`, backgroundColor: COLORS_TYPE.depenses }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] mb-1">
+                    <span style={textSecondary}>Épargnes</span>
+                    <span className="text-blue-400">{pctEpargnes}%</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.colors.cardBorder}50` }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pctEpargnes}%`, backgroundColor: COLORS_TYPE.epargnes }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] mb-1">
+                    <span style={textSecondary}>Reste disponible</span>
+                    <span style={{ color: theme.colors.primary }}>{pctReste}%</span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.colors.cardBorder}50` }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(0, parseFloat(pctReste))}%`, backgroundColor: theme.colors.primary }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-center py-8" style={textSecondary}>Aucun revenu enregistré</p>
+          )}
+        </div>
+
+        {/* Analyse du flux */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>📊 Analyse du flux</h3>
+          <div className="space-y-2">
+            {totalRevenus > 0 && (
+              <>
+                <div className="flex items-start gap-2 p-2 rounded-lg" style={{ backgroundColor: `${theme.colors.primary}05` }}>
+                  <span className="text-sm">💡</span>
+                  <p className="text-xs" style={textSecondary}>
+                    {parseFloat(pctFactures) > 50 
+                      ? `Vos charges fixes représentent ${pctFactures}% de vos revenus. C'est élevé !`
+                      : `Vos charges fixes représentent ${pctFactures}% de vos revenus. C'est raisonnable.`}
+                  </p>
+                </div>
+                <div className="flex items-start gap-2 p-2 rounded-lg" style={{ backgroundColor: `${theme.colors.primary}05` }}>
+                  <span className="text-sm">💰</span>
+                  <p className="text-xs" style={textSecondary}>
+                    {parseFloat(pctEpargnes) >= 20 
+                      ? `Excellent ! Vous épargnez ${pctEpargnes}% de vos revenus.`
+                      : parseFloat(pctEpargnes) >= 10
+                        ? `Bien ! Vous épargnez ${pctEpargnes}% de vos revenus. L'objectif idéal est 20%.`
+                        : `Vous épargnez ${pctEpargnes}% de vos revenus. Essayez d'atteindre au moins 10%.`}
+                  </p>
+                </div>
+                {resteAVivre < 0 && (
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-red-500/10">
+                    <span className="text-sm">⚠️</span>
+                    <p className="text-xs text-red-400">
+                      Attention ! Vos dépenses dépassent vos revenus de {Math.abs(resteAVivre).toFixed(0)} €.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <SmartTips page="statistiques" />
+      </div>
+    );
+  };
+
   const tabs: { id: TabType; label: string }[] = [
     { id: 'resume', label: 'Résumé' }, { id: 'revenus', label: 'Revenus' }, { id: 'factures', label: 'Factures' },
-    { id: 'depenses', label: 'Dépenses' }, { id: 'epargnes', label: 'Épargnes' }, { id: 'evolution', label: 'Évolution' }
+    { id: 'depenses', label: 'Dépenses' }, { id: 'epargnes', label: 'Épargnes' }, { id: 'evolution', label: 'Évolution' },
+    { id: 'calendrier', label: '📅' }, { id: 'flux', label: '💸' }
   ];
 
   return (
@@ -938,6 +1260,8 @@ function StatistiquesContent() {
         {activeTab === 'depenses' && renderDetail('Dépenses', COLORS_TYPE.depenses)}
         {activeTab === 'epargnes' && renderDetail('Épargnes', COLORS_TYPE.epargnes)}
         {activeTab === 'evolution' && renderEvolution()}
+        {activeTab === 'calendrier' && renderCalendrier()}
+        {activeTab === 'flux' && renderFlux()}
       </div>
 
       {/* Modal plein écran pour les graphiques */}
