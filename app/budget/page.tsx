@@ -16,7 +16,7 @@ interface Transaction {
 
 const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 const monthsFull = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-const years = Array.from({ length: 81 }, (_, i) => 2020 + i);
+const years = Array.from({ length: 76 }, (_, i) => 2025 + i);
 
 type TabType = 'vue' | 'revenus' | 'correctifs' | 'epargne' | 'bilan';
 type BilanAccordionType = 'revenus' | 'factures' | 'depenses' | 'epargnes' | null;
