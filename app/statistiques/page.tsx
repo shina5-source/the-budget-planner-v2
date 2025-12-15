@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle, Filter, X, Download, Maximize2, X as XIcon, Calendar, GitBranch } from 'lucide-react';
-import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid, Sankey, Layer, Rectangle } from 'recharts';
+import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle, Filter, X, Download, Maximize2, X as XIcon, Calendar, GitBranch, Target, Plus, Trash2 } from 'lucide-react';
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
 import { AppShell, SmartTips } from '@/components';
@@ -36,13 +36,21 @@ const COLORS_TYPE = {
   epargnes: '#2196F3'
 };
 
-type TabType = 'resume' | 'revenus' | 'factures' | 'depenses' | 'epargnes' | 'evolution' | 'calendrier' | 'flux';
+type TabType = 'resume' | 'revenus' | 'factures' | 'depenses' | 'epargnes' | 'evolution' | 'calendrier' | 'flux' | 'objectifs';
+
+interface ObjectifBudget {
+  id: string;
+  categorie: string;
+  type: 'Factures' | 'Dépenses' | 'Épargnes';
+  montantCible: number;
+}
 
 function StatistiquesContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [parametres, setParametres] = useState<ParametresData>({ comptes: [], moyensPaiement: [] });
+  const [objectifsBudget, setObjectifsBudget] = useState<ObjectifBudget[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [activeTab, setActiveTab] = useState<TabType>('resume');
@@ -87,6 +95,9 @@ function StatistiquesContent() {
         moyensPaiement: params.moyensPaiement || []
       });
     }
+
+    const savedObjectifsBudget = localStorage.getItem('budget-objectifs-budget');
+    if (savedObjectifsBudget) setObjectifsBudget(JSON.parse(savedObjectifsBudget));
   }, []);
 
   // Extraire les comptes et moyens de paiement uniques des transactions
@@ -1154,10 +1165,273 @@ function StatistiquesContent() {
     );
   };
 
+  // === OBJECTIFS VS RÉALITÉ ===
+  const renderObjectifs = () => {
+    // Obtenir les catégories uniques des transactions
+    const categoriesDepenses = [...new Set(filteredTransactions.filter(t => t.type === 'Dépenses').map(t => t.categorie))];
+    const categoriesFactures = [...new Set(filteredTransactions.filter(t => t.type === 'Factures').map(t => t.categorie))];
+    
+    // Calculer les dépenses réelles par catégorie
+    const depensesReellesParCategorie: Record<string, number> = {};
+    filteredTransactions.forEach(t => {
+      if (t.type === 'Dépenses' || t.type === 'Factures') {
+        const key = `${t.type}-${t.categorie}`;
+        depensesReellesParCategorie[key] = (depensesReellesParCategorie[key] || 0) + parseFloat(t.montant || '0');
+      }
+    });
+
+    // Ajouter un objectif
+    const addObjectif = (type: 'Factures' | 'Dépenses' | 'Épargnes', categorie: string) => {
+      const newObjectif: ObjectifBudget = {
+        id: Date.now().toString(),
+        type,
+        categorie,
+        montantCible: 0
+      };
+      const updated = [...objectifsBudget, newObjectif];
+      setObjectifsBudget(updated);
+      localStorage.setItem('budget-objectifs-budget', JSON.stringify(updated));
+    };
+
+    // Modifier un objectif
+    const updateObjectif = (id: string, montant: number) => {
+      const updated = objectifsBudget.map(o => o.id === id ? { ...o, montantCible: montant } : o);
+      setObjectifsBudget(updated);
+      localStorage.setItem('budget-objectifs-budget', JSON.stringify(updated));
+    };
+
+    // Supprimer un objectif
+    const deleteObjectif = (id: string) => {
+      const updated = objectifsBudget.filter(o => o.id !== id);
+      setObjectifsBudget(updated);
+      localStorage.setItem('budget-objectifs-budget', JSON.stringify(updated));
+    };
+
+    // Calculer le statut d'un objectif
+    const getObjectifStatus = (objectif: ObjectifBudget) => {
+      const key = `${objectif.type}-${objectif.categorie}`;
+      const reel = depensesReellesParCategorie[key] || 0;
+      const cible = objectif.montantCible;
+      
+      if (cible === 0) return { status: 'none', pct: 0, reel, diff: 0 };
+      
+      const pct = (reel / cible) * 100;
+      const diff = reel - cible;
+      
+      if (objectif.type === 'Épargnes') {
+        // Pour l'épargne, on veut atteindre ou dépasser
+        if (pct >= 100) return { status: 'success', pct, reel, diff };
+        if (pct >= 75) return { status: 'warning', pct, reel, diff };
+        return { status: 'danger', pct, reel, diff };
+      } else {
+        // Pour les dépenses, on veut rester en dessous
+        if (pct <= 80) return { status: 'success', pct, reel, diff };
+        if (pct <= 100) return { status: 'warning', pct, reel, diff };
+        return { status: 'danger', pct, reel, diff };
+      }
+    };
+
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'success': return 'text-green-400';
+        case 'warning': return 'text-orange-400';
+        case 'danger': return 'text-red-400';
+        default: return 'text-gray-400';
+      }
+    };
+
+    const getStatusBg = (status: string) => {
+      switch (status) {
+        case 'success': return 'bg-green-500';
+        case 'warning': return 'bg-orange-500';
+        case 'danger': return 'bg-red-500';
+        default: return 'bg-gray-500';
+      }
+    };
+
+    // Résumé global
+    const objectifsDefinis = objectifsBudget.filter(o => o.montantCible > 0);
+    const objectifsRespectes = objectifsDefinis.filter(o => {
+      const s = getObjectifStatus(o);
+      return o.type === 'Épargnes' ? s.pct >= 100 : s.pct <= 100;
+    }).length;
+
+    return (
+      <div className="space-y-4">
+        {/* Résumé */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}>
+            <Target className="w-4 h-4" /> Objectifs vs Réalité - {selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'} {selectedYear}
+          </h3>
+          
+          {objectifsDefinis.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}10` }}>
+                <p className="text-[9px]" style={textSecondary}>Objectifs définis</p>
+                <p className="text-lg font-bold" style={textPrimary}>{objectifsDefinis.length}</p>
+              </div>
+              <div className="p-2 rounded-xl text-center" style={{ background: 'rgba(74, 222, 128, 0.1)' }}>
+                <p className="text-[9px]" style={textSecondary}>Respectés</p>
+                <p className="text-lg font-bold text-green-400">{objectifsRespectes}</p>
+              </div>
+              <div className="p-2 rounded-xl text-center" style={{ background: 'rgba(248, 113, 113, 0.1)' }}>
+                <p className="text-[9px]" style={textSecondary}>Dépassés</p>
+                <p className="text-lg font-bold text-red-400">{objectifsDefinis.length - objectifsRespectes}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-center py-4" style={textSecondary}>
+              Aucun objectif défini. Ajoutez des objectifs ci-dessous !
+            </p>
+          )}
+        </div>
+
+        {/* Liste des objectifs */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h4 className="text-xs font-semibold mb-3" style={textPrimary}>Mes objectifs budgétaires</h4>
+          
+          {objectifsBudget.length > 0 ? (
+            <div className="space-y-3">
+              {objectifsBudget.map(objectif => {
+                const { status, pct, reel, diff } = getObjectifStatus(objectif);
+                const isEpargne = objectif.type === 'Épargnes';
+                
+                return (
+                  <div key={objectif.id} className="p-3 rounded-xl" style={{ background: `${theme.colors.primary}05` }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full ${
+                          objectif.type === 'Dépenses' ? 'bg-orange-500/20 text-orange-400' :
+                          objectif.type === 'Factures' ? 'bg-red-500/20 text-red-400' :
+                          'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {objectif.type}
+                        </span>
+                        <span className="text-xs font-medium" style={textPrimary}>{objectif.categorie}</span>
+                      </div>
+                      <button onClick={() => deleteObjectif(objectif.id)} className="p-1 rounded hover:bg-red-500/20">
+                        <Trash2 className="w-3 h-3 text-red-400" />
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-1">
+                        <div className="flex justify-between text-[10px] mb-1">
+                          <span style={textSecondary}>Réel: {reel.toFixed(0)} €</span>
+                          <span className={getStatusColor(status)}>
+                            {objectif.montantCible > 0 ? `${pct.toFixed(0)}%` : '-'}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.colors.cardBorder}50` }}>
+                          <div 
+                            className={`h-full rounded-full transition-all ${getStatusBg(status)}`} 
+                            style={{ width: `${Math.min(pct, 100)}%` }} 
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px]" style={textSecondary}>Objectif:</span>
+                        <input
+                          type="number"
+                          value={objectif.montantCible || ''}
+                          onChange={(e) => updateObjectif(objectif.id, parseFloat(e.target.value) || 0)}
+                          className="w-16 px-2 py-1 rounded text-xs text-right border"
+                          style={inputStyle}
+                          placeholder="0"
+                        />
+                        <span className="text-[10px]" style={textSecondary}>€</span>
+                      </div>
+                    </div>
+                    
+                    {objectif.montantCible > 0 && (
+                      <p className={`text-[9px] ${getStatusColor(status)}`}>
+                        {isEpargne 
+                          ? (diff >= 0 ? `✓ Objectif atteint (+${diff.toFixed(0)} €)` : `${Math.abs(diff).toFixed(0)} € restants à épargner`)
+                          : (diff <= 0 ? `✓ Sous l'objectif (${Math.abs(diff).toFixed(0)} € de marge)` : `⚠ Dépassement de ${diff.toFixed(0)} €`)
+                        }
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-center py-2" style={textSecondary}>Aucun objectif</p>
+          )}
+        </div>
+
+        {/* Ajouter un objectif */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h4 className="text-xs font-semibold mb-3" style={textPrimary}>Ajouter un objectif</h4>
+          
+          <div className="space-y-3">
+            {/* Dépenses */}
+            {categoriesDepenses.length > 0 && (
+              <div>
+                <p className="text-[10px] mb-2 text-orange-400">Dépenses</p>
+                <div className="flex flex-wrap gap-2">
+                  {categoriesDepenses
+                    .filter(cat => !objectifsBudget.some(o => o.type === 'Dépenses' && o.categorie === cat))
+                    .map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => addObjectif('Dépenses', cat)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] border transition-colors hover:bg-orange-500/10"
+                        style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}
+                      >
+                        <Plus className="w-3 h-3" /> {cat}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Factures */}
+            {categoriesFactures.length > 0 && (
+              <div>
+                <p className="text-[10px] mb-2 text-red-400">Factures</p>
+                <div className="flex flex-wrap gap-2">
+                  {categoriesFactures
+                    .filter(cat => !objectifsBudget.some(o => o.type === 'Factures' && o.categorie === cat))
+                    .map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => addObjectif('Factures', cat)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] border transition-colors hover:bg-red-500/10"
+                        style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}
+                      >
+                        <Plus className="w-3 h-3" /> {cat}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Épargne globale */}
+            {!objectifsBudget.some(o => o.type === 'Épargnes' && o.categorie === 'Global') && (
+              <div>
+                <p className="text-[10px] mb-2 text-blue-400">Épargne</p>
+                <button
+                  onClick={() => addObjectif('Épargnes', 'Global')}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] border transition-colors hover:bg-blue-500/10"
+                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}
+                >
+                  <Plus className="w-3 h-3" /> Objectif épargne mensuel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <SmartTips page="statistiques" />
+      </div>
+    );
+  };
+
   const tabs: { id: TabType; label: string }[] = [
     { id: 'resume', label: 'Résumé' }, { id: 'revenus', label: 'Revenus' }, { id: 'factures', label: 'Factures' },
     { id: 'depenses', label: 'Dépenses' }, { id: 'epargnes', label: 'Épargnes' }, { id: 'evolution', label: 'Évolution' },
-    { id: 'calendrier', label: '📅' }, { id: 'flux', label: '💸' }
+    { id: 'calendrier', label: '📅' }, { id: 'flux', label: '💸' }, { id: 'objectifs', label: '🎯' }
   ];
 
   return (
@@ -1262,6 +1536,7 @@ function StatistiquesContent() {
         {activeTab === 'evolution' && renderEvolution()}
         {activeTab === 'calendrier' && renderCalendrier()}
         {activeTab === 'flux' && renderFlux()}
+        {activeTab === 'objectifs' && renderObjectifs()}
       </div>
 
       {/* Modal plein écran pour les graphiques */}

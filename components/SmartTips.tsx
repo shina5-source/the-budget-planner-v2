@@ -190,6 +190,86 @@ export default function SmartTips({
 
   const objectifAtteint = objectifs.find(o => o.montantActuel >= o.montantCible);
 
+  // === TENDANCES IA AVANCÉES ===
+  
+  // Calculer les moyennes sur 3 mois
+  const getLast3MonthsData = () => {
+    const months = [];
+    for (let i = 0; i < 3; i++) {
+      let y = currentYear;
+      let m = currentMonth - i;
+      if (m < 0) { m += 12; y--; }
+      const key = getMonthKey(y, m);
+      const trans = getTransactionsByMonth(key);
+      months.push({
+        key,
+        revenus: trans.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0),
+        depenses: trans.filter(t => ['Factures', 'Dépenses'].includes(t.type)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0),
+        epargne: trans.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0),
+        transactions: trans
+      });
+    }
+    return months;
+  };
+
+  const last3Months = getLast3MonthsData();
+  const avgDepenses3M = last3Months.reduce((sum, m) => sum + m.depenses, 0) / 3;
+  const avgEpargne3M = last3Months.reduce((sum, m) => sum + m.epargne, 0) / 3;
+
+  // Tendance dépenses (croissante/décroissante)
+  const tendanceDepenses = last3Months.length >= 2 
+    ? last3Months[0].depenses - last3Months[1].depenses 
+    : 0;
+
+  // Jour de la semaine avec le plus de dépenses
+  const depensesParJourSemaine: Record<number, number> = {};
+  currentMonthTransactions
+    .filter(t => t.type === 'Dépenses')
+    .forEach(t => {
+      if (t.date) {
+        const dayOfWeek = new Date(t.date).getDay();
+        depensesParJourSemaine[dayOfWeek] = (depensesParJourSemaine[dayOfWeek] || 0) + parseFloat(t.montant || '0');
+      }
+    });
+  
+  const joursSemaine = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  const jourMaxDepenses = Object.entries(depensesParJourSemaine)
+    .sort(([,a], [,b]) => b - a)[0];
+
+  // Catégorie en hausse vs mois précédent
+  const depensesPrevParCategorie = previousMonthTransactions
+    .filter(t => t.type === 'Dépenses')
+    .reduce((acc, t) => {
+      acc[t.categorie] = (acc[t.categorie] || 0) + parseFloat(t.montant || '0');
+      return acc;
+    }, {} as Record<string, number>);
+
+  const categoriesEnHausse = Object.entries(depensesParCategorie)
+    .filter(([cat, montant]) => {
+      const prevMontant = depensesPrevParCategorie[cat] || 0;
+      return prevMontant > 0 && montant > prevMontant * 1.3; // +30%
+    })
+    .map(([cat, montant]) => ({
+      categorie: cat,
+      montant,
+      prevMontant: depensesPrevParCategorie[cat] || 0,
+      variation: ((montant - (depensesPrevParCategorie[cat] || 0)) / (depensesPrevParCategorie[cat] || 1)) * 100
+    }))
+    .sort((a, b) => b.variation - a.variation);
+
+  // Dépense moyenne par transaction
+  const depensesTransactions = currentMonthTransactions.filter(t => t.type === 'Dépenses');
+  const moyenneParTransaction = depensesTransactions.length > 0 
+    ? depensesTransactions.reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0) / depensesTransactions.length 
+    : 0;
+
+  // Fréquence des achats
+  const nbJoursAvecDepenses = new Set(
+    currentMonthTransactions
+      .filter(t => t.type === 'Dépenses')
+      .map(t => t.date?.split('T')[0])
+  ).size;
+
   // Générer les conseils
   const generateTips = (): Tip[] => {
     const allTips: Tip[] = [];
@@ -408,6 +488,133 @@ export default function SmartTips({
         icon: TrendingUp,
         priority: 2,
         category: ['accueil', 'transactions', 'budget']
+      });
+    }
+
+    // === TENDANCES IA AVANCÉES ===
+    
+    // Catégorie en forte hausse
+    if (categoriesEnHausse.length > 0) {
+      const topHausse = categoriesEnHausse[0];
+      allTips.push({
+        id: 'categorie-hausse-ia',
+        message: `🤖 IA détecte : "${topHausse.categorie}" +${topHausse.variation.toFixed(0)}% vs mois dernier`,
+        type: 'warning',
+        icon: TrendingUp,
+        priority: 2,
+        category: ['accueil', 'transactions', 'statistiques', 'budget']
+      });
+    }
+
+    // Jour de la semaine critique
+    if (jourMaxDepenses && parseFloat(jourMaxDepenses[1] as unknown as string) > 0) {
+      const jourNom = joursSemaine[parseInt(jourMaxDepenses[0])];
+      const montantJour = jourMaxDepenses[1] as number;
+      if (montantJour > depenses * 0.25) { // Si ce jour représente > 25% des dépenses
+        allTips.push({
+          id: 'jour-depensier-ia',
+          message: `🤖 Pattern détecté : vous dépensez plus le ${jourNom}`,
+          type: 'info',
+          icon: Calendar,
+          priority: 3,
+          category: ['accueil', 'statistiques', 'transactions']
+        });
+      }
+    }
+
+    // Dépenses au-dessus de la moyenne 3 mois
+    if (depenses > avgDepenses3M * 1.15 && avgDepenses3M > 0) {
+      allTips.push({
+        id: 'au-dessus-moyenne-ia',
+        message: `🤖 Dépenses ${((depenses / avgDepenses3M - 1) * 100).toFixed(0)}% au-dessus de votre moyenne`,
+        type: 'warning',
+        icon: BarChart3,
+        priority: 2,
+        category: ['accueil', 'statistiques', 'budget']
+      });
+    }
+
+    // Dépenses en dessous de la moyenne
+    if (depenses < avgDepenses3M * 0.85 && avgDepenses3M > 0 && currentDay > 15) {
+      allTips.push({
+        id: 'en-dessous-moyenne-ia',
+        message: `🤖 Bravo ! Dépenses ${((1 - depenses / avgDepenses3M) * 100).toFixed(0)}% sous votre moyenne`,
+        type: 'success',
+        icon: Award,
+        priority: 2,
+        category: ['accueil', 'statistiques', 'budget']
+      });
+    }
+
+    // Fréquence d'achats élevée
+    if (nbJoursAvecDepenses > currentDay * 0.7 && currentDay > 10) {
+      allTips.push({
+        id: 'frequence-achats-ia',
+        message: `🤖 Achats fréquents : ${nbJoursAvecDepenses} jours sur ${currentDay} avec dépenses`,
+        type: 'info',
+        icon: ShoppingBag,
+        priority: 4,
+        category: ['accueil', 'transactions', 'statistiques']
+      });
+    }
+
+    // Panier moyen élevé
+    if (moyenneParTransaction > 50 && depensesTransactions.length >= 5) {
+      allTips.push({
+        id: 'panier-moyen-ia',
+        message: `🤖 Panier moyen : ${moyenneParTransaction.toFixed(0)}${devise}/transaction`,
+        type: 'info',
+        icon: ShoppingBag,
+        priority: 4,
+        category: ['transactions', 'statistiques']
+      });
+    }
+
+    // Tendance épargne
+    if (epargne > avgEpargne3M * 1.2 && avgEpargne3M > 0) {
+      allTips.push({
+        id: 'epargne-hausse-ia',
+        message: `🤖 Super ! Épargne en hausse vs votre moyenne`,
+        type: 'success',
+        icon: PiggyBank,
+        priority: 2,
+        category: ['accueil', 'epargnes', 'statistiques']
+      });
+    }
+
+    if (epargne < avgEpargne3M * 0.5 && avgEpargne3M > 50 && currentDay > 20) {
+      allTips.push({
+        id: 'epargne-baisse-ia',
+        message: `🤖 Épargne en baisse ce mois, pensez-y avant la fin`,
+        type: 'warning',
+        icon: PiggyBank,
+        priority: 2,
+        category: ['accueil', 'epargnes', 'statistiques']
+      });
+    }
+
+    // Conseil proactif fin de mois
+    if (currentDay >= 25 && solde > 100) {
+      allTips.push({
+        id: 'fin-mois-epargne-ia',
+        message: `🤖 Fin de mois : ${solde.toFixed(0)}${devise} dispo, placez-les en épargne ?`,
+        type: 'success',
+        icon: Sparkles,
+        priority: 2,
+        category: ['accueil', 'epargnes']
+      });
+    }
+
+    // Conseil si revenus stables mais dépenses variables
+    const variationRevenus = revenusPrev > 0 ? Math.abs((revenus - revenusPrev) / revenusPrev * 100) : 0;
+    if (variationRevenus < 10 && Math.abs(variationDepenses) > 25 && revenusPrev > 0) {
+      allTips.push({
+        id: 'revenus-stables-depenses-variables-ia',
+        message: `🤖 Revenus stables mais dépenses ${variationDepenses > 0 ? 'en hausse' : 'en baisse'}, analysez les causes`,
+        type: 'info',
+        icon: BarChart3,
+        priority: 3,
+        category: ['accueil', 'statistiques', 'budget']
       });
     }
 
