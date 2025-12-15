@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle, Filter, X, Download, Maximize2, X as XIcon } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
@@ -15,6 +15,12 @@ interface Transaction {
   categorie: string;
   depuis?: string;
   vers?: string;
+  moyenPaiement?: string;
+}
+
+interface ParametresData {
+  comptes: string[];
+  moyensPaiement: string[];
 }
 
 const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -35,9 +41,20 @@ function StatistiquesContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [parametres, setParametres] = useState<ParametresData>({ comptes: [], moyensPaiement: [] });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [activeTab, setActiveTab] = useState<TabType>('resume');
+  
+  // Filtres avancés
+  const [filterCompte, setFilterCompte] = useState<string>('');
+  const [filterMoyenPaiement, setFilterMoyenPaiement] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Export et plein écran
+  const [isExporting, setIsExporting] = useState(false);
+  const [fullscreenChart, setFullscreenChart] = useState<string | null>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
@@ -60,13 +77,47 @@ function StatistiquesContent() {
   useEffect(() => {
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
+    
+    const savedParametres = localStorage.getItem('budget-parametres');
+    if (savedParametres) {
+      const params = JSON.parse(savedParametres);
+      setParametres({
+        comptes: params.comptes || [],
+        moyensPaiement: params.moyensPaiement || []
+      });
+    }
   }, []);
+
+  // Extraire les comptes et moyens de paiement uniques des transactions
+  const comptesUniques = [...new Set(transactions.flatMap(t => [t.depuis, t.vers].filter(Boolean)))];
+  const moyensPaiementUniques = [...new Set(transactions.map(t => t.moyenPaiement).filter(Boolean))];
+  
+  // Nombre de filtres actifs
+  const nbFiltresActifs = (filterCompte ? 1 : 0) + (filterMoyenPaiement ? 1 : 0);
 
   const getFilteredTransactions = () => {
     return transactions.filter(t => {
-      if (selectedMonth === null) return t.date?.startsWith(`${selectedYear}`);
-      const monthKey = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
-      return t.date?.startsWith(monthKey);
+      // Filtre par date
+      let matchDate = false;
+      if (selectedMonth === null) {
+        matchDate = t.date?.startsWith(`${selectedYear}`);
+      } else {
+        const monthKey = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
+        matchDate = t.date?.startsWith(monthKey);
+      }
+      if (!matchDate) return false;
+
+      // Filtre par compte
+      if (filterCompte && t.depuis !== filterCompte && t.vers !== filterCompte) {
+        return false;
+      }
+
+      // Filtre par moyen de paiement
+      if (filterMoyenPaiement && t.moyenPaiement !== filterMoyenPaiement) {
+        return false;
+      }
+
+      return true;
     });
   };
 
@@ -113,6 +164,31 @@ function StatistiquesContent() {
   const variationEpargnes = calcVariation(totalEpargnes, prevEpargnes);
   const variationSolde = calcVariation(solde, prevSolde);
   const variationResteAVivre = calcVariation(resteAVivre, prevResteAVivre);
+
+  // === COMPARAISON N-1 (même période, année précédente) ===
+  const getN1Transactions = () => {
+    if (selectedMonth === null) {
+      // Vue annuelle : comparer avec année N-1
+      return transactions.filter(t => t.date?.startsWith(`${selectedYear - 1}`));
+    }
+    // Vue mensuelle : même mois, année précédente
+    const n1MonthKey = `${selectedYear - 1}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
+    return transactions.filter(t => t.date?.startsWith(n1MonthKey));
+  };
+
+  const n1Transactions = getN1Transactions();
+  const n1Revenus = n1Transactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const n1Factures = n1Transactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const n1Depenses = n1Transactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const n1Epargnes = n1Transactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+  const n1Solde = n1Revenus - n1Factures - n1Depenses - n1Epargnes;
+  const hasN1Data = n1Transactions.length > 0;
+
+  const variationN1Revenus = calcVariation(totalRevenus, n1Revenus);
+  const variationN1Factures = calcVariation(totalFactures, n1Factures);
+  const variationN1Depenses = calcVariation(totalDepenses, n1Depenses);
+  const variationN1Epargnes = calcVariation(totalEpargnes, n1Epargnes);
+  const variationN1Solde = calcVariation(solde, n1Solde);
 
   // Composant Badge de variation
   const VariationBadge = ({ variation, inverse = false }: { variation: number; inverse?: boolean }) => {
@@ -220,6 +296,154 @@ function StatistiquesContent() {
   const projectionSorties = projectionDepenses + projectionFactures + totalEpargnes;
   const projectionSolde = totalRevenus - projectionSorties;
   const joursRestants = daysInCurrentMonth - currentDay;
+
+  // === EXPORT IMAGE ===
+  const handleExportImage = async () => {
+    if (!statsRef.current) return;
+    setIsExporting(true);
+    
+    try {
+      // Dynamically import dom-to-image-more
+      const domtoimage = await import('dom-to-image-more');
+      
+      const dataUrl = await domtoimage.toPng(statsRef.current, {
+        quality: 1,
+        bgcolor: theme.colors.background,
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left'
+        }
+      });
+      
+      const link = document.createElement('a');
+      link.download = `statistiques-${selectedMonth !== null ? monthsFull[selectedMonth].toLowerCase() : 'annee'}-${selectedYear}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (error) {
+      console.error('Erreur export:', error);
+      alert('Erreur lors de l\'export. Veuillez réessayer.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // === COMPOSANT GRAPHIQUE PLEIN ÉCRAN ===
+  const FullscreenChartModal = () => {
+    if (!fullscreenChart) return null;
+
+    const getChartContent = () => {
+      switch (fullscreenChart) {
+        case 'repartition':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Répartition des sorties</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <RechartsPie>
+                  <Pie data={repartitionData} cx="50%" cy="50%" innerRadius={80} outerRadius={150} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={true}>
+                    {repartitionData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Legend />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
+          );
+        case 'bilan':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Bilan du budget</h3>
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={bilanData} layout="vertical" margin={{ top: 20, right: 50, left: 20, bottom: 20 }}>
+                  <XAxis type="number" tick={{ fill: theme.colors.textPrimary, fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="name" type="category" tick={{ fill: theme.colors.textPrimary, fontSize: 12 }} width={80} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Bar dataKey="montant" radius={[0, 8, 8, 0]} barSize={30}>{bilanData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.fill} />))}</Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        case 'evolution':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Évolution mensuelle {selectedYear}</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={evolutionData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '15px' }} />
+                  <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={3} dot={{ r: 4 }} name="Revenus" />
+                  <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={3} dot={{ r: 4 }} name="Factures" />
+                  <Line type="monotone" dataKey="depenses" stroke={COLORS_TYPE.depenses} strokeWidth={3} dot={{ r: 4 }} name="Dépenses" />
+                  <Line type="monotone" dataKey="epargnes" stroke={COLORS_TYPE.epargnes} strokeWidth={3} dot={{ r: 4 }} name="Épargnes" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        case 'solde':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Évolution du solde {selectedYear}</h3>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={evolutionData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Line type="monotone" dataKey="solde" stroke={theme.colors.primary} strokeWidth={4} dot={{ r: 5, fill: theme.colors.primary }} name="Solde" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        case 'revenus-depenses':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Revenus vs Dépenses par mois</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={evolutionData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '15px' }} />
+                  <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="depenses" fill={COLORS_TYPE.depenses} name="Dépenses" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
+        <div className="relative w-full max-w-4xl h-[80vh] rounded-2xl p-6" style={{ background: theme.colors.cardBackground }}>
+          <button 
+            onClick={() => setFullscreenChart(null)}
+            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-500/20 transition-colors"
+          >
+            <XIcon className="w-6 h-6" style={textPrimary} />
+          </button>
+          {getChartContent()}
+        </div>
+      </div>
+    );
+  };
+
+  // Bouton pour agrandir un graphique
+  const ExpandButton = ({ chartId }: { chartId: string }) => (
+    <button 
+      onClick={() => setFullscreenChart(chartId)}
+      className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-gray-500/20 transition-colors opacity-60 hover:opacity-100"
+      title="Agrandir"
+    >
+      <Maximize2 className="w-4 h-4" style={textPrimary} />
+    </button>
+  );
 
   const renderResume = () => (
     <div className="space-y-4">
@@ -374,7 +598,8 @@ function StatistiquesContent() {
         </div>
       )}
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+        <ExpandButton chartId="repartition" />
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><PieChart className="w-4 h-4" /> Répartition des sorties</h3>
         {repartitionData.length > 0 ? (
           <div className="flex justify-center">
@@ -393,7 +618,8 @@ function StatistiquesContent() {
         <div className="flex justify-center gap-4 mt-2">{repartitionData.map((item, i) => (<div key={i} className="flex items-center gap-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} /><span className="text-[10px]" style={textSecondary}>{item.name}</span></div>))}</div>
       </div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+        <ExpandButton chartId="bilan" />
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}><BarChart3 className="w-4 h-4" /> Bilan du budget</h3>
         <div className="flex justify-center">
           <div style={{ width: '100%', maxWidth: 350, height: 180 }}>
@@ -465,7 +691,8 @@ function StatistiquesContent() {
 
   const renderEvolution = () => (
     <div className="space-y-4">
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+        <ExpandButton chartId="evolution" />
         <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution mensuelle {selectedYear}</h3>
         <div className="flex justify-center">
           <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
@@ -486,7 +713,8 @@ function StatistiquesContent() {
         </div>
       </div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+        <ExpandButton chartId="solde" />
         <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution du solde {selectedYear}</h3>
         <div className="flex justify-center">
           <div style={{ width: '100%', maxWidth: 380, height: 200 }}>
@@ -503,7 +731,8 @@ function StatistiquesContent() {
         </div>
       </div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+        <ExpandButton chartId="revenus-depenses" />
         <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Revenus vs Dépenses par mois</h3>
         <div className="flex justify-center">
           <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
@@ -560,6 +789,46 @@ function StatistiquesContent() {
         </div>
       </div>
 
+      {/* Comparaison N-1 (même période, année précédente) */}
+      {hasN1Data && (
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3 flex items-center justify-between" style={textPrimary}>
+            <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Comparaison {selectedYear} vs {selectedYear - 1}</span>
+            <span className="text-[9px] font-normal px-2 py-0.5 rounded-full" style={{ background: `${theme.colors.primary}20`, color: theme.colors.textSecondary }}>N-1</span>
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Revenus {selectedYear - 1}</p>
+              <p className="text-sm font-semibold text-green-400">{n1Revenus.toFixed(0)} €</p>
+              <p className={`text-[8px] ${variationN1Revenus >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {variationN1Revenus >= 0 ? '▲' : '▼'} {Math.abs(variationN1Revenus).toFixed(0)}% cette année
+              </p>
+            </div>
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Factures {selectedYear - 1}</p>
+              <p className="text-sm font-semibold text-red-400">{n1Factures.toFixed(0)} €</p>
+              <p className={`text-[8px] ${variationN1Factures <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {variationN1Factures >= 0 ? '▲' : '▼'} {Math.abs(variationN1Factures).toFixed(0)}% cette année
+              </p>
+            </div>
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Dépenses {selectedYear - 1}</p>
+              <p className="text-sm font-semibold text-orange-400">{n1Depenses.toFixed(0)} €</p>
+              <p className={`text-[8px] ${variationN1Depenses <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {variationN1Depenses >= 0 ? '▲' : '▼'} {Math.abs(variationN1Depenses).toFixed(0)}% cette année
+              </p>
+            </div>
+            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+              <p className="text-[9px]" style={textSecondary}>Solde {selectedYear - 1}</p>
+              <p className={`text-sm font-semibold ${n1Solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{n1Solde.toFixed(0)} €</p>
+              <p className={`text-[8px] ${variationN1Solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {variationN1Solde >= 0 ? '▲' : '▼'} {Math.abs(variationN1Solde).toFixed(0)}% cette année
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <SmartTips page="statistiques" />
     </div>
   );
@@ -585,14 +854,94 @@ function StatistiquesContent() {
         </div>
       </div>
 
+      {/* Bouton Filtres avancés + Export */}
+      <div className="mb-4 flex gap-2">
+        <button 
+          onClick={() => setShowFilters(!showFilters)} 
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors"
+          style={showFilters || nbFiltresActifs > 0 ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: theme.colors.cardBackground, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}
+        >
+          <Filter className="w-4 h-4" />
+          Filtres {nbFiltresActifs > 0 && `(${nbFiltresActifs})`}
+        </button>
+        
+        <button 
+          onClick={handleExportImage}
+          disabled={isExporting}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors disabled:opacity-50"
+          style={{ background: theme.colors.cardBackground, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}
+        >
+          <Download className="w-4 h-4" />
+          {isExporting ? 'Export...' : 'Exporter'}
+        </button>
+
+        {/* Panel des filtres */}
+        {showFilters && (
+          <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mt-2" style={cardStyle}>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold" style={textPrimary}>Filtres avancés</h4>
+              {nbFiltresActifs > 0 && (
+                <button 
+                  onClick={() => { setFilterCompte(''); setFilterMoyenPaiement(''); }}
+                  className="text-[10px] px-2 py-1 rounded-lg flex items-center gap-1"
+                  style={{ background: `${theme.colors.primary}20`, color: theme.colors.textPrimary }}
+                >
+                  <X className="w-3 h-3" /> Réinitialiser
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] font-medium mb-1 block" style={textSecondary}>Compte</label>
+                <select 
+                  value={filterCompte} 
+                  onChange={(e) => setFilterCompte(e.target.value)}
+                  className="w-full rounded-lg px-2 py-1.5 text-xs border"
+                  style={inputStyle}
+                >
+                  <option value="">Tous les comptes</option>
+                  {comptesUniques.map((compte, i) => (
+                    <option key={i} value={compte}>{compte}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-medium mb-1 block" style={textSecondary}>Moyen de paiement</label>
+                <select 
+                  value={filterMoyenPaiement} 
+                  onChange={(e) => setFilterMoyenPaiement(e.target.value)}
+                  className="w-full rounded-lg px-2 py-1.5 text-xs border"
+                  style={inputStyle}
+                >
+                  <option value="">Tous</option>
+                  {moyensPaiementUniques.map((moyen, i) => (
+                    <option key={i} value={moyen}>{moyen}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {nbFiltresActifs > 0 && (
+              <p className="text-[10px] mt-2" style={textSecondary}>
+                {filteredTransactions.length} transaction(s) trouvée(s)
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="overflow-x-auto mb-4"><div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm flex border min-w-max" style={cardStyle}>{tabs.map((tab) => (<button key={tab.id} onClick={() => setActiveTab(tab.id)} className="py-2 px-3 rounded-xl text-xs font-medium transition-colors whitespace-nowrap" style={activeTab === tab.id ? { background: theme.colors.primary, color: theme.colors.textOnPrimary } : { color: theme.colors.textSecondary }}>{tab.label}</button>))}</div></div>
 
-      {activeTab === 'resume' && renderResume()}
-      {activeTab === 'revenus' && renderDetail('Revenus', COLORS_TYPE.revenus)}
-      {activeTab === 'factures' && renderDetail('Factures', COLORS_TYPE.factures)}
-      {activeTab === 'depenses' && renderDetail('Dépenses', COLORS_TYPE.depenses)}
-      {activeTab === 'epargnes' && renderDetail('Épargnes', COLORS_TYPE.epargnes)}
-      {activeTab === 'evolution' && renderEvolution()}
+      <div ref={statsRef}>
+        {activeTab === 'resume' && renderResume()}
+        {activeTab === 'revenus' && renderDetail('Revenus', COLORS_TYPE.revenus)}
+        {activeTab === 'factures' && renderDetail('Factures', COLORS_TYPE.factures)}
+        {activeTab === 'depenses' && renderDetail('Dépenses', COLORS_TYPE.depenses)}
+        {activeTab === 'epargnes' && renderDetail('Épargnes', COLORS_TYPE.epargnes)}
+        {activeTab === 'evolution' && renderEvolution()}
+      </div>
+
+      {/* Modal plein écran pour les graphiques */}
+      <FullscreenChartModal />
     </div>
   );
 }
