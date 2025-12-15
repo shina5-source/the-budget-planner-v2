@@ -79,10 +79,6 @@ function StatistiquesContent() {
   };
   const tooltipLabelStyle = { fontSize: '10px', fontWeight: 'bold', color: theme.colors.textPrimary };
 
-  // Marges uniformes pour tous les graphiques
-  const chartMargin = { top: 10, right: 10, left: 10, bottom: 10 };
-  const chartMarginWithLegend = { top: 10, right: 10, left: 10, bottom: 30 };
-
   useEffect(() => {
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
@@ -426,6 +422,67 @@ function StatistiquesContent() {
               </ResponsiveContainer>
             </div>
           );
+        case 'pie-revenus':
+        case 'pie-factures':
+        case 'pie-dépenses':
+        case 'pie-épargnes': {
+          const typeMap: Record<string, { label: string; color: string }> = {
+            'pie-revenus': { label: 'Revenus', color: COLORS_TYPE.revenus },
+            'pie-factures': { label: 'Factures', color: COLORS_TYPE.factures },
+            'pie-dépenses': { label: 'Dépenses', color: COLORS_TYPE.depenses },
+            'pie-épargnes': { label: 'Épargnes', color: COLORS_TYPE.epargnes }
+          };
+          const config = typeMap[fullscreenChart];
+          const pieData = getDataByCategorie(config.label);
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Répartition {config.label}</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <RechartsPie>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={80} outerRadius={150} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={true}>
+                    {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Legend />
+                </RechartsPie>
+              </ResponsiveContainer>
+            </div>
+          );
+        }
+        case 'taux-epargne':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Taux d'épargne mensuel {selectedYear}</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart data={evolutionData.map(d => ({ ...d, tauxEpargne: d.revenus > 0 ? (d.epargnes / d.revenus) * 100 : 0 }))} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} width={50} unit="%" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Bar dataKey="tauxEpargne" fill={COLORS_TYPE.epargnes} name="Taux d'épargne" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        case 'solde-cumule':
+          return (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <h3 className="text-lg font-semibold mb-4" style={textPrimary}>Solde cumulé {selectedYear}</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={evolutionData.reduce((acc: { name: string; soldeCumule: number }[], d, i) => {
+                  const prev = i > 0 ? acc[i - 1].soldeCumule : 0;
+                  acc.push({ name: d.name, soldeCumule: prev + d.solde });
+                  return acc;
+                }, [])} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 11 }} axisLine={false} tickLine={false} width={60} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Line type="monotone" dataKey="soldeCumule" stroke={theme.colors.primary} strokeWidth={4} dot={{ r: 5, fill: theme.colors.primary }} name="Solde cumulé" fill={`${theme.colors.primary}20`} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          );
         default:
           return null;
       }
@@ -661,15 +718,67 @@ function StatistiquesContent() {
   const renderDetail = (type: string, color: string) => {
     const data = getDataByCategorie(type);
     const total = data.reduce((sum, d) => sum + d.value, 0);
+    
+    // === AMÉLIORATION 1: Données mois précédent pour comparaison ===
+    const getPreviousMonthTransactions = () => {
+      if (selectedMonth === null) return [];
+      let prevMonth = selectedMonth - 1;
+      let prevYear = selectedYear;
+      if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+      const prevMonthKey = `${prevYear}-${(prevMonth + 1).toString().padStart(2, '0')}`;
+      return transactions.filter(t => t.date?.startsWith(prevMonthKey));
+    };
+    
+    const prevMonthTransactions = getPreviousMonthTransactions();
+    const prevMonthData: Record<string, number> = {};
+    prevMonthTransactions.filter(t => t.type === type).forEach(t => {
+      prevMonthData[t.categorie] = (prevMonthData[t.categorie] || 0) + parseFloat(t.montant || '0');
+    });
+    const prevMonthTotal = Object.values(prevMonthData).reduce((sum, v) => sum + v, 0);
+    const variationTotal = prevMonthTotal > 0 ? ((total - prevMonthTotal) / prevMonthTotal) * 100 : 0;
+
+    // === AMÉLIORATION 2: Top 5 transactions du mois ===
+    const top5Transactions = filteredTransactions
+      .filter(t => t.type === type)
+      .sort((a, b) => parseFloat(b.montant || '0') - parseFloat(a.montant || '0'))
+      .slice(0, 5);
+
+    // === AMÉLIORATION 3: Mini évolution par catégorie (6 derniers mois) ===
+    const getEvolutionByCategorie = (categorie: string) => {
+      const monthsData = [];
+      for (let i = 5; i >= 0; i--) {
+        let m = (selectedMonth ?? new Date().getMonth()) - i;
+        let y = selectedYear;
+        while (m < 0) { m += 12; y--; }
+        const monthKey = `${y}-${(m + 1).toString().padStart(2, '0')}`;
+        const monthTotal = transactions
+          .filter(t => t.date?.startsWith(monthKey) && t.type === type && t.categorie === categorie)
+          .reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+        monthsData.push({ name: monthsShort[m], value: monthTotal });
+      }
+      return monthsData;
+    };
+
     return (
       <div className="space-y-4">
+        {/* Total avec variation */}
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border text-center" style={cardStyle}>
           <p className="text-xs" style={textSecondary}>Total {type}</p>
           <p className="text-2xl font-semibold" style={{ color }}>{total.toFixed(2)} €</p>
           <p className="text-[10px]" style={textSecondary}>{data.length} catégorie(s)</p>
+          {/* Variation vs mois précédent */}
+          {selectedMonth !== null && prevMonthTotal > 0 && (
+            <div className="mt-2 pt-2" style={{ borderTopWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full ${variationTotal >= 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                {variationTotal >= 0 ? '▲' : '▼'} {Math.abs(variationTotal).toFixed(0)}% vs mois précédent
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+        {/* Pie Chart avec plein écran */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+          <ExpandButton chartId={`pie-${type.toLowerCase()}`} />
           <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Répartition</h3>
           {data.length > 0 ? (
             <div className="flex justify-center">
@@ -687,163 +796,376 @@ function StatistiquesContent() {
           ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
         </div>
 
+        {/* Détail par catégorie avec variation et mini graphique */}
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
           <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Détail par catégorie</h3>
           {data.length > 0 ? (
-            <div className="space-y-2">
-              <div className="flex items-center py-2" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}><span className="flex-1 text-[10px] font-semibold" style={textSecondary}>Catégorie</span><span className="w-20 text-right text-[10px] font-semibold" style={textSecondary}>Montant</span><span className="w-16 text-right text-[10px] font-semibold" style={textSecondary}>%</span></div>
-              {data.map((item, i) => (<div key={i} className="flex items-center py-2" style={{ borderBottomWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}><div className="flex items-center gap-2 flex-1"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} /><span className="text-xs font-medium truncate" style={textPrimary}>{item.name}</span></div><span className="w-20 text-right text-xs font-medium" style={textPrimary}>{item.value.toFixed(2)} €</span><span className="w-16 text-right text-[10px]" style={textSecondary}>{total > 0 ? ((item.value / total) * 100).toFixed(1) : 0}%</span></div>))}
-              <div className="flex items-center py-2 rounded-lg px-2 mt-2" style={{ background: `${theme.colors.primary}10` }}><span className="flex-1 text-xs font-bold" style={textPrimary}>Total</span><span className="w-20 text-right text-xs font-bold" style={textPrimary}>{total.toFixed(2)} €</span><span className="w-16 text-right text-[10px] font-bold" style={textSecondary}>100%</span></div>
+            <div className="space-y-3">
+              {data.map((item, i) => {
+                const prevValue = prevMonthData[item.name] || 0;
+                const variation = prevValue > 0 ? ((item.value - prevValue) / prevValue) * 100 : 0;
+                const evolutionData = getEvolutionByCategorie(item.name);
+                const maxEvo = Math.max(...evolutionData.map(e => e.value), 1);
+                
+                return (
+                  <div key={i} className="p-3 rounded-xl" style={{ background: `${theme.colors.primary}05` }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                        <span className="text-xs font-medium" style={textPrimary}>{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {selectedMonth !== null && prevValue > 0 && (
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded ${variation >= 0 ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                            {variation >= 0 ? '▲' : '▼'} {Math.abs(variation).toFixed(0)}%
+                          </span>
+                        )}
+                        <span className="text-sm font-semibold" style={{ color }}>{item.value.toFixed(2)} €</span>
+                      </div>
+                    </div>
+                    
+                    {/* Mini graphique évolution 6 mois */}
+                    <div className="flex items-end gap-1 h-8 mt-2">
+                      {evolutionData.map((evo, j) => (
+                        <div key={j} className="flex-1 flex flex-col items-center">
+                          <div 
+                            className="w-full rounded-t transition-all" 
+                            style={{ 
+                              height: `${Math.max((evo.value / maxEvo) * 24, 2)}px`,
+                              backgroundColor: j === evolutionData.length - 1 ? color : `${color}50`
+                            }} 
+                          />
+                          <span className="text-[7px] mt-0.5" style={textSecondary}>{evo.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[8px]" style={textSecondary}>{total > 0 ? ((item.value / total) * 100).toFixed(1) : 0}% du total</span>
+                      {selectedMonth !== null && prevValue > 0 && (
+                        <span className="text-[8px]" style={textSecondary}>Mois préc: {prevValue.toFixed(0)} €</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Total */}
+              <div className="flex items-center py-2 rounded-lg px-3 mt-2" style={{ background: `${theme.colors.primary}15` }}>
+                <span className="flex-1 text-xs font-bold" style={textPrimary}>Total</span>
+                <span className="text-sm font-bold" style={{ color }}>{total.toFixed(2)} €</span>
+              </div>
             </div>
           ) : (<p className="text-xs text-center py-8" style={textSecondary}>Aucune donnée</p>)}
         </div>
+
+        {/* Top 5 transactions */}
+        {top5Transactions.length > 0 && (
+          <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}>
+              <Receipt className="w-4 h-4" /> Top 5 {type}
+            </h3>
+            <div className="space-y-2">
+              {top5Transactions.map((t, i) => (
+                <div key={t.id} className="flex items-center justify-between py-2" style={{ borderBottomWidth: i < 4 ? 1 : 0, borderColor: `${theme.colors.cardBorder}30` }}>
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: `${color}20`, color }}>
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium truncate" style={textPrimary}>{t.categorie}</p>
+                      <p className="text-[9px]" style={textSecondary}>{t.date ? new Date(t.date).toLocaleDateString('fr-FR') : '-'}</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color }}>{parseFloat(t.montant || '0').toFixed(2)} €</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <SmartTips page="statistiques" />
       </div>
     );
   };
 
-  const renderEvolution = () => (
-    <div className="space-y-4">
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
-        <ExpandButton chartId="evolution" />
-        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution mensuelle {selectedYear}</h3>
-        <div className="flex justify-center">
-          <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
-                <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
-                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-                <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
-                <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={2} dot={{ r: 2 }} name="Revenus" />
-                <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={2} dot={{ r: 2 }} name="Factures" />
-                <Line type="monotone" dataKey="depenses" stroke={COLORS_TYPE.depenses} strokeWidth={2} dot={{ r: 2 }} name="Dépenses" />
-                <Line type="monotone" dataKey="epargnes" stroke={COLORS_TYPE.epargnes} strokeWidth={2} dot={{ r: 2 }} name="Épargnes" />
-              </LineChart>
-            </ResponsiveContainer>
+  const renderEvolution = () => {
+    // Calcul du taux d'épargne par mois
+    const tauxEpargneData = evolutionData.map(d => ({
+      ...d,
+      tauxEpargne: d.revenus > 0 ? (d.epargnes / d.revenus) * 100 : 0
+    }));
+
+    // Calcul du solde cumulé
+    const soldeCumuleData = evolutionData.reduce((acc: { name: string; soldeCumule: number; solde: number }[], d, i) => {
+      const prev = i > 0 ? acc[i - 1].soldeCumule : 0;
+      acc.push({ name: d.name, soldeCumule: prev + d.solde, solde: d.solde });
+      return acc;
+    }, []);
+
+    // Calcul de la prévision (moyenne des 3 derniers mois avec données)
+    const moisAvecDonnees = evolutionData.filter(d => d.revenus > 0 || d.depenses > 0);
+    const derniersMois = moisAvecDonnees.slice(-3);
+    const avgRevenus = derniersMois.length > 0 ? derniersMois.reduce((s, d) => s + d.revenus, 0) / derniersMois.length : 0;
+    const avgFactures = derniersMois.length > 0 ? derniersMois.reduce((s, d) => s + d.factures, 0) / derniersMois.length : 0;
+    const avgDepenses = derniersMois.length > 0 ? derniersMois.reduce((s, d) => s + d.depenses, 0) / derniersMois.length : 0;
+    const avgEpargnes = derniersMois.length > 0 ? derniersMois.reduce((s, d) => s + d.epargnes, 0) / derniersMois.length : 0;
+    const avgSolde = avgRevenus - avgFactures - avgDepenses - avgEpargnes;
+
+    // Générer les 3 prochains mois de prévision
+    const currentMonthIndex = new Date().getMonth();
+    const previsionData = [];
+    for (let i = 1; i <= 3; i++) {
+      const futureMonth = (currentMonthIndex + i) % 12;
+      previsionData.push({
+        name: monthsShort[futureMonth],
+        revenus: avgRevenus,
+        depenses: avgFactures + avgDepenses,
+        solde: avgSolde,
+        isPrevision: true
+      });
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+          <ExpandButton chartId="evolution" />
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution mensuelle {selectedYear}</h3>
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
+                  <Line type="monotone" dataKey="revenus" stroke={COLORS_TYPE.revenus} strokeWidth={2} dot={{ r: 2 }} name="Revenus" />
+                  <Line type="monotone" dataKey="factures" stroke={COLORS_TYPE.factures} strokeWidth={2} dot={{ r: 2 }} name="Factures" />
+                  <Line type="monotone" dataKey="depenses" stroke={COLORS_TYPE.depenses} strokeWidth={2} dot={{ r: 2 }} name="Dépenses" />
+                  <Line type="monotone" dataKey="epargnes" stroke={COLORS_TYPE.epargnes} strokeWidth={2} dot={{ r: 2 }} name="Épargnes" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
-        <ExpandButton chartId="solde" />
-        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution du solde {selectedYear}</h3>
-        <div className="flex justify-center">
-          <div style={{ width: '100%', maxWidth: 380, height: 200 }}>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
-                <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
-                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-                <Line type="monotone" dataKey="solde" stroke={theme.colors.primary} strokeWidth={3} dot={{ r: 3, fill: theme.colors.primary }} name="Solde" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
-        <ExpandButton chartId="revenus-depenses" />
-        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Revenus vs Dépenses par mois</h3>
-        <div className="flex justify-center">
-          <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
-                <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
-                <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
-                <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
-                <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="depenses" fill={COLORS_TYPE.depenses} name="Dépenses" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
-        <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Récapitulatif annuel</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
-                <th className="py-2 text-left w-12" style={textPrimary}>Mois</th>
-                <th className="py-2 text-center text-green-400">Revenus</th>
-                <th className="py-2 text-center text-red-400">Factures</th>
-                <th className="py-2 text-center text-orange-400">Dépenses</th>
-                <th className="py-2 text-center" style={textPrimary}>Solde</th>
-              </tr>
-            </thead>
-            <tbody>
-              {evolutionData.map((row, i) => (
-                <tr key={i} style={{ borderBottomWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
-                  <td className="py-2" style={textPrimary}>{row.name}</td>
-                  <td className="py-2 text-center text-green-400">{row.revenus > 0 ? row.revenus.toFixed(0) : '-'}</td>
-                  <td className="py-2 text-center text-red-400">{row.factures > 0 ? row.factures.toFixed(0) : '-'}</td>
-                  <td className="py-2 text-center text-orange-400">{row.depenses > 0 ? row.depenses.toFixed(0) : '-'}</td>
-                  <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{row.solde !== 0 ? row.solde.toFixed(0) : '-'}</td>      
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr style={{ background: `${theme.colors.primary}10` }}>
-                <td className="py-2 font-bold" style={textPrimary}>Total</td>
-                <td className="py-2 text-center font-bold text-green-400">{evolutionData.reduce((s, r) => s + r.revenus, 0).toFixed(0)}</td>
-                <td className="py-2 text-center font-bold text-red-400">{evolutionData.reduce((s, r) => s + r.factures, 0).toFixed(0)}</td>
-                <td className="py-2 text-center font-bold text-orange-400">{evolutionData.reduce((s, r) => s + r.depenses, 0).toFixed(0)}</td>
-                <td className="py-2 text-center font-bold" style={textPrimary}>{evolutionData.reduce((s, r) => s + r.solde, 0).toFixed(0)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </div>
-
-      {/* Comparaison N-1 (même période, année précédente) */}
-      {hasN1Data && (
-        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
-          <h3 className="text-sm font-semibold mb-3 flex items-center justify-between" style={textPrimary}>
-            <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Comparaison {selectedYear} vs {selectedYear - 1}</span>
-            <span className="text-[9px] font-normal px-2 py-0.5 rounded-full" style={{ background: `${theme.colors.primary}20`, color: theme.colors.textSecondary }}>N-1</span>
+        {/* NOUVEAU: Taux d'épargne mensuel */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+          <ExpandButton chartId="taux-epargne" />
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}>
+            <PiggyBank className="w-4 h-4" /> Taux d'épargne mensuel
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
-              <p className="text-[9px]" style={textSecondary}>Revenus {selectedYear - 1}</p>
-              <p className="text-sm font-semibold text-green-400">{n1Revenus.toFixed(0)} €</p>
-              <p className={`text-[8px] ${variationN1Revenus >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {variationN1Revenus >= 0 ? '▲' : '▼'} {Math.abs(variationN1Revenus).toFixed(0)}% cette année
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: 380, height: 200 }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={tauxEpargneData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} unit="%" domain={[0, 'auto']} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Bar dataKey="tauxEpargne" fill={COLORS_TYPE.epargnes} name="Taux d'épargne" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {/* Objectif 20% */}
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="h-0.5 w-4" style={{ backgroundColor: '#4CAF50' }} />
+            <span className="text-[9px]" style={textSecondary}>Objectif recommandé: 20%</span>
+          </div>
+        </div>
+
+        {/* NOUVEAU: Solde cumulé (patrimoine) */}
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+          <ExpandButton chartId="solde-cumule" />
+          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={textPrimary}>
+            <Wallet className="w-4 h-4" /> Solde cumulé {selectedYear}
+          </h3>
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: 380, height: 200 }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={soldeCumuleData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={45} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Line type="monotone" dataKey="soldeCumule" stroke={theme.colors.primary} strokeWidth={3} dot={{ r: 3, fill: theme.colors.primary }} name="Solde cumulé" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          {/* Résumé */}
+          <div className="grid grid-cols-2 gap-2 mt-3 pt-3" style={{ borderTopWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+            <div className="text-center">
+              <p className="text-[9px]" style={textSecondary}>Total cumulé</p>
+              <p className={`text-sm font-bold ${soldeCumuleData[soldeCumuleData.length - 1]?.soldeCumule >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {(soldeCumuleData[soldeCumuleData.length - 1]?.soldeCumule || 0).toFixed(0)} €
               </p>
             </div>
-            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
-              <p className="text-[9px]" style={textSecondary}>Factures {selectedYear - 1}</p>
-              <p className="text-sm font-semibold text-red-400">{n1Factures.toFixed(0)} €</p>
-              <p className={`text-[8px] ${variationN1Factures <= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {variationN1Factures >= 0 ? '▲' : '▼'} {Math.abs(variationN1Factures).toFixed(0)}% cette année
-              </p>
-            </div>
-            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
-              <p className="text-[9px]" style={textSecondary}>Dépenses {selectedYear - 1}</p>
-              <p className="text-sm font-semibold text-orange-400">{n1Depenses.toFixed(0)} €</p>
-              <p className={`text-[8px] ${variationN1Depenses <= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {variationN1Depenses >= 0 ? '▲' : '▼'} {Math.abs(variationN1Depenses).toFixed(0)}% cette année
-              </p>
-            </div>
-            <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
-              <p className="text-[9px]" style={textSecondary}>Solde {selectedYear - 1}</p>
-              <p className={`text-sm font-semibold ${n1Solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{n1Solde.toFixed(0)} €</p>
-              <p className={`text-[8px] ${variationN1Solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {variationN1Solde >= 0 ? '▲' : '▼'} {Math.abs(variationN1Solde).toFixed(0)}% cette année
+            <div className="text-center">
+              <p className="text-[9px]" style={textSecondary}>Moyenne mensuelle</p>
+              <p className="text-sm font-bold" style={textPrimary}>
+                {moisAvecDonnees.length > 0 ? (soldeCumuleData[soldeCumuleData.length - 1]?.soldeCumule / moisAvecDonnees.length).toFixed(0) : 0} €
               </p>
             </div>
           </div>
         </div>
-      )}
 
-      <SmartTips page="statistiques" />
-    </div>
-  );
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+          <ExpandButton chartId="solde" />
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Évolution du solde {selectedYear}</h3>
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: 380, height: 200 }}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Line type="monotone" dataKey="solde" stroke={theme.colors.primary} strokeWidth={3} dot={{ r: 3, fill: theme.colors.primary }} name="Solde" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative" style={cardStyle}>
+          <ExpandButton chartId="revenus-depenses" />
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Revenus vs Dépenses par mois</h3>
+          <div className="flex justify-center">
+            <div style={{ width: '100%', maxWidth: 380, height: 250 }}>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.cardBorder} opacity={0.3} />
+                  <XAxis dataKey="name" tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: theme.colors.textPrimary, fontSize: 9 }} axisLine={false} tickLine={false} width={35} />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} €`} contentStyle={tooltipContentStyle} labelStyle={tooltipLabelStyle} />
+                  <Legend wrapperStyle={{ fontSize: '9px', paddingTop: '10px' }} />
+                  <Bar dataKey="revenus" fill={COLORS_TYPE.revenus} name="Revenus" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="factures" fill={COLORS_TYPE.factures} name="Factures" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="depenses" fill={COLORS_TYPE.depenses} name="Dépenses" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* NOUVEAU: Prévision 3 prochains mois */}
+        {derniersMois.length >= 2 && (
+          <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+            <h3 className="text-sm font-semibold mb-3 flex items-center justify-between" style={textPrimary}>
+              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Prévision (3 prochains mois)</span>
+              <span className="text-[9px] font-normal px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">Estimation</span>
+            </h3>
+            <p className="text-[10px] mb-3" style={textSecondary}>
+              Basée sur la moyenne des {derniersMois.length} derniers mois avec activité
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {previsionData.map((p, i) => (
+                <div key={i} className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05`, border: '1px dashed', borderColor: `${theme.colors.cardBorder}50` }}>
+                  <p className="text-[10px] font-semibold" style={textPrimary}>{p.name}</p>
+                  <p className="text-[9px] text-green-400">+{p.revenus.toFixed(0)} €</p>
+                  <p className="text-[9px] text-orange-400">-{p.depenses.toFixed(0)} €</p>
+                  <p className={`text-xs font-bold mt-1 ${p.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {p.solde >= 0 ? '+' : ''}{p.solde.toFixed(0)} €
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 pt-3 text-center" style={{ borderTopWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+              <p className="text-[9px]" style={textSecondary}>Prévision totale sur 3 mois</p>
+              <p className={`text-lg font-bold ${avgSolde * 3 >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {avgSolde * 3 >= 0 ? '+' : ''}{(avgSolde * 3).toFixed(0)} €
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+          <h3 className="text-sm font-semibold mb-3" style={textPrimary}>Récapitulatif annuel</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
+                  <th className="py-2 text-left w-12" style={textPrimary}>Mois</th>
+                  <th className="py-2 text-center text-green-400">Revenus</th>
+                  <th className="py-2 text-center text-red-400">Factures</th>
+                  <th className="py-2 text-center text-orange-400">Dépenses</th>
+                  <th className="py-2 text-center text-blue-400">Épargne</th>
+                  <th className="py-2 text-center" style={textPrimary}>Solde</th>
+                </tr>
+              </thead>
+              <tbody>
+                {evolutionData.map((row, i) => (
+                  <tr key={i} style={{ borderBottomWidth: 1, borderColor: `${theme.colors.cardBorder}50` }}>
+                    <td className="py-2" style={textPrimary}>{row.name}</td>
+                    <td className="py-2 text-center text-green-400">{row.revenus > 0 ? row.revenus.toFixed(0) : '-'}</td>
+                    <td className="py-2 text-center text-red-400">{row.factures > 0 ? row.factures.toFixed(0) : '-'}</td>
+                    <td className="py-2 text-center text-orange-400">{row.depenses > 0 ? row.depenses.toFixed(0) : '-'}</td>
+                    <td className="py-2 text-center text-blue-400">{row.epargnes > 0 ? row.epargnes.toFixed(0) : '-'}</td>
+                    <td className={`py-2 text-center font-semibold ${row.solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{row.solde !== 0 ? row.solde.toFixed(0) : '-'}</td>      
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: `${theme.colors.primary}10` }}>
+                  <td className="py-2 font-bold" style={textPrimary}>Total</td>
+                  <td className="py-2 text-center font-bold text-green-400">{evolutionData.reduce((s, r) => s + r.revenus, 0).toFixed(0)}</td>
+                  <td className="py-2 text-center font-bold text-red-400">{evolutionData.reduce((s, r) => s + r.factures, 0).toFixed(0)}</td>
+                  <td className="py-2 text-center font-bold text-orange-400">{evolutionData.reduce((s, r) => s + r.depenses, 0).toFixed(0)}</td>
+                  <td className="py-2 text-center font-bold text-blue-400">{evolutionData.reduce((s, r) => s + r.epargnes, 0).toFixed(0)}</td>
+                  <td className="py-2 text-center font-bold" style={textPrimary}>{evolutionData.reduce((s, r) => s + r.solde, 0).toFixed(0)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        {/* Comparaison N-1 (même période, année précédente) */}
+        {hasN1Data && (
+          <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={cardStyle}>
+            <h3 className="text-sm font-semibold mb-3 flex items-center justify-between" style={textPrimary}>
+              <span className="flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Comparaison {selectedYear} vs {selectedYear - 1}</span>
+              <span className="text-[9px] font-normal px-2 py-0.5 rounded-full" style={{ background: `${theme.colors.primary}20`, color: theme.colors.textSecondary }}>N-1</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+                <p className="text-[9px]" style={textSecondary}>Revenus {selectedYear - 1}</p>
+                <p className="text-sm font-semibold text-green-400">{n1Revenus.toFixed(0)} €</p>
+                <p className={`text-[8px] ${variationN1Revenus >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {variationN1Revenus >= 0 ? '▲' : '▼'} {Math.abs(variationN1Revenus).toFixed(0)}% cette année
+                </p>
+              </div>
+              <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+                <p className="text-[9px]" style={textSecondary}>Factures {selectedYear - 1}</p>
+                <p className="text-sm font-semibold text-red-400">{n1Factures.toFixed(0)} €</p>
+                <p className={`text-[8px] ${variationN1Factures <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {variationN1Factures >= 0 ? '▲' : '▼'} {Math.abs(variationN1Factures).toFixed(0)}% cette année
+                </p>
+              </div>
+              <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+                <p className="text-[9px]" style={textSecondary}>Dépenses {selectedYear - 1}</p>
+                <p className="text-sm font-semibold text-orange-400">{n1Depenses.toFixed(0)} €</p>
+                <p className={`text-[8px] ${variationN1Depenses <= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {variationN1Depenses >= 0 ? '▲' : '▼'} {Math.abs(variationN1Depenses).toFixed(0)}% cette année
+                </p>
+              </div>
+              <div className="p-2 rounded-xl text-center" style={{ background: `${theme.colors.primary}05` }}>
+                <p className="text-[9px]" style={textSecondary}>Solde {selectedYear - 1}</p>
+                <p className={`text-sm font-semibold ${n1Solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>{n1Solde.toFixed(0)} €</p>
+                <p className={`text-[8px] ${variationN1Solde >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {variationN1Solde >= 0 ? '▲' : '▼'} {Math.abs(variationN1Solde).toFixed(0)}% cette année
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <SmartTips page="statistiques" />
+      </div>
+    );
+  };
 
   // === HEATMAP CALENDRIER ===
   const renderCalendrier = () => {
