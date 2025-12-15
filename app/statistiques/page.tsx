@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, PieChart, BarChart3, Wallet, Receipt, PiggyBank, AlertTriangle, Filter, X, Download, Maximize2, X as XIcon, Calendar, GitBranch, Target, Plus, Trash2 } from 'lucide-react';
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid } from 'recharts';
 import { useRouter } from 'next/navigation';
@@ -54,6 +54,7 @@ function StatistiquesContent() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [activeTab, setActiveTab] = useState<TabType>('resume');
+  const [isLoaded, setIsLoaded] = useState(false);
   
   // Filtres avancés
   const [filterCompte, setFilterCompte] = useState<string>('');
@@ -94,16 +95,26 @@ function StatistiquesContent() {
 
     const savedObjectifsBudget = localStorage.getItem('budget-objectifs-budget');
     if (savedObjectifsBudget) setObjectifsBudget(JSON.parse(savedObjectifsBudget));
+    
+    // Délai pour l'animation d'entrée
+    setTimeout(() => setIsLoaded(true), 100);
   }, []);
 
   // Extraire les comptes et moyens de paiement uniques des transactions
-  const comptesUniques = [...new Set(transactions.flatMap(t => [t.depuis, t.vers].filter(Boolean)))];
-  const moyensPaiementUniques = [...new Set(transactions.map(t => t.moyenPaiement).filter(Boolean))];
+  const comptesUniques = useMemo(() => 
+    [...new Set(transactions.flatMap(t => [t.depuis, t.vers].filter(Boolean)))],
+    [transactions]
+  );
+  const moyensPaiementUniques = useMemo(() => 
+    [...new Set(transactions.map(t => t.moyenPaiement).filter(Boolean))],
+    [transactions]
+  );
   
   // Nombre de filtres actifs
   const nbFiltresActifs = (filterCompte ? 1 : 0) + (filterMoyenPaiement ? 1 : 0);
 
-  const getFilteredTransactions = () => {
+  // === CALCULS OPTIMISÉS AVEC USEMEMO ===
+  const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
       // Filtre par date
       let matchDate = false;
@@ -127,17 +138,21 @@ function StatistiquesContent() {
 
       return true;
     });
-  };
+  }, [transactions, selectedYear, selectedMonth, filterCompte, filterMoyenPaiement]);
 
-  const filteredTransactions = getFilteredTransactions();
+  // Totaux avec useMemo
+  const totals = useMemo(() => {
+    const totalRevenus = filteredTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalFactures = filteredTransactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalDepenses = filteredTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalEpargnes = filteredTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    const totalSorties = totalFactures + totalDepenses + totalEpargnes;
+    const solde = totalRevenus - totalSorties;
+    const resteAVivre = totalRevenus - totalFactures - totalDepenses;
+    return { totalRevenus, totalFactures, totalDepenses, totalEpargnes, totalSorties, solde, resteAVivre };
+  }, [filteredTransactions]);
 
-  const totalRevenus = filteredTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
-  const totalFactures = filteredTransactions.filter(t => t.type === 'Factures').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
-  const totalDepenses = filteredTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
-  const totalEpargnes = filteredTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
-  const totalSorties = totalFactures + totalDepenses + totalEpargnes;
-  const solde = totalRevenus - totalSorties;
-  const resteAVivre = totalRevenus - totalFactures - totalDepenses;
+  const { totalRevenus, totalFactures, totalDepenses, totalEpargnes, totalSorties, solde, resteAVivre } = totals;
 
   // === COMPARAISON MOIS PRÉCÉDENT ===
   const getPreviousMonthTransactions = () => {
@@ -236,7 +251,8 @@ function StatistiquesContent() {
     { name: 'Épargnes', montant: totalEpargnes, fill: COLORS_TYPE.epargnes },
   ];
 
-  const evolutionData = monthsShort.map((month, index) => {
+  // Evolution data avec useMemo (calcul lourd)
+  const evolutionData = useMemo(() => monthsShort.map((month, index) => {
     const monthKey = `${selectedYear}-${(index + 1).toString().padStart(2, '0')}`;
     const monthTransactions = transactions.filter(t => t.date?.startsWith(monthKey));
     const revenus = monthTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -244,7 +260,7 @@ function StatistiquesContent() {
     const depenses = monthTransactions.filter(t => t.type === 'Dépenses').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     const epargnes = monthTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
     return { name: month, revenus, factures, depenses, epargnes, solde: revenus - factures - depenses - epargnes };
-  });
+  }), [transactions, selectedYear]);
 
   const top5Depenses = getDataByCategorie('Dépenses').slice(0, 5);
 
@@ -1756,27 +1772,53 @@ function StatistiquesContent() {
     { id: 'calendrier', label: '📅' }, { id: 'flux', label: '💸' }, { id: 'objectifs', label: '🎯' }
   ];
 
+  // Skeleton Loader Component
+  const SkeletonCard = ({ height = 200 }: { height?: number }) => (
+    <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-pulse" style={cardStyle}>
+      <div className="h-4 w-32 rounded mb-4" style={{ backgroundColor: `${theme.colors.cardBorder}50` }} />
+      <div className="flex justify-center">
+        <div className="rounded-lg" style={{ width: '100%', maxWidth: 380, height, backgroundColor: `${theme.colors.cardBorder}30` }} />
+      </div>
+    </div>
+  );
+
+  // Si pas encore chargé, afficher skeleton
+  if (!isLoaded) {
+    return (
+      <div className="pb-4 space-y-4">
+        <div className="text-center mb-4">
+          <div className="h-5 w-32 mx-auto rounded mb-2 animate-pulse" style={{ backgroundColor: `${theme.colors.cardBorder}50` }} />
+          <div className="h-3 w-48 mx-auto rounded animate-pulse" style={{ backgroundColor: `${theme.colors.cardBorder}30` }} />
+        </div>
+        <SkeletonCard height={120} />
+        <SkeletonCard height={60} />
+        <SkeletonCard height={250} />
+        <SkeletonCard height={200} />
+      </div>
+    );
+  }
+
   return (
     <div className="pb-4">
-      <div className="text-center mb-4"><h1 className="text-lg font-medium" style={textPrimary}>Statistiques</h1><p className="text-xs" style={textSecondary}>Analyse détaillée de votre budget</p></div>
+      <div className="text-center mb-4 animate-fade-in"><h1 className="text-lg font-medium" style={textPrimary}>Statistiques</h1><p className="text-xs" style={textSecondary}>Analyse détaillée de votre budget</p></div>
 
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
+      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4 animate-slide-up" style={{ ...cardStyle, animationDelay: '0.1s' }}>
         <div className="flex items-center justify-between mb-4">
-          <button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
-          <div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div>
-          <button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
+          <button onClick={prevMonth} className="p-1 hover:scale-110 transition-transform"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
+          <div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border transition-colors" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div>
+          <button onClick={nextMonth} className="p-1 hover:scale-110 transition-transform"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
         </div>
         <div className="flex flex-wrap gap-2 justify-center">
-          <button onClick={() => setSelectedMonth(null)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === null ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>Année</button>
-          {monthsShort.map((month, index) => (<button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>))}
+          <button onClick={() => setSelectedMonth(null)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 border" style={selectedMonth === null ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>Année</button>
+          {monthsShort.map((month, index) => (<button key={index} onClick={() => setSelectedMonth(index)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 border" style={selectedMonth === index ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>))}
         </div>
       </div>
 
       {/* Bouton Filtres avancés + Export */}
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex gap-2 animate-slide-up" style={{ animationDelay: '0.2s' }}>
         <button 
           onClick={() => setShowFilters(!showFilters)} 
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all hover:scale-105"
           style={showFilters || nbFiltresActifs > 0 ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : { background: theme.colors.cardBackground, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}
         >
           <Filter className="w-4 h-4" />
@@ -1786,7 +1828,7 @@ function StatistiquesContent() {
         <button 
           onClick={handleExportImage}
           disabled={isExporting}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all hover:scale-105 disabled:opacity-50"
           style={{ background: theme.colors.cardBackground, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}
         >
           <Download className="w-4 h-4" />
@@ -1859,6 +1901,16 @@ function StatistiquesContent() {
         {activeTab === 'calendrier' && renderCalendrier()}
         {activeTab === 'flux' && renderFlux()}
         {activeTab === 'objectifs' && renderObjectifs()}
+      </div>
+
+      {/* SmartTips */}
+      <SmartTips page="statistiques" />
+
+      {/* Footer */}
+      <div className="text-center pt-4 pb-2">
+        <p className="text-[10px]" style={textSecondary}>
+          Créé avec <span className="text-red-400">❤️</span> Shina5
+        </p>
       </div>
 
       {/* Modal plein écran pour les graphiques */}
