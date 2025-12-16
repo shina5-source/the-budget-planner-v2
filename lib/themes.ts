@@ -4,6 +4,8 @@
 export type ThemeKey =
   | 'bordeaux-or'
   | 'rose-bleu-nuit'
+  | 'soft-pink'
+  | 'excel-teal'
   | 'pastel-violet'
   | 'pastel-bleu'
   | 'pastel-vert'
@@ -40,7 +42,7 @@ export interface Theme {
       textPrimary: string;
       textSecondary: string;
       textOnPrimary: string;
-      textOnSecondary: string; // Nouvelle propriété
+      textOnSecondary: string;
     };
     dark: {
       primary: string;
@@ -58,7 +60,7 @@ export interface Theme {
       textPrimary: string;
       textSecondary: string;
       textOnPrimary: string;
-      textOnSecondary: string; // Nouvelle propriété
+      textOnSecondary: string;
     };
   };
 }
@@ -73,7 +75,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#D4AF37',
         primaryLight: '#E8C84B',
-        secondary: '#722F37', // Bordeaux
+        secondary: '#722F37',
         secondaryLight: '#8B4557',
         accent: '#D4AF37',
         gradientFrom: '#D4AF37',
@@ -86,12 +88,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#D4AF37',
         textSecondary: 'rgba(212, 175, 55, 0.7)',
         textOnPrimary: '#722F37',
-        textOnSecondary: '#f0d78c', // Or clair pour contraster avec le bordeaux
+        textOnSecondary: '#f0d78c',
       },
       dark: {
         primary: '#f0d78c',
         primaryLight: '#f8e6a8',
-        secondary: '#1a1a2e', // Bleu nuit très foncé
+        secondary: '#1a1a2e',
         secondaryLight: '#2a2a4a',
         accent: '#f0d78c',
         gradientFrom: '#f0d78c',
@@ -104,12 +106,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#f0d78c',
         textSecondary: 'rgba(240, 215, 140, 0.7)',
         textOnPrimary: '#1a1a2e',
-        textOnSecondary: '#f0d78c', // Or clair pour contraster avec le bleu nuit
+        textOnSecondary: '#f0d78c',
       },
     },
   },
 
-  // ========== THÈME ROSE + BLEU NUIT (comme sur l'image) ==========
+  // ========== THÈME ROSE + BLEU NUIT ==========
   'rose-bleu-nuit': {
     key: 'rose-bleu-nuit',
     name: 'Rose & Bleu Nuit',
@@ -118,7 +120,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#D4AF37',
         primaryLight: '#E8C84B',
-        secondary: '#1e293b', // Bleu nuit
+        secondary: '#1e293b',
         secondaryLight: '#334155',
         accent: '#D4AF37',
         gradientFrom: '#D4AF37',
@@ -131,12 +133,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#D4AF37',
         textSecondary: 'rgba(212, 175, 55, 0.7)',
         textOnPrimary: '#1e293b',
-        textOnSecondary: '#f9a8d4', // Rose pâle pour contraster avec le bleu nuit
+        textOnSecondary: '#f9a8d4',
       },
       dark: {
         primary: '#f472b6',
         primaryLight: '#f9a8d4',
-        secondary: '#0f172a', // Bleu nuit très foncé
+        secondary: '#0f172a',
         secondaryLight: '#1e293b',
         accent: '#f472b6',
         gradientFrom: '#f472b6',
@@ -149,12 +151,102 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#f9a8d4',
         textSecondary: 'rgba(249, 168, 212, 0.7)',
         textOnPrimary: '#0f172a',
-        textOnSecondary: '#f9a8d4', // Rose pâle pour contraster avec le bleu nuit très foncé
+        textOnSecondary: '#f9a8d4',
       }
     },
   },
 
-  // ========== THÈMES PASTELS (DÉGRADÉ AMÉLIORÉ V3) ==========
+  // ========== NOUVEAU THÈME - SOFT PINK (Style Budget Chris) ==========
+  'soft-pink': {
+    key: 'soft-pink',
+    name: 'Soft Pink',
+    emoji: '🌷',
+    colors: {
+      light: {
+        primary: '#6B5B75',           // Violet/mauve plus foncé pour meilleure lisibilité
+        primaryLight: '#9B8AA5',      // Violet moyen
+        secondary: '#E8D5D5',         // Beige rosé (pour header)
+        secondaryLight: '#F5E6E0',    // Rose pâle
+        accent: '#7BA085',            // Vert sauge (accent secondaire)
+        gradientFrom: '#F5E6E0',      // Rose pâle
+        gradientTo: '#E8D5D5',        // Beige rosé
+        backgroundGradientFrom: '#F5E6E0',  // Rose pâle
+        backgroundGradientTo: '#E8D5D5',    // Beige rosé
+        cardBackground: 'rgba(255, 255, 255, 0.85)',  // Blanc semi-transparent
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.95)',
+        cardBorder: 'rgba(107, 91, 117, 0.25)',  // Bordure violet
+        textPrimary: '#4A4A4A',       // Gris foncé
+        textSecondary: '#6B6B6B',     // Gris moyen (plus foncé pour lisibilité)
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#4A4A4A',   // Gris foncé
+      },
+      dark: {
+        primary: '#B8A9C0',           // Violet clair
+        primaryLight: '#D4C8DC',      // Violet très clair
+        secondary: '#2A2530',         // Violet très foncé (pour header)
+        secondaryLight: '#3D3347',    // Violet foncé
+        accent: '#7BA085',            // Vert sauge
+        gradientFrom: '#3D3347',      // Violet foncé
+        gradientTo: '#2A2530',        // Violet très foncé
+        backgroundGradientFrom: '#2A2530',
+        backgroundGradientTo: '#1E1A22',
+        cardBackground: 'rgba(61, 51, 71, 0.8)',
+        cardBackgroundLight: 'rgba(61, 51, 71, 0.9)',
+        cardBorder: 'rgba(184, 169, 192, 0.3)',
+        textPrimary: '#E8D5E0',       // Rose pâle
+        textSecondary: 'rgba(232, 213, 224, 0.7)',
+        textOnPrimary: '#2A2530',
+        textOnSecondary: '#E8D5E0',
+      }
+    },
+  },
+
+  // ========== NOUVEAU THÈME - EXCEL PRO (Style Tableur Pro) ==========
+  'excel-teal': {
+    key: 'excel-teal',
+    name: 'Excel Pro',
+    emoji: '📊',
+    colors: {
+      light: {
+        primary: '#8B7355',           // Taupe/Brun (boutons actifs, accent)
+        primaryLight: '#A08B70',      // Taupe clair
+        secondary: '#2D5A5A',         // Teal/Vert foncé (header)
+        secondaryLight: '#3D7A7A',    // Teal moyen
+        accent: '#C9A86C',            // Caramel/Beige doré (barres progression)
+        gradientFrom: '#F8F6F3',      // Beige très clair
+        gradientTo: '#F0EDE8',        // Beige clair
+        backgroundGradientFrom: '#FAF9F7',
+        backgroundGradientTo: '#F2F0EB',
+        cardBackground: 'rgba(255, 255, 255, 0.98)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 1)',
+        cardBorder: 'rgba(45, 90, 90, 0.15)',  // Bordure teal légère
+        textPrimary: '#2C3E50',       // Gris-bleu foncé
+        textSecondary: '#7F8C8D',     // Gris moyen
+        textOnPrimary: '#FFFFFF',     // Blanc sur taupe
+        textOnSecondary: '#FFFFFF',   // Blanc sur teal (header)
+      },
+      dark: {
+        primary: '#D4B87A',           // Caramel clair
+        primaryLight: '#E5D4A8',      // Beige clair
+        secondary: '#1E3A3A',         // Teal très foncé
+        secondaryLight: '#2D5050',    // Teal foncé
+        accent: '#C9A86C',            // Caramel
+        gradientFrom: '#1A2626',
+        gradientTo: '#141E1E',
+        backgroundGradientFrom: '#1A2626',
+        backgroundGradientTo: '#141E1E',
+        cardBackground: 'rgba(35, 55, 55, 0.85)',
+        cardBackgroundLight: 'rgba(35, 55, 55, 0.95)',
+        cardBorder: 'rgba(212, 184, 122, 0.25)',
+        textPrimary: '#ECF0F1',       // Gris très clair
+        textSecondary: 'rgba(236, 240, 241, 0.7)',
+        textOnPrimary: '#1A1612',
+        textOnSecondary: '#ECF0F1',
+      }
+    },
+  },
+
+  // ========== THÈMES PASTELS ==========
   'pastel-violet': {
     key: 'pastel-violet',
     name: 'Violet Pastel',
@@ -163,7 +255,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#ede9fe',
         primaryLight: '#c4b5fd',
-        secondary: '#7c3aed', // Violet
+        secondary: '#7c3aed',
         secondaryLight: '#8b5cf6',
         accent: '#818cf8',
         gradientFrom: '#a78bfa',
@@ -176,12 +268,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#5b21b6',
         textSecondary: 'rgba(91, 33, 182, 0.75)',
         textOnPrimary: '#5b21b6',
-        textOnSecondary: '#ede9fe', // Violet très clair pour contraster avec le violet
+        textOnSecondary: '#ede9fe',
       },
       dark: {
         primary: '#a78bfa',
         primaryLight: '#c4b5fd',
-        secondary: '#1e1b4b', // Violet foncé
+        secondary: '#1e1b4b',
         secondaryLight: '#312e74',
         accent: '#818cf8',
         gradientFrom: '#a78bfa',
@@ -194,7 +286,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#c4b5fd',
         textSecondary: 'rgba(196, 181, 253, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#c4b5fd', // Violet clair pour contraster avec le violet foncé
+        textOnSecondary: '#c4b5fd',
       }
     },
   },
@@ -206,7 +298,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#dbeafe',
         primaryLight: '#93c5fd',
-        secondary: '#2563eb', // Bleu
+        secondary: '#2563eb',
         secondaryLight: '#3b82f6',
         accent: '#3b82f6',
         gradientFrom: '#60a5fa',
@@ -219,12 +311,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#1e3a8a',
         textSecondary: 'rgba(30, 58, 138, 0.75)',
         textOnPrimary: '#1e3a8a',
-        textOnSecondary: '#dbeafe', // Bleu très clair pour contraster avec le bleu
+        textOnSecondary: '#dbeafe',
       },
       dark: {
         primary: '#60a5fa',
         primaryLight: '#93c5fd',
-        secondary: '#1e3a8a', // Bleu foncé
+        secondary: '#1e3a8a',
         secondaryLight: '#1e40af',
         accent: '#818cf8',
         gradientFrom: '#60a5fa',
@@ -237,7 +329,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#93c5fd',
         textSecondary: 'rgba(147, 197, 253, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#93c5fd', // Bleu clair pour contraster avec le bleu foncé
+        textOnSecondary: '#93c5fd',
       }
     },
   },
@@ -249,7 +341,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#dcfce7',
         primaryLight: '#86efac',
-        secondary: '#16a34a', // Vert
+        secondary: '#16a34a',
         secondaryLight: '#22c55e',
         accent: '#a3e635',
         gradientFrom: '#4ade80',
@@ -262,12 +354,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#14532d',
         textSecondary: 'rgba(20, 83, 45, 0.75)',
         textOnPrimary: '#14532d',
-        textOnSecondary: '#dcfce7', // Vert très clair pour contraster avec le vert
+        textOnSecondary: '#dcfce7',
       },
       dark: {
         primary: '#4ade80',
         primaryLight: '#86efac',
-        secondary: '#14532d', // Vert foncé
+        secondary: '#14532d',
         secondaryLight: '#166534',
         accent: '#a3e635',
         gradientFrom: '#4ade80',
@@ -280,7 +372,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#86efac',
         textSecondary: 'rgba(134, 239, 172, 0.7)',
         textOnPrimary: '#000000',
-        textOnSecondary: '#86efac', // Vert clair pour contraster avec le vert foncé
+        textOnSecondary: '#86efac',
       }
     },
   },
@@ -292,7 +384,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#ffedd5',
         primaryLight: '#fdba74',
-        secondary: '#ea580c', // Orange
+        secondary: '#ea580c',
         secondaryLight: '#f97316',
         accent: '#facc15',
         gradientFrom: '#fb923c',
@@ -305,12 +397,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#9a3412',
         textSecondary: 'rgba(154, 52, 18, 0.75)',
         textOnPrimary: '#9a3412',
-        textOnSecondary: '#ffedd5', // Orange très clair pour contraster avec l'orange
+        textOnSecondary: '#ffedd5',
       },
       dark: {
         primary: '#fb923c',
         primaryLight: '#fdba74',
-        secondary: '#7c2d12', // Orange brun foncé
+        secondary: '#7c2d12',
         secondaryLight: '#9a3412',
         accent: '#facc15',
         gradientFrom: '#fb923c',
@@ -323,12 +415,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#fdba74',
         textSecondary: 'rgba(253, 186, 116, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#fdba74', // Orange clair pour contraster avec l'orange brun foncé
+        textOnSecondary: '#fdba74',
       }
     },
   },
 
-  // ========== THÈMES NATURE (DÉGRADÉ AMÉLIORÉ) ==========
+  // ========== THÈMES NATURE ==========
   'ocean': {
     key: 'ocean',
     name: 'Océan',
@@ -337,7 +429,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#e0f2fe',
         primaryLight: '#38bdf8',
-        secondary: '#0369a1', // Bleu océan
+        secondary: '#0369a1',
         secondaryLight: '#0284c7',
         accent: '#6366f1',
         gradientFrom: '#bae6fd',
@@ -350,12 +442,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#084c61',
         textSecondary: 'rgba(8, 76, 97, 0.75)',
         textOnPrimary: '#084c61',
-        textOnSecondary: '#e0f2fe', // Bleu très clair pour contraster avec le bleu océan
+        textOnSecondary: '#e0f2fe',
       },
       dark: {
         primary: '#38bdf8',
         primaryLight: '#7dd3fc',
-        secondary: '#082f49', // Bleu nuit océan
+        secondary: '#082f49',
         secondaryLight: '#075985',
         accent: '#6366f1',
         gradientFrom: '#38bdf8',
@@ -368,7 +460,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#7dd3fc',
         textSecondary: 'rgba(125, 211, 252, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#7dd3fc', // Bleu clair pour contraster avec le bleu nuit océan
+        textOnSecondary: '#7dd3fc',
       }
     },
   },
@@ -380,7 +472,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#dcfce7',
         primaryLight: '#4ade80',
-        secondary: '#15803d', // Vert forêt
+        secondary: '#15803d',
         secondaryLight: '#16a34a',
         accent: '#14b8a6',
         gradientFrom: '#bbf7d0',
@@ -393,12 +485,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#14532d',
         textSecondary: 'rgba(20, 83, 45, 0.75)',
         textOnPrimary: '#14532d',
-        textOnSecondary: '#dcfce7', // Vert très clair pour contraster avec le vert forêt
+        textOnSecondary: '#dcfce7',
       },
       dark: {
         primary: '#4ade80',
         primaryLight: '#86efac',
-        secondary: '#14532d', // Vert forêt foncé
+        secondary: '#14532d',
         secondaryLight: '#166534',
         accent: '#14b8a6',
         gradientFrom: '#4ade80',
@@ -411,7 +503,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#86efac',
         textSecondary: 'rgba(134, 239, 172, 0.7)',
         textOnPrimary: '#000000',
-        textOnSecondary: '#86efac', // Vert clair pour contraster avec le vert forêt foncé
+        textOnSecondary: '#86efac',
       }
     },
   },
@@ -423,7 +515,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#ccfbf1',
         primaryLight: '#2dd4bf',
-        secondary: '#0f766e', // Cyan menthe
+        secondary: '#0f766e',
         secondaryLight: '#0d9488',
         accent: '#06b6d4',
         gradientFrom: '#99f6e4',
@@ -436,12 +528,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#134e4a',
         textSecondary: 'rgba(19, 78, 74, 0.75)',
         textOnPrimary: '#134e4a',
-        textOnSecondary: '#ccfbf1', // Cyan très clair pour contraster avec le cyan menthe
+        textOnSecondary: '#ccfbf1',
       },
       dark: {
         primary: '#2dd4bf',
         primaryLight: '#5eead4',
-        secondary: '#134e4a', // Cyan menthe foncé
+        secondary: '#134e4a',
         secondaryLight: '#115e59',
         accent: '#06b6d4',
         gradientFrom: '#2dd4bf',
@@ -454,12 +546,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#5eead4',
         textSecondary: 'rgba(94, 234, 212, 0.7)',
         textOnPrimary: '#000000',
-        textOnSecondary: '#5eead4', // Cyan clair pour contraster avec le cyan menthe foncé
+        textOnSecondary: '#5eead4',
       }
     },
   },
 
-  // ========== THÈMES CHAUDS (DÉGRADÉ AMÉLIORÉ) ==========
+  // ========== THÈMES CHAUDS ==========
   'sunset': {
     key: 'sunset',
     name: 'Coucher de soleil',
@@ -468,7 +560,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#ffe4e6',
         primaryLight: '#fb7185',
-        secondary: '#be123c', // Rose foncé (coucher de soleil)
+        secondary: '#be123c',
         secondaryLight: '#e11d48',
         accent: '#eab308',
         gradientFrom: '#fecaca',
@@ -481,12 +573,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#881337',
         textSecondary: 'rgba(136, 19, 55, 0.75)',
         textOnPrimary: '#881337',
-        textOnSecondary: '#ffe4e6', // Rose très clair pour contraster avec le rose foncé
+        textOnSecondary: '#ffe4e6',
       },
       dark: {
         primary: '#fb7185',
         primaryLight: '#fda4af',
-        secondary: '#881337', // Rouge foncé (coucher de soleil)
+        secondary: '#881337',
         secondaryLight: '#9f1239',
         accent: '#eab308',
         gradientFrom: '#fb7185',
@@ -499,7 +591,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#fda4af',
         textSecondary: 'rgba(251, 113, 133, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#fb7185', // Rose clair pour contraster avec le rouge foncé
+        textOnSecondary: '#fb7185',
       }
     },
   },
@@ -511,7 +603,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#fce7f3',
         primaryLight: '#fb7185',
-        secondary: '#9f1239', // Cerise foncé
+        secondary: '#9f1239',
         secondaryLight: '#be123c',
         accent: '#f472b6',
         gradientFrom: '#fbcfe8',
@@ -524,12 +616,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#831843',
         textSecondary: 'rgba(131, 24, 67, 0.75)',
         textOnPrimary: '#831843',
-        textOnSecondary: '#fce7f3', // Rose très clair pour contraster avec le cerise foncé
+        textOnSecondary: '#fce7f3',
       },
       dark: {
         primary: '#f472b6',
         primaryLight: '#f9a8d4',
-        secondary: '#831843', // Cerise très foncé
+        secondary: '#831843',
         secondaryLight: '#9d174d',
         accent: '#e11d48',
         gradientFrom: '#f472b6',
@@ -542,7 +634,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#f9a8d4',
         textSecondary: 'rgba(249, 168, 212, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#f472b6', // Rose pour contraster avec le cerise très foncé
+        textOnSecondary: '#f472b6',
       }
     },
   },
@@ -554,7 +646,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#fef9c3',
         primaryLight: '#b45309',
-        secondary: '#78350f', // Brun chocolat
+        secondary: '#78350f',
         secondaryLight: '#92400e',
         accent: '#d97706',
         gradientFrom: '#fde68a',
@@ -567,12 +659,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#451a03',
         textSecondary: 'rgba(69, 26, 3, 0.75)',
         textOnPrimary: '#451a03',
-        textOnSecondary: '#fef9c3', // Jaune clair pour contraster avec le brun
+        textOnSecondary: '#fef9c3',
       },
       dark: {
         primary: '#fde68a',
         primaryLight: '#fef08a',
-        secondary: '#451a03', // Brun chocolat très foncé
+        secondary: '#451a03',
         secondaryLight: '#78350f',
         accent: '#d97706',
         gradientFrom: '#fde68a',
@@ -585,12 +677,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#fde68a',
         textSecondary: 'rgba(254, 240, 138, 0.7)',
         textOnPrimary: '#451a03',
-        textOnSecondary: '#fde68a', // Jaune clair pour contraster avec le brun très foncé
+        textOnSecondary: '#fde68a',
       }
     },
   },
 
-  // ========== THÈMES ÉLÉGANTS (DÉGRADÉ AMÉLIORÉ) ==========
+  // ========== THÈMES ÉLÉGANTS ==========
   'rose-gold': {
     key: 'rose-gold',
     name: 'Rose Gold',
@@ -599,7 +691,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#fce7f3',
         primaryLight: '#f472b6',
-        secondary: '#be185d', // Rose gold foncé
+        secondary: '#be185d',
         secondaryLight: '#db2777',
         accent: '#d946ef',
         gradientFrom: '#fbcfe8',
@@ -612,12 +704,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#831843',
         textSecondary: 'rgba(131, 24, 67, 0.75)',
         textOnPrimary: '#831843',
-        textOnSecondary: '#fce7f3', // Rose très clair pour contraster avec le rose gold foncé
+        textOnSecondary: '#fce7f3',
       },
       dark: {
         primary: '#f472b6',
         primaryLight: '#f9a8d4',
-        secondary: '#831843', // Rose gold très foncé
+        secondary: '#831843',
         secondaryLight: '#9d174d',
         accent: '#d946ef',
         gradientFrom: '#f472b6',
@@ -630,7 +722,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#f9a8d4',
         textSecondary: 'rgba(249, 168, 212, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#f9a8d4', // Rose pour contraster avec le rose gold très foncé
+        textOnSecondary: '#f9a8d4',
       }
     },
   },
@@ -642,7 +734,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#ede9fe',
         primaryLight: '#a78bfa',
-        secondary: '#6d28d9', // Lavande foncé
+        secondary: '#6d28d9',
         secondaryLight: '#7c3aed',
         accent: '#a855f7',
         gradientFrom: '#ddd6fe',
@@ -655,12 +747,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#4c1d95',
         textSecondary: 'rgba(76, 29, 149, 0.75)',
         textOnPrimary: '#4c1d95',
-        textOnSecondary: '#ede9fe', // Lavande très clair pour contraster avec le lavande foncé
+        textOnSecondary: '#ede9fe',
       },
       dark: {
         primary: '#a78bfa',
         primaryLight: '#c4b5fd',
-        secondary: '#4c1d95', // Lavande très foncé
+        secondary: '#4c1d95',
         secondaryLight: '#5b21b6',
         accent: '#a855f7',
         gradientFrom: '#a78bfa',
@@ -673,7 +765,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#c4b5fd',
         textSecondary: 'rgba(196, 181, 253, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#c4b5fd', // Lavande clair pour contraster avec le lavande très foncé
+        textOnSecondary: '#c4b5fd',
       }
     },
   },
@@ -685,7 +777,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#e0e7ff',
         primaryLight: '#818cf8',
-        secondary: '#4338ca', // Bleu nuit étoilée
+        secondary: '#4338ca',
         secondaryLight: '#4f46e5',
         accent: '#fbbf24',
         gradientFrom: '#c7d2fe',
@@ -698,12 +790,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#312e81',
         textSecondary: 'rgba(49, 46, 129, 0.75)',
         textOnPrimary: '#312e81',
-        textOnSecondary: '#e0e7ff', // Bleu très clair pour contraster avec le bleu nuit étoilée
+        textOnSecondary: '#e0e7ff',
       },
       dark: {
         primary: '#818cf8',
         primaryLight: '#a5b4fc',
-        secondary: '#312e81', // Bleu nuit étoilée foncé
+        secondary: '#312e81',
         secondaryLight: '#3730a3',
         accent: '#fbbf24',
         gradientFrom: '#818cf8',
@@ -716,7 +808,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#a5b4fc',
         textSecondary: 'rgba(165, 180, 252, 0.7)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#a5b4fc', // Bleu clair pour contraster avec le bleu nuit étoilée foncé
+        textOnSecondary: '#a5b4fc',
       }
     },
   },
@@ -728,7 +820,7 @@ export const themes: Record<ThemeKey, Theme> = {
       light: {
         primary: '#374151',
         primaryLight: '#4b5563',
-        secondary: '#f9fafb', // Gris très clair (presque blanc)
+        secondary: '#f9fafb',
         secondaryLight: '#f3f4f6',
         accent: '#000000',
         gradientFrom: '#e5e7eb',
@@ -741,12 +833,12 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#111827',
         textSecondary: 'rgba(17, 24, 39, 0.75)',
         textOnPrimary: '#ffffff',
-        textOnSecondary: '#111827', // Noir pour contraster avec le gris très clair
+        textOnSecondary: '#111827',
       },
       dark: {
         primary: '#9ca3af',
         primaryLight: '#d1d5db',
-        secondary: '#111827', // Gris foncé
+        secondary: '#111827',
         secondaryLight: '#1f2937',
         accent: '#f9fafb',
         gradientFrom: '#9ca3af',
@@ -759,7 +851,7 @@ export const themes: Record<ThemeKey, Theme> = {
         textPrimary: '#d1d5db',
         textSecondary: 'rgba(209, 213, 219, 0.7)',
         textOnPrimary: '#000000',
-        textOnSecondary: '#d1d5db', // Gris clair pour contraster avec le gris foncé
+        textOnSecondary: '#d1d5db',
       }
     },
   },
