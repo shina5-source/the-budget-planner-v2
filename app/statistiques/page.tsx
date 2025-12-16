@@ -1902,17 +1902,7 @@ function StatistiquesContent() {
         {activeTab === 'flux' && renderFlux()}
         {activeTab === 'objectifs' && renderObjectifs()}
       </div>
-
-      {/* SmartTips */}
-      <SmartTips page="statistiques" />
-
-      {/* Footer */}
-      <div className="text-center pt-4 pb-2">
-        <p className="text-[10px]" style={textSecondary}>
-          Créé avec <span className="text-red-400">❤️</span> Shina5
-        </p>
-      </div>
-
+            
       {/* Modal plein écran pour les graphiques */}
       <FullscreenChartModal />
     </div>

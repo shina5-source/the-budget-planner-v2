@@ -43,6 +43,12 @@ export interface Theme {
       textSecondary: string;
       textOnPrimary: string;
       textOnSecondary: string;
+      // Couleurs étendues (optionnelles) - utilisées par Excel Pro
+      negative?: string;        // Rouge/Orange pour montants négatifs
+      positive?: string;        // Vert pour montants positifs
+      headerAlt?: string;       // Bleu-gris pour headers alternatifs
+      headerTaupe?: string;     // Taupe pour headers secondaires
+      chartBar?: string;        // Couleur barres graphiques
     };
     dark: {
       primary: string;
@@ -61,6 +67,12 @@ export interface Theme {
       textSecondary: string;
       textOnPrimary: string;
       textOnSecondary: string;
+      // Couleurs étendues (optionnelles)
+      negative?: string;
+      positive?: string;
+      headerAlt?: string;
+      headerTaupe?: string;
+      chartBar?: string;
     };
   };
 }
@@ -163,37 +175,37 @@ export const themes: Record<ThemeKey, Theme> = {
     emoji: '🌷',
     colors: {
       light: {
-        primary: '#6B5B75',           // Violet/mauve plus foncé pour meilleure lisibilité
-        primaryLight: '#9B8AA5',      // Violet moyen
-        secondary: '#E8D5D5',         // Beige rosé (pour header)
-        secondaryLight: '#F5E6E0',    // Rose pâle
-        accent: '#7BA085',            // Vert sauge (accent secondaire)
-        gradientFrom: '#F5E6E0',      // Rose pâle
-        gradientTo: '#E8D5D5',        // Beige rosé
-        backgroundGradientFrom: '#F5E6E0',  // Rose pâle
-        backgroundGradientTo: '#E8D5D5',    // Beige rosé
-        cardBackground: 'rgba(255, 255, 255, 0.85)',  // Blanc semi-transparent
+        primary: '#6B5B75',
+        primaryLight: '#9B8AA5',
+        secondary: '#E8D5D5',
+        secondaryLight: '#F5E6E0',
+        accent: '#7BA085',
+        gradientFrom: '#F5E6E0',
+        gradientTo: '#E8D5D5',
+        backgroundGradientFrom: '#F5E6E0',
+        backgroundGradientTo: '#E8D5D5',
+        cardBackground: 'rgba(255, 255, 255, 0.85)',
         cardBackgroundLight: 'rgba(255, 255, 255, 0.95)',
-        cardBorder: 'rgba(107, 91, 117, 0.25)',  // Bordure violet
-        textPrimary: '#4A4A4A',       // Gris foncé
-        textSecondary: '#6B6B6B',     // Gris moyen (plus foncé pour lisibilité)
-        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
-        textOnSecondary: '#4A4A4A',   // Gris foncé
+        cardBorder: 'rgba(107, 91, 117, 0.25)',
+        textPrimary: '#4A4A4A',
+        textSecondary: '#6B6B6B',
+        textOnPrimary: '#FFFFFF',
+        textOnSecondary: '#4A4A4A',
       },
       dark: {
-        primary: '#B8A9C0',           // Violet clair
-        primaryLight: '#D4C8DC',      // Violet très clair
-        secondary: '#2A2530',         // Violet très foncé (pour header)
-        secondaryLight: '#3D3347',    // Violet foncé
-        accent: '#7BA085',            // Vert sauge
-        gradientFrom: '#3D3347',      // Violet foncé
-        gradientTo: '#2A2530',        // Violet très foncé
+        primary: '#B8A9C0',
+        primaryLight: '#D4C8DC',
+        secondary: '#2A2530',
+        secondaryLight: '#3D3347',
+        accent: '#7BA085',
+        gradientFrom: '#3D3347',
+        gradientTo: '#2A2530',
         backgroundGradientFrom: '#2A2530',
         backgroundGradientTo: '#1E1A22',
         cardBackground: 'rgba(61, 51, 71, 0.8)',
         cardBackgroundLight: 'rgba(61, 51, 71, 0.9)',
         cardBorder: 'rgba(184, 169, 192, 0.3)',
-        textPrimary: '#E8D5E0',       // Rose pâle
+        textPrimary: '#E8D5E0',
         textSecondary: 'rgba(232, 213, 224, 0.7)',
         textOnPrimary: '#2A2530',
         textOnSecondary: '#E8D5E0',
@@ -208,40 +220,52 @@ export const themes: Record<ThemeKey, Theme> = {
     emoji: '📊',
     colors: {
       light: {
-        primary: '#8B7355',           // Taupe/Brun (boutons actifs, accent)
+        primary: '#8B7355',           // Taupe/Marron (boutons actifs Vue, Déc, etc.)
         primaryLight: '#A08B70',      // Taupe clair
-        secondary: '#2D5A5A',         // Teal/Vert foncé (header)
+        secondary: '#2D5A5A',         // Teal FONCÉ (header & bottom nav)
         secondaryLight: '#3D7A7A',    // Teal moyen
-        accent: '#C9A86C',            // Caramel/Beige doré (barres progression)
-        gradientFrom: '#F8F6F3',      // Beige très clair
-        gradientTo: '#F0EDE8',        // Beige clair
-        backgroundGradientFrom: '#FAF9F7',
-        backgroundGradientTo: '#F2F0EB',
-        cardBackground: 'rgba(255, 255, 255, 0.98)',
-        cardBackgroundLight: 'rgba(255, 255, 255, 1)',
-        cardBorder: 'rgba(45, 90, 90, 0.15)',  // Bordure teal légère
-        textPrimary: '#2C3E50',       // Gris-bleu foncé
-        textSecondary: '#7F8C8D',     // Gris moyen
-        textOnPrimary: '#FFFFFF',     // Blanc sur taupe
-        textOnSecondary: '#FFFFFF',   // Blanc sur teal (header)
+        accent: '#2D5A5A',            // Teal (icônes dans cercles)
+        gradientFrom: '#EBE6DD',      // Beige chaud
+        gradientTo: '#DED8CC',        // Beige plus foncé
+        backgroundGradientFrom: '#E8E3D9',  // Fond beige
+        backgroundGradientTo: '#DED8CC',    // Fond beige foncé
+        cardBackground: 'rgba(250, 248, 244, 0.98)',  // Beige très clair
+        cardBackgroundLight: 'rgba(255, 253, 250, 1)', // Crème
+        cardBorder: 'rgba(139, 115, 85, 0.55)',  // Bordure marron bien visible
+        textPrimary: '#3D3225',       // Marron très foncé (titres)
+        textSecondary: '#5D4E3A',     // Marron moyen (sous-titres)
+        textOnPrimary: '#FFFFFF',     // Blanc sur taupe (boutons actifs)
+        textOnSecondary: '#FFFFFF',   // Blanc sur teal (header/nav)
+        // === COULEURS EXCEL SPÉCIFIQUES ===
+        negative: '#C0392B',          // Rouge/Orange pour montants négatifs (392,79 €)
+        positive: '#27AE60',          // Vert pour montants positifs
+        headerAlt: '#5D6D7E',         // Bleu-gris pour headers "DÉTAIL DES..."
+        headerTaupe: '#A89880',       // Taupe clair pour headers "MA TRÉSORERIE"
+        chartBar: '#C9A86C',          // Caramel pour barres graphiques
       },
       dark: {
         primary: '#D4B87A',           // Caramel clair
         primaryLight: '#E5D4A8',      // Beige clair
-        secondary: '#1E3A3A',         // Teal très foncé
-        secondaryLight: '#2D5050',    // Teal foncé
-        accent: '#C9A86C',            // Caramel
-        gradientFrom: '#1A2626',
-        gradientTo: '#141E1E',
-        backgroundGradientFrom: '#1A2626',
-        backgroundGradientTo: '#141E1E',
-        cardBackground: 'rgba(35, 55, 55, 0.85)',
-        cardBackgroundLight: 'rgba(35, 55, 55, 0.95)',
-        cardBorder: 'rgba(212, 184, 122, 0.25)',
-        textPrimary: '#ECF0F1',       // Gris très clair
-        textSecondary: 'rgba(236, 240, 241, 0.7)',
+        secondary: '#1E3D3D',         // Teal très foncé
+        secondaryLight: '#2D5A5A',    // Teal foncé
+        accent: '#5DADE2',            // Teal clair
+        gradientFrom: '#2A2520',
+        gradientTo: '#1E1A16',
+        backgroundGradientFrom: '#252019',
+        backgroundGradientTo: '#1A1612',
+        cardBackground: 'rgba(50, 45, 38, 0.9)',
+        cardBackgroundLight: 'rgba(50, 45, 38, 0.95)',
+        cardBorder: 'rgba(212, 184, 122, 0.4)',
+        textPrimary: '#E8E0D5',       // Beige clair
+        textSecondary: 'rgba(232, 224, 213, 0.8)',
         textOnPrimary: '#1A1612',
-        textOnSecondary: '#ECF0F1',
+        textOnSecondary: '#E8E0D5',
+        // === COULEURS EXCEL SPÉCIFIQUES (Dark) ===
+        negative: '#E74C3C',          // Rouge clair
+        positive: '#2ECC71',          // Vert clair
+        headerAlt: '#85929E',         // Bleu-gris clair
+        headerTaupe: '#C9B896',       // Taupe clair
+        chartBar: '#D4B87A',          // Caramel
       }
     },
   },
