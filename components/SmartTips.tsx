@@ -60,7 +60,6 @@ export default function SmartTips({
   autoRotate = true, 
   rotateInterval = 6000 
 }: SmartTipsProps) {
-  // Utiliser isDarkMode directement du contexte !
   const { theme, isDarkMode } = useTheme();
   
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -71,7 +70,6 @@ export default function SmartTips({
   const [devise, setDevise] = useState('€');
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // Charger les données
   useEffect(() => {
     const savedTransactions = localStorage.getItem('budget-transactions');
     if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
@@ -89,11 +87,9 @@ export default function SmartTips({
     }
   }, []);
 
-  // === STYLES DYNAMIQUES - Utilise isDarkMode du contexte ===
   const getTypeStyles = useMemo(() => {
     return (type: string) => {
       if (isDarkMode) {
-        // === THÈME SOMBRE : texte TRÈS clair ===
         switch (type) {
           case 'danger': 
             return { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.5)', text: '#FECACA', icon: '#FCA5A5', textSecondary: '#FECACA' };
@@ -107,7 +103,6 @@ export default function SmartTips({
             return { bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.4)', text: '#F1F5F9', icon: '#94A3B8', textSecondary: '#E2E8F0' };
         }
       } else {
-        // === THÈME CLAIR : texte TRÈS foncé ===
         switch (type) {
           case 'danger': 
             return { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#7F1D1D', icon: '#DC2626', textSecondary: '#991B1B' };
@@ -124,7 +119,6 @@ export default function SmartTips({
     };
   }, [isDarkMode]);
 
-  // Helpers de calcul
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -149,7 +143,6 @@ export default function SmartTips({
   const currentMonthTransactions = getTransactionsByMonth(currentMonthKey);
   const previousMonthTransactions = getTransactionsByMonth(getPreviousMonthKey());
 
-  // Calculs financiers
   const revenus = currentMonthTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const depenses = currentMonthTransactions.filter(t => ['Factures', 'Dépenses'].includes(t.type)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const epargne = currentMonthTransactions.filter(t => t.type === 'Épargnes').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -177,7 +170,6 @@ export default function SmartTips({
   const objectifProche = objectifs.find(o => { const reste = o.montantCible - o.montantActuel; return reste > 0 && reste <= 100; });
   const objectifAtteint = objectifs.find(o => o.montantActuel >= o.montantCible);
 
-  // Tendances 3 mois
   const getLast3MonthsData = () => {
     const months = [];
     for (let i = 0; i < 3; i++) {
@@ -206,7 +198,6 @@ export default function SmartTips({
   const moyenneParTransaction = depensesTransactions.length > 0 ? depensesTransactions.reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0) / depensesTransactions.length : 0;
   const nbJoursAvecDepenses = new Set(currentMonthTransactions.filter(t => t.type === 'Dépenses').map(t => t.date?.split('T')[0])).size;
 
-  // Générer les conseils
   const generateTips = (): Tip[] => {
     const allTips: Tip[] = [];
 
@@ -297,18 +288,17 @@ export default function SmartTips({
     }, 150);
   };
 
-  // Empty state
   if (tips.length === 0) {
     return (
       <div 
-        className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" 
+        className="backdrop-blur-sm rounded-xl p-3 shadow-sm border" 
         style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl" style={{ background: `${theme.colors.primary}20` }}>
-            <Sparkles className="w-4 h-4" style={{ color: theme.colors.primary }} />
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg" style={{ background: `${theme.colors.primary}20` }}>
+            <Sparkles className="w-3.5 h-3.5" style={{ color: theme.colors.primary }} />
           </div>
-          <p className="text-xs font-medium" style={{ color: theme.colors.textPrimary }}>
+          <p className="text-[11px] font-medium" style={{ color: theme.colors.textPrimary }}>
             Tout va bien ! Continuez comme ça 👍
           </p>
         </div>
@@ -322,20 +312,20 @@ export default function SmartTips({
 
   return (
     <div 
-      className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" 
+      className="backdrop-blur-sm rounded-xl p-3 shadow-sm border" 
       style={{ background: styles.bg, borderColor: styles.border }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg" style={{ background: `${styles.icon}25` }}>
-            <Lightbulb className="w-3.5 h-3.5" style={{ color: styles.icon }} />
+      {/* Header compact */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <div className="p-1 rounded-md" style={{ background: `${styles.icon}25` }}>
+            <Lightbulb className="w-3 h-3" style={{ color: styles.icon }} />
           </div>
-          <h4 className="text-xs font-semibold" style={{ color: styles.text }}>Conseils</h4>
+          <h4 className="text-[10px] font-semibold" style={{ color: styles.text }}>Conseils</h4>
         </div>
         {tips.length > 1 && (
           <span 
-            className="text-[10px] px-2 py-0.5 rounded-full font-medium" 
+            className="text-[9px] px-1.5 py-0.5 rounded-full font-medium" 
             style={{ background: `${styles.icon}20`, color: styles.text }}
           >
             {currentIndex + 1}/{tips.length}
@@ -343,30 +333,32 @@ export default function SmartTips({
         )}
       </div>
 
-      {/* Conseil actuel */}
-      <div className={`flex items-start gap-3 mb-3 transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="p-2 rounded-xl flex-shrink-0" style={{ background: `${styles.icon}20` }}>
-          <IconComponent className="w-4 h-4" style={{ color: styles.icon }} />
+      {/* Conseil actuel - plus compact */}
+      <div className={`flex items-center gap-2 mb-2 transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="p-1.5 rounded-lg flex-shrink-0" style={{ background: `${styles.icon}20` }}>
+          <IconComponent className="w-3.5 h-3.5" style={{ color: styles.icon }} />
         </div>
-        <p className="text-xs leading-relaxed pt-1 font-medium" style={{ color: styles.text }}>
+        <p className="text-[11px] leading-snug font-medium" style={{ color: styles.text }}>
           {currentTip.message}
         </p>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation compacte */}
       {tips.length > 1 && (
         <div className="flex items-center justify-between">
           <button 
+            type="button"
             onClick={goToPrevious} 
-            className="p-1.5 rounded-lg transition-all hover:scale-110" 
+            className="p-1 rounded-md transition-all hover:scale-110" 
             style={{ background: `${styles.icon}15`, color: styles.text }}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
 
-          <div className="flex gap-1.5">
+          <div className="flex gap-1">
             {tips.slice(0, Math.min(tips.length, 7)).map((_, i) => (
               <button
+                type="button"
                 key={i}
                 onClick={() => {
                   setIsAnimating(true);
@@ -375,24 +367,22 @@ export default function SmartTips({
                     setIsAnimating(false);
                   }, 150);
                 }}
-                className="w-2 h-2 rounded-full transition-all duration-300"
+                className="w-1.5 h-1.5 rounded-full transition-all duration-300"
                 style={{ 
                   backgroundColor: i === currentIndex ? styles.icon : `${styles.icon}40`,
                   transform: i === currentIndex ? 'scale(1.3)' : 'scale(1)'
                 }}
               />
             ))}
-            {tips.length > 7 && (
-              <span className="text-[10px] font-medium" style={{ color: styles.text }}>+{tips.length - 7}</span>
-            )}
           </div>
 
           <button 
+            type="button"
             onClick={goToNext} 
-            className="p-1.5 rounded-lg transition-all hover:scale-110" 
+            className="p-1 rounded-md transition-all hover:scale-110" 
             style={{ background: `${styles.icon}15`, color: styles.text }}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

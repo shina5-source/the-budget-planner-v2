@@ -58,9 +58,14 @@ export default function HeroCard({
 
   const WeatherIcon = weather.icon;
 
+  // Formater le montant (espaces pour les milliers)
+  const formatAmount = (value: number) => {
+    return value.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  };
+
   return (
     <div 
-      className="backdrop-blur-sm rounded-2xl p-4 shadow-lg border animate-fade-in-up stagger-2 opacity-0" 
+      className="backdrop-blur-sm rounded-2xl p-3 shadow-lg border animate-fade-in-up stagger-2 opacity-0" 
       style={{ 
         background: totals.soldeReel >= 0 
           ? `linear-gradient(135deg, ${theme.colors.cardBackground} 0%, rgba(74, 222, 128, 0.1) 100%)`
@@ -70,63 +75,63 @@ export default function HeroCard({
       }}
     >
       {/* Ligne 1: Score + Météo + Streak */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <div className="relative">
-              <svg width={50} height={50} className="transform -rotate-90">
-                <circle cx={25} cy={25} r={20} stroke={`${theme.colors.cardBorder}50`} strokeWidth={4} fill="none" />
+              <svg width={40} height={40} className="transform -rotate-90">
+                <circle cx={20} cy={20} r={16} stroke={`${theme.colors.cardBorder}50`} strokeWidth={3} fill="none" />
                 <circle 
-                  cx={25} cy={25} r={20} 
+                  cx={20} cy={20} r={16} 
                   stroke={getScoreColor(financialData.score)} 
-                  strokeWidth={4} fill="none" 
-                  strokeDasharray={126} 
-                  strokeDashoffset={126 - (animatedScore / 100) * 126} 
+                  strokeWidth={3} fill="none" 
+                  strokeDasharray={100} 
+                  strokeDashoffset={100 - (animatedScore / 100) * 100} 
                   strokeLinecap="round" 
                   className="transition-all duration-1000 ease-out" 
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <Trophy className="w-4 h-4" style={{ color: getScoreColor(financialData.score) }} />
+                <Trophy className="w-3.5 h-3.5" style={{ color: getScoreColor(financialData.score) }} />
               </div>
             </div>
             <div>
-              <span className={`text-xl font-bold ${financialData.color}`}>{animatedScore}</span>
-              <span className="text-[10px]" style={textSecondary}>/100</span>
+              <span className={`text-lg font-bold ${financialData.color}`}>{animatedScore}</span>
+              <span className="text-[9px]" style={textSecondary}>/100</span>
             </div>
           </div>
           <span 
-            className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${financialData.color}`} 
+            className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${financialData.color}`} 
             style={{ background: `${theme.colors.primary}15` }}
           >
             {financialData.emoji} {financialData.label}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {epargneStreak > 0 && (
-            <span className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 animate-pulse-slow">
-              <Flame className="w-3 h-3" /> {epargneStreak}
+            <span className="flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 animate-pulse-slow">
+              <Flame className="w-2.5 h-2.5" /> {epargneStreak}
             </span>
           )}
-          <div className={`p-2 rounded-lg ${weather.bg} transition-transform hover:scale-110`}>
-            <WeatherIcon className={`w-5 h-5 ${weather.color}`} />
+          <div className={`p-1.5 rounded-lg ${weather.bg} transition-transform hover:scale-110`}>
+            <WeatherIcon className={`w-4 h-4 ${weather.color}`} />
           </div>
         </div>
       </div>
 
       {/* Ligne 2: Solde principal */}
-      <div className="flex items-end justify-between mb-3">
+      <div className="flex items-end justify-between mb-2">
         <div>
-          <p className="text-xs mb-1" style={textSecondary}>Solde réel</p>
-          <p className={`text-3xl font-bold ${totals.soldeReel >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {totals.soldeReel >= 0 ? '+' : ''}{totals.soldeReel.toFixed(0)} <span className="text-lg">{devise}</span>
+          <p className="text-[10px] mb-0.5" style={textSecondary}>Solde réel</p>
+          <p className={`text-xl font-bold ${totals.soldeReel >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {totals.soldeReel >= 0 ? '+' : ''}{formatAmount(totals.soldeReel)} <span className="text-sm">{devise}</span>
           </p>
         </div>
         <div className="text-right">
           {prevTotals.prevSolde !== 0 && (
             <VariationBadge current={totals.soldeReel} previous={prevTotals.prevSolde} />
           )}
-          <p className="text-[10px] mt-1" style={textSecondary}>
+          <p className="text-[9px] mt-0.5" style={textSecondary}>
             {budgetParJour.toFixed(0)}{devise}/jour • {joursRestants}j
           </p>
         </div>
@@ -142,7 +147,7 @@ export default function HeroCard({
 
       {/* Message motivationnel */}
       {(totals.soldeReel > 500 || totals.soldeReel < -50) && (
-        <p className="text-[10px] mt-2 text-center animate-fade-in" style={textSecondary}>
+        <p className="text-[9px] mt-1.5 text-center animate-fade-in" style={textSecondary}>
           {totals.soldeReel > 500 ? '🎉 Excellent ! Pensez à épargner' : 
            totals.soldeReel > 0 ? '👍 Budget maîtrisé' : 
            totals.soldeReel < -500 ? '🚨 Budget dépassé' :

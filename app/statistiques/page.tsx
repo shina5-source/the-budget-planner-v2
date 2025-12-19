@@ -34,7 +34,7 @@ import {
 
 function StatistiquesContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme } = useTheme() as any;
+  const { theme, isDarkMode } = useTheme() as any;
   const statsRef = useRef<HTMLDivElement>(null);
 
   // États
@@ -62,12 +62,12 @@ function StatistiquesContent() {
   useEffect(() => {
     const loadData = () => {
       try {
-        const stored = localStorage.getItem('transactions');
+        const stored = localStorage.getItem('budget-transactions');
         if (stored) {
           setTransactions(JSON.parse(stored));
         }
         
-        const storedObjectifs = localStorage.getItem('objectifsBudget');
+        const storedObjectifs = localStorage.getItem('budget-objectifs-limites');
         if (storedObjectifs) {
           setObjectifsBudget(JSON.parse(storedObjectifs));
         }
@@ -84,7 +84,7 @@ function StatistiquesContent() {
   // Sauvegarder les objectifs
   useEffect(() => {
     if (objectifsBudget.length > 0) {
-      localStorage.setItem('objectifsBudget', JSON.stringify(objectifsBudget));
+      localStorage.setItem('budget-objectifs-limites', JSON.stringify(objectifsBudget));
     }
   }, [objectifsBudget]);
 
@@ -155,7 +155,9 @@ function StatistiquesContent() {
   }, [transactions]);
 
   // Navigation mois
-  const prevMonth = () => {
+  const handlePrevMonth = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (selectedMonth === null) {
       setSelectedYear(selectedYear - 1);
     } else if (selectedMonth === 0) {
@@ -166,7 +168,9 @@ function StatistiquesContent() {
     }
   };
 
-  const nextMonth = () => {
+  const handleNextMonth = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (selectedMonth === null) {
       setSelectedYear(selectedYear + 1);
     } else if (selectedMonth === 11) {
@@ -177,21 +181,92 @@ function StatistiquesContent() {
     }
   };
 
-  // Export image
+  const handleSelectMonth = (e: React.MouseEvent, index: number | null) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedMonth(index);
+  };
+
+  // Export image - Version simplifiée sans html2canvas
   const handleExport = async () => {
     if (!statsRef.current) return;
+    
     try {
+      // Méthode alternative : créer un screenshot via l'API native
+      // On utilise une approche plus simple qui évite les problèmes de couleurs CSS modernes
+      
+      const element = statsRef.current;
+      const rect = element.getBoundingClientRect();
+      
+      // Créer un canvas manuellement
+      const canvas = document.createElement('canvas');
+      const scale = 2;
+      canvas.width = rect.width * scale;
+      canvas.height = rect.height * scale;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        alert('Export non disponible sur ce navigateur');
+        return;
+      }
+      
+      // Remplir le fond
+      ctx.fillStyle = isDarkMode ? '#1a1a2e' : '#faf5f5';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Utiliser html2canvas avec des options de fallback agressives
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(statsRef.current, {
-        backgroundColor: theme.colors.cardBackground,
-        scale: 2
+      
+      const capturedCanvas = await html2canvas(element, {
+        backgroundColor: null,
+        scale: scale,
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        foreignObjectRendering: false,
+        removeContainer: true,
+        onclone: (clonedDoc, clonedElement) => {
+          // Parcourir TOUS les éléments et forcer des couleurs CSS standard
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            const computedStyle = window.getComputedStyle(htmlEl);
+            
+            // Forcer backgroundColor si elle contient lab/oklab/oklch
+            const bgColor = computedStyle.backgroundColor;
+            if (bgColor && (bgColor.includes('lab') || bgColor.includes('oklch') || bgColor.includes('oklab'))) {
+              // Convertir en couleur de fallback basée sur l'opacité perçue
+              htmlEl.style.backgroundColor = 'transparent';
+            }
+            
+            // Forcer color si elle contient lab/oklab/oklch
+            const textColor = computedStyle.color;
+            if (textColor && (textColor.includes('lab') || textColor.includes('oklch') || textColor.includes('oklab'))) {
+              htmlEl.style.color = isDarkMode ? '#ffffff' : '#1a1a2e';
+            }
+            
+            // Forcer borderColor
+            const borderColor = computedStyle.borderColor;
+            if (borderColor && (borderColor.includes('lab') || borderColor.includes('oklch') || borderColor.includes('oklab'))) {
+              htmlEl.style.borderColor = isDarkMode ? '#333333' : '#e5e5e5';
+            }
+          });
+        }
       });
+      
+      // Dessiner le canvas capturé sur notre canvas avec fond
+      ctx.drawImage(capturedCanvas, 0, 0);
+      
+      // Télécharger
       const link = document.createElement('a');
       link.download = `statistiques-${selectedYear}-${selectedMonth !== null ? selectedMonth + 1 : 'annee'}.png`;
-      link.href = canvas.toDataURL();
+      link.href = canvas.toDataURL('image/png');
       link.click();
+      
     } catch (error) {
       console.error('Erreur export:', error);
+      // Fallback : proposer d'utiliser la capture d'écran native
+      alert('L\'export automatique a échoué. Utilisez la capture d\'écran de votre navigateur (Ctrl+Shift+S sur Windows).');
     }
   };
 
@@ -230,7 +305,7 @@ function StatistiquesContent() {
         <div className="rounded-2xl p-6 w-full max-w-4xl h-[80vh] border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }} onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium" style={textPrimary}>Graphique</h2>
-            <button onClick={() => setFullscreenChart(null)} className="p-2 rounded-xl" style={{ background: `${theme.colors.primary}20` }}>
+            <button type="button" onClick={() => setFullscreenChart(null)} className="p-2 rounded-xl" style={{ background: `${theme.colors.primary}20` }}>
               <X className="w-5 h-5" style={textPrimary} />
             </button>
           </div>
@@ -342,47 +417,115 @@ function StatistiquesContent() {
           <h1 className="text-lg font-medium flex items-center gap-2" style={textPrimary}>
             📊 Statistiques
           </h1>
-          <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
+          <button 
+            type="button"
+            onClick={handleExport} 
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all hover:scale-105 active:scale-95" 
+            style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}
+          >
             <Download size={14} />
             Export
           </button>
         </div>
 
-        {/* Sélecteur de mois - Style Prévisionnel */}
-        <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={prevMonth} className="p-1">
-              <ChevronLeft className="w-5 h-5" style={textPrimary} />
+        {/* MonthSelector harmonisé */}
+        <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border mb-4" style={cardStyle}>
+          {/* Navigation mois */}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="p-2 transition-all hover:scale-110 active:scale-95 rounded-lg"
+              style={{ color: textSecondary.color }}
+            >
+              <ChevronLeft className="w-5 h-5" />
             </button>
+            
             <div className="flex items-center gap-2">
-              <select 
-                value={selectedMonth ?? 'all'} 
-                onChange={(e) => setSelectedMonth(e.target.value === 'all' ? null : parseInt(e.target.value))} 
-                className="rounded-lg px-3 py-1 text-sm font-semibold border" 
+              <span 
+                className="text-lg font-bold"
+                style={{ color: theme.colors.primary }}
+              >
+                {selectedMonth !== null ? monthsFull[selectedMonth] : 'Année'}
+              </span>
+              
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-lg px-3 py-1.5 text-sm font-semibold border cursor-pointer transition-all hover:opacity-80"
                 style={inputStyle}
               >
-                <option value="all">Année entière</option>
-                {monthsFull.map((month, i) => (<option key={i} value={i}>{month}</option>))}
-              </select>
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))} 
-                className="rounded-lg px-3 py-1 text-sm font-semibold border" 
-                style={inputStyle}
-              >
-                {years.map(year => (<option key={year} value={year}>{year}</option>))}
+                {years.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
               </select>
             </div>
-            <button onClick={nextMonth} className="p-1">
-              <ChevronRight className="w-5 h-5" style={textPrimary} />
+            
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="p-2 transition-all hover:scale-110 active:scale-95 rounded-lg"
+              style={{ color: textSecondary.color }}
+            >
+              <ChevronRight className="w-5 h-5" />
             </button>
+          </div>
+          
+          {/* Boutons mois */}
+          <div className="flex flex-wrap gap-2 justify-center mt-3">
+            <button
+              type="button"
+              onClick={(e) => handleSelectMonth(e, null)}
+              className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 active:scale-95 border"
+              style={selectedMonth === null
+                ? {
+                    background: theme.colors.primary,
+                    color: theme.colors.textOnPrimary || '#ffffff',
+                    borderColor: theme.colors.primary,
+                    boxShadow: `0 2px 8px ${theme.colors.primary}40`
+                  }
+                : {
+                    background: 'transparent',
+                    color: theme.colors.textPrimary,
+                    borderColor: theme.colors.cardBorder
+                  }
+              }
+            >
+              Année
+            </button>
+            
+            {monthsShort.map((month, index) => (
+              <button
+                type="button"
+                key={index}
+                onClick={(e) => handleSelectMonth(e, index)}
+                className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 active:scale-95 border"
+                style={selectedMonth === index
+                  ? {
+                      background: theme.colors.primary,
+                      color: theme.colors.textOnPrimary || '#ffffff',
+                      borderColor: theme.colors.primary,
+                      boxShadow: `0 2px 8px ${theme.colors.primary}40`
+                    }
+                  : {
+                      background: 'transparent',
+                      color: theme.colors.textPrimary,
+                      borderColor: theme.colors.cardBorder
+                    }
+                }
+              >
+                {month}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Bouton Filtres */}
         <button 
+          type="button"
           onClick={() => setShowFilters(!showFilters)} 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border mb-4"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border mb-4 transition-all hover:scale-105"
           style={{ 
             borderColor: (compteFilter !== 'all' || moyenPaiementFilter !== 'all') ? theme.colors.primary : theme.colors.cardBorder,
             color: theme.colors.textPrimary,
@@ -418,10 +561,11 @@ function StatistiquesContent() {
           </div>
         )}
 
-        {/* Onglets - Style Prévisionnel */}
+        {/* Onglets */}
         <div className="backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border overflow-x-auto" style={cardStyle}>
           {tabs.map((tab) => (
             <button 
+              type="button"
               key={tab.id} 
               onClick={() => setActiveTab(tab.id)} 
               className="flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-colors whitespace-nowrap"
