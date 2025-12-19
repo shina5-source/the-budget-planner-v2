@@ -187,86 +187,79 @@ function StatistiquesContent() {
     setSelectedMonth(index);
   };
 
-  // Export image - Version simplifiée sans html2canvas
+  // Export image - Utilise dom-to-image-more (meilleur support SVG)
   const handleExport = async () => {
     if (!statsRef.current) return;
     
     try {
-      // Méthode alternative : créer un screenshot via l'API native
-      // On utilise une approche plus simple qui évite les problèmes de couleurs CSS modernes
-      
       const element = statsRef.current;
-      const rect = element.getBoundingClientRect();
       
-      // Créer un canvas manuellement
-      const canvas = document.createElement('canvas');
-      const scale = 2;
-      canvas.width = rect.width * scale;
-      canvas.height = rect.height * scale;
+      // 1. Désactiver les animations temporairement
+      const style = document.createElement('style');
+      style.id = 'export-fix';
+      style.textContent = `
+        * {
+          animation: none !important;
+          transition: none !important;
+          opacity: 1 !important;
+        }
+      `;
+      document.head.appendChild(style);
       
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        alert('Export non disponible sur ce navigateur');
-        return;
-      }
+      // 2. Attendre un frame
+      await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Remplir le fond
-      ctx.fillStyle = isDarkMode ? '#1a1a2e' : '#faf5f5';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // 3. Utiliser dom-to-image-more
+      const domtoimage = await import('dom-to-image-more');
       
-      // Utiliser html2canvas avec des options de fallback agressives
-      const html2canvas = (await import('html2canvas')).default;
-      
-      const capturedCanvas = await html2canvas(element, {
-        backgroundColor: null,
-        scale: scale,
-        useCORS: true,
-        logging: false,
-        allowTaint: true,
-        foreignObjectRendering: false,
-        removeContainer: true,
-        onclone: (clonedDoc, clonedElement) => {
-          // Parcourir TOUS les éléments et forcer des couleurs CSS standard
-          const allElements = clonedDoc.querySelectorAll('*');
-          allElements.forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            const computedStyle = window.getComputedStyle(htmlEl);
-            
-            // Forcer backgroundColor si elle contient lab/oklab/oklch
-            const bgColor = computedStyle.backgroundColor;
-            if (bgColor && (bgColor.includes('lab') || bgColor.includes('oklch') || bgColor.includes('oklab'))) {
-              // Convertir en couleur de fallback basée sur l'opacité perçue
-              htmlEl.style.backgroundColor = 'transparent';
-            }
-            
-            // Forcer color si elle contient lab/oklab/oklch
-            const textColor = computedStyle.color;
-            if (textColor && (textColor.includes('lab') || textColor.includes('oklch') || textColor.includes('oklab'))) {
-              htmlEl.style.color = isDarkMode ? '#ffffff' : '#1a1a2e';
-            }
-            
-            // Forcer borderColor
-            const borderColor = computedStyle.borderColor;
-            if (borderColor && (borderColor.includes('lab') || borderColor.includes('oklch') || borderColor.includes('oklab'))) {
-              htmlEl.style.borderColor = isDarkMode ? '#333333' : '#e5e5e5';
-            }
-          });
+      const dataUrl = await domtoimage.toPng(element, {
+        quality: 1,
+        bgcolor: isDarkMode ? '#1a1a2e' : '#faf5f5',
+        style: {
+          transform: 'none',
+          opacity: '1'
+        },
+        filter: (node: Node) => {
+          // Exclure les éléments problématiques si nécessaire
+          return true;
         }
       });
       
-      // Dessiner le canvas capturé sur notre canvas avec fond
-      ctx.drawImage(capturedCanvas, 0, 0);
+      // 4. Restaurer les animations
+      document.getElementById('export-fix')?.remove();
       
-      // Télécharger
+      // 5. Télécharger
       const link = document.createElement('a');
       link.download = `statistiques-${selectedYear}-${selectedMonth !== null ? selectedMonth + 1 : 'annee'}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
       
     } catch (error) {
       console.error('Erreur export:', error);
-      // Fallback : proposer d'utiliser la capture d'écran native
-      alert('L\'export automatique a échoué. Utilisez la capture d\'écran de votre navigateur (Ctrl+Shift+S sur Windows).');
+      
+      // Restaurer les animations en cas d'erreur
+      document.getElementById('export-fix')?.remove();
+      
+      // Fallback : essayer avec html2canvas basique
+      try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(statsRef.current!, {
+          backgroundColor: isDarkMode ? '#1a1a2e' : '#faf5f5',
+          scale: 2,
+          logging: false,
+          ignoreElements: (el) => {
+            // Ignorer les SVG problématiques
+            return el.tagName === 'svg';
+          }
+        });
+        
+        const link = document.createElement('a');
+        link.download = `statistiques-${selectedYear}-${selectedMonth !== null ? selectedMonth + 1 : 'annee'}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (fallbackError) {
+        alert('L\'export a échoué. Utilisez la capture d\'écran (Ctrl+Shift+S).');
+      }
     }
   };
 
@@ -286,10 +279,14 @@ function StatistiquesContent() {
   const renderFullscreenModal = () => {
     if (!fullscreenChart) return null;
 
+    // Couleurs fixes pour éviter les problèmes de transparence
+    const modalBg = isDarkMode ? '#1a1a2e' : '#ffffff';
+    const modalBorder = isDarkMode ? '#2d2d44' : '#e5e5e5';
+
     const tooltipStyle = {
       fontSize: '10px',
-      backgroundColor: theme.colors.cardBackground,
-      border: `1px solid ${theme.colors.cardBorder}`,
+      backgroundColor: modalBg,
+      border: `1px solid ${modalBorder}`,
       borderRadius: '8px',
       color: theme.colors.textPrimary
     };
@@ -301,8 +298,8 @@ function StatistiquesContent() {
     ].filter(d => d.value > 0);
 
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setFullscreenChart(null)}>
-        <div className="rounded-2xl p-6 w-full max-w-4xl h-[80vh] border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }} onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm" onClick={() => setFullscreenChart(null)}>
+        <div className="rounded-2xl p-6 w-full max-w-4xl h-[80vh] border shadow-2xl" style={{ background: modalBg, borderColor: modalBorder }} onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium" style={textPrimary}>Graphique</h2>
             <button type="button" onClick={() => setFullscreenChart(null)} className="p-2 rounded-xl" style={{ background: `${theme.colors.primary}20` }}>

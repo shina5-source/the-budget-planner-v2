@@ -60,6 +60,7 @@ type VueAccordionType = 'revenus' | 'factures' | 'enveloppes' | 'epargne' | 'sol
 function BudgetContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+  const router = useRouter();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -84,6 +85,11 @@ function BudgetContent() {
   const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
   const tooltipStyle = { fontSize: '10px', backgroundColor: theme.colors.cardBackground, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: '8px', color: theme.colors.textPrimary };
+
+  // Navigation vers la page transactions
+  const navigateToTransactions = useCallback(() => {
+    router.push('/transactions');
+  }, [router]);
 
   useEffect(() => {
     const saved = localStorage.getItem('budget-transactions');
@@ -313,6 +319,7 @@ function BudgetContent() {
     { name: 'Dépenses', value: totalDepenses, color: COLORS_TYPE.depenses },
     { name: 'Épargnes', value: totalEpargnes, color: COLORS_TYPE.epargnes },
   ].filter(d => d.value > 0);
+
   // === RENDU VUE ENRICHIE ===
   const renderVue = () => {
     const hasData = filteredTransactions.length > 0;
@@ -395,7 +402,12 @@ function BudgetContent() {
       return (
         <div className="space-y-4">
           <style>{animationStyles}</style>
-          <EmptyState message="Commencez par ajouter vos revenus et dépenses du mois" icon="💰" title="Votre budget vous attend !" />
+          <EmptyState 
+            message="Commencez par ajouter vos revenus et dépenses du mois" 
+            icon="💰" 
+            title="Votre budget vous attend !" 
+            onAddTransaction={navigateToTransactions}
+          />
           <div className="grid grid-cols-2 gap-3 opacity-50">
             <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-pulse" style={cardStyle}>
               <div className="h-3 w-20 rounded mb-2" style={{ backgroundColor: `${theme.colors.cardBorder}50` }} />
@@ -495,20 +507,20 @@ function BudgetContent() {
         <div className="flex items-center gap-3 mb-2 animate-fade-in-up"><div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}><Target className="w-5 h-5" style={textPrimary} /></div><div><h3 className="text-sm font-semibold" style={textPrimary}>Correctifs & Actions</h3><p className="text-[10px]" style={textSecondary}>Gérez vos objectifs</p></div></div>
         
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-fade-in-up stagger-1 opacity-0" style={{ ...cardStyle, animationFillMode: 'forwards' }}>
-          <div className="flex items-center justify-between mb-3"><h4 className="text-xs font-semibold flex items-center gap-2" style={textPrimary}>🎯 Objectifs budgétaires</h4><button onClick={() => setShowAddObjectif(!showAddObjectif)} className="p-1.5 rounded-lg transition-transform hover:scale-110" style={{ background: `${theme.colors.primary}20` }}><Plus className="w-4 h-4" style={textPrimary} /></button></div>
+          <div className="flex items-center justify-between mb-3"><h4 className="text-xs font-semibold flex items-center gap-2" style={textPrimary}>🎯 Objectifs budgétaires</h4><button type="button" onClick={() => setShowAddObjectif(!showAddObjectif)} className="p-1.5 rounded-lg transition-transform hover:scale-110" style={{ background: `${theme.colors.primary}20` }}><Plus className="w-4 h-4" style={textPrimary} /></button></div>
           {showAddObjectif && (
             <div className="p-3 rounded-xl mb-3 animate-fade-in" style={{ background: `${theme.colors.primary}10` }}>
               <div className="space-y-2">
                 <select value={newObjectifCategorie} onChange={(e) => setNewObjectifCategorie(e.target.value)} className="w-full px-3 py-2 rounded-lg text-xs border" style={inputStyle}><option value="">Sélectionner une catégorie</option>{categoriesUniques.map(cat => (<option key={cat} value={cat}>{cat}</option>))}</select>
                 <div className="flex gap-2"><input type="number" placeholder="Limite (€)" value={newObjectifLimite} onChange={(e) => setNewObjectifLimite(e.target.value)} className="flex-1 px-3 py-2 rounded-lg text-xs border" style={inputStyle} /><select value={newObjectifType} onChange={(e) => setNewObjectifType(e.target.value as 'Factures' | 'Dépenses')} className="px-3 py-2 rounded-lg text-xs border" style={inputStyle}><option value="Dépenses">Dépenses</option><option value="Factures">Factures</option></select></div>
-                <button onClick={addObjectif} className="w-full py-2 rounded-lg text-xs font-medium transition-transform hover:scale-[1.02]" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>Ajouter</button>
+                <button type="button" onClick={addObjectif} className="w-full py-2 rounded-lg text-xs font-medium transition-transform hover:scale-[1.02]" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>Ajouter</button>
               </div>
             </div>
           )}
           {objectifsBudget.length === 0 ? <p className="text-xs text-center py-3" style={textSecondary}>Aucun objectif défini.</p> : (
             <div className="space-y-2">{objectifsBudget.map(obj => { const actuel = depensesParCategorie[obj.categorie]?.total || 0; const pct = (actuel / obj.limite) * 100; const isOver = actuel > obj.limite; return (
               <div key={obj.id} className="p-2 rounded-xl" style={{ background: `${theme.colors.primary}05` }}>
-                <div className="flex items-center justify-between mb-1"><div className="flex items-center gap-2"><span className="text-xs font-medium" style={textPrimary}>{obj.categorie}</span><span className={`text-[8px] px-1.5 py-0.5 rounded-full ${obj.type === 'Dépenses' ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'}`}>{obj.type}</span></div><button onClick={() => deleteObjectif(obj.id)} className="p-1 rounded hover:bg-red-500/20 transition-colors"><Trash2 className="w-3 h-3 text-red-400" /></button></div>
+                <div className="flex items-center justify-between mb-1"><div className="flex items-center gap-2"><span className="text-xs font-medium" style={textPrimary}>{obj.categorie}</span><span className={`text-[8px] px-1.5 py-0.5 rounded-full ${obj.type === 'Dépenses' ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'}`}>{obj.type}</span></div><button type="button" onClick={() => deleteObjectif(obj.id)} className="p-1 rounded hover:bg-red-500/20 transition-colors"><Trash2 className="w-3 h-3 text-red-400" /></button></div>
                 <div className="flex items-center justify-between text-[10px] mb-1"><span style={textSecondary}>{actuel.toFixed(0)} € / {obj.limite.toFixed(0)} €</span><span className={isOver ? 'text-red-400' : 'text-green-400'}>{pct.toFixed(0)}%</span></div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: `${theme.colors.cardBorder}50` }}><div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: isOver ? '#F44336' : pct > 80 ? '#FF9800' : '#4CAF50' }} /></div>
               </div>
@@ -532,23 +544,24 @@ function BudgetContent() {
 
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-fade-in-up stagger-4 opacity-0" style={{ ...cardStyle, animationFillMode: 'forwards' }}>
           <h4 className="text-xs font-semibold mb-3 flex items-center gap-2" style={textPrimary}><ClipboardList className="w-4 h-4" /> Actions à faire</h4>
-          <div className="flex gap-2 mb-3"><input type="text" placeholder="Ajouter une action..." value={newAction} onChange={(e) => setNewAction(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addAction()} className="flex-1 px-3 py-2 rounded-lg text-xs border" style={inputStyle} /><button onClick={addAction} className="p-2 rounded-lg transition-transform hover:scale-110" style={{ background: theme.colors.primary }}><Plus className="w-4 h-4" style={{ color: theme.colors.textOnPrimary }} /></button></div>
+          <div className="flex gap-2 mb-3"><input type="text" placeholder="Ajouter une action..." value={newAction} onChange={(e) => setNewAction(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addAction()} className="flex-1 px-3 py-2 rounded-lg text-xs border" style={inputStyle} /><button type="button" onClick={addAction} className="p-2 rounded-lg transition-transform hover:scale-110" style={{ background: theme.colors.primary }}><Plus className="w-4 h-4" style={{ color: theme.colors.textOnPrimary }} /></button></div>
           {actions.length === 0 ? <p className="text-xs text-center py-2" style={textSecondary}>Aucune action.</p> : (
-            <div className="space-y-2">{actions.map(action => (<div key={action.id} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: `${theme.colors.primary}05` }}><button onClick={() => toggleAction(action.id)} className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${action.done ? 'bg-green-500 border-green-500' : ''}`} style={{ borderColor: action.done ? undefined : theme.colors.cardBorder }}>{action.done && <Check className="w-3 h-3 text-white" />}</button><span className={`flex-1 text-xs ${action.done ? 'line-through opacity-50' : ''}`} style={textPrimary}>{action.text}</span><button onClick={() => deleteAction(action.id)} className="p-1 rounded hover:bg-red-500/20 transition-colors"><X className="w-3 h-3 text-red-400" /></button></div>))}</div>
+            <div className="space-y-2">{actions.map(action => (<div key={action.id} className="flex items-center gap-2 p-2 rounded-lg" style={{ background: `${theme.colors.primary}05` }}><button type="button" onClick={() => toggleAction(action.id)} className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${action.done ? 'bg-green-500 border-green-500' : ''}`} style={{ borderColor: action.done ? undefined : theme.colors.cardBorder }}>{action.done && <Check className="w-3 h-3 text-white" />}</button><span className={`flex-1 text-xs ${action.done ? 'line-through opacity-50' : ''}`} style={textPrimary}>{action.text}</span><button type="button" onClick={() => deleteAction(action.id)} className="p-1 rounded hover:bg-red-500/20 transition-colors"><X className="w-3 h-3 text-red-400" /></button></div>))}</div>
           )}
         </div>
 
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-fade-in-up stagger-5 opacity-0" style={{ ...cardStyle, animationFillMode: 'forwards' }}>
           <h4 className="text-xs font-semibold mb-3 flex items-center gap-2" style={textPrimary}><StickyNote className="w-4 h-4" /> Notes personnelles</h4>
-          <div className="flex gap-2 mb-3"><input type="text" placeholder="Ajouter une note..." value={newNote} onChange={(e) => setNewNote(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addNote()} className="flex-1 px-3 py-2 rounded-lg text-xs border" style={inputStyle} /><button onClick={addNote} className="p-2 rounded-lg transition-transform hover:scale-110" style={{ background: theme.colors.primary }}><Plus className="w-4 h-4" style={{ color: theme.colors.textOnPrimary }} /></button></div>
+          <div className="flex gap-2 mb-3"><input type="text" placeholder="Ajouter une note..." value={newNote} onChange={(e) => setNewNote(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addNote()} className="flex-1 px-3 py-2 rounded-lg text-xs border" style={inputStyle} /><button type="button" onClick={addNote} className="p-2 rounded-lg transition-transform hover:scale-110" style={{ background: theme.colors.primary }}><Plus className="w-4 h-4" style={{ color: theme.colors.textOnPrimary }} /></button></div>
           {notes.length === 0 ? <p className="text-xs text-center py-2" style={textSecondary}>Aucune note.</p> : (
-            <div className="space-y-2">{notes.map(note => (<div key={note.id} className="p-2 rounded-lg" style={{ background: `${theme.colors.primary}05` }}>{editingNote === note.id ? <input type="text" defaultValue={note.text} onBlur={(e) => updateNote(note.id, e.target.value)} onKeyPress={(e) => e.key === 'Enter' && updateNote(note.id, (e.target as HTMLInputElement).value)} className="w-full px-2 py-1 rounded text-xs border" style={inputStyle} autoFocus /> : <div className="flex items-start justify-between"><div><p className="text-xs" style={textPrimary}>{note.text}</p><p className="text-[9px] mt-1" style={textSecondary}>{note.date}</p></div><div className="flex gap-1"><button onClick={() => setEditingNote(note.id)} className="p-1 rounded hover:bg-gray-500/20 transition-colors"><Edit3 className="w-3 h-3" style={textSecondary} /></button><button onClick={() => deleteNote(note.id)} className="p-1 rounded hover:bg-red-500/20 transition-colors"><X className="w-3 h-3 text-red-400" /></button></div></div>}</div>))}</div>
+            <div className="space-y-2">{notes.map(note => (<div key={note.id} className="p-2 rounded-lg" style={{ background: `${theme.colors.primary}05` }}>{editingNote === note.id ? <input type="text" defaultValue={note.text} onBlur={(e) => updateNote(note.id, e.target.value)} onKeyPress={(e) => e.key === 'Enter' && updateNote(note.id, (e.target as HTMLInputElement).value)} className="w-full px-2 py-1 rounded text-xs border" style={inputStyle} autoFocus /> : <div className="flex items-start justify-between"><div><p className="text-xs" style={textPrimary}>{note.text}</p><p className="text-[9px] mt-1" style={textSecondary}>{note.date}</p></div><div className="flex gap-1"><button type="button" onClick={() => setEditingNote(note.id)} className="p-1 rounded hover:bg-gray-500/20 transition-colors"><Edit3 className="w-3 h-3" style={textSecondary} /></button><button type="button" onClick={() => deleteNote(note.id)} className="p-1 rounded hover:bg-red-500/20 transition-colors"><X className="w-3 h-3 text-red-400" /></button></div></div>}</div>))}</div>
           )}
         </div>
         <SmartTips page="budget" />
       </div>
     );
   };
+
   // === RENDU ANALYSE ===
   const renderAnalyse = () => {
     const hasYearData = evolution12Mois.some(m => m.revenus > 0 || m.depenses > 0);
@@ -560,7 +573,14 @@ function BudgetContent() {
         <style>{animationStyles}</style>
         <div className="flex items-center gap-3 mb-2 animate-fade-in-up"><div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}><BarChart3 className="w-5 h-5" style={textPrimary} /></div><div><h3 className="text-sm font-semibold" style={textPrimary}>Analyse approfondie</h3><p className="text-[10px]" style={textSecondary}>{monthsFull[selectedMonth]} {selectedYear}</p></div></div>
 
-        {!hasData && !hasYearData ? <EmptyState message="Ajoutez des transactions pour voir l'analyse" icon="📈" title="Analyses en attente" /> : (
+        {!hasData && !hasYearData ? (
+          <EmptyState 
+            message="Ajoutez des transactions pour voir l'analyse" 
+            icon="📈" 
+            title="Analyses en attente" 
+            onAddTransaction={navigateToTransactions}
+          />
+        ) : (
           <>
             {hasData && (
               <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-fade-in-up stagger-1 opacity-0" style={{ ...cardStyle, animationFillMode: 'forwards' }}>

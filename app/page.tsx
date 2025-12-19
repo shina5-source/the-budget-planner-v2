@@ -49,12 +49,19 @@ const animationStyles = `
     0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
     50% { transform: scale(1.03); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
   }
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.4); }
+    50% { transform: scale(1); }
+    75% { transform: scale(1.4); }
+  }
   .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
   .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
   .animate-scale-in { animation: scaleIn 0.4s ease-out forwards; }
   .animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
   .animate-logo-entrance { animation: logoEntrance 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
   .animate-logo-pulse { animation: logoPulse 3s ease-in-out infinite; }
+  .animate-heartbeat { animation: heartbeat 1.2s ease-in-out infinite; }
   .stagger-1 { animation-delay: 0.05s; }
   .stagger-2 { animation-delay: 0.1s; }
   .stagger-3 { animation-delay: 0.15s; }
@@ -437,8 +444,12 @@ function AccueilContent() {
       )}
 
       <SmartTips page="accueil" />
+      
+      {/* Footer avec cœur animé */}
       <div className="text-center pt-4 pb-2 animate-fade-in opacity-0" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-        <p className="text-[10px]" style={textSecondary}>Créé avec <span className="text-red-400 animate-pulse-slow">❤️</span> Shina5</p>
+        <p className="text-[10px]" style={textSecondary}>
+          Créé avec <span className="inline-block animate-heartbeat text-red-500 text-sm">❤️</span> by Shina5
+        </p>
       </div>
     </div>
   );

@@ -114,7 +114,8 @@ export default function ResumeTab({
   selectedYear,
   onExpandChart
 }: ResumeTabProps) {
-  const { theme } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme, isDarkMode } = useTheme() as any;
   const [showConfetti, setShowConfetti] = useState(false);
   const [hasShownConfetti, setHasShownConfetti] = useState(false);
 
@@ -124,7 +125,7 @@ export default function ResumeTab({
 
   const tooltipStyle = {
     fontSize: '10px',
-    backgroundColor: theme.colors.cardBackground,
+    backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
     border: `1px solid ${theme.colors.cardBorder}`,
     borderRadius: '8px',
     color: theme.colors.textPrimary
@@ -166,9 +167,9 @@ export default function ResumeTab({
     { name: 'Épargnes', value: totals.epargnes, fill: COLORS_TYPE.epargnes }
   ];
 
-  // Top 5 transactions
-  const top5 = [...filteredTransactions]
-    .filter(t => t.type !== 'Revenu')
+  // Top 5 transactions (SORTIES uniquement = Factures + Dépenses, PAS Épargnes ni Revenus)
+  const top5Sorties = [...filteredTransactions]
+    .filter(t => t.type === 'Factures' || t.type === 'Dépenses')
     .sort((a, b) => parseFloat(b.montant || '0') - parseFloat(a.montant || '0'))
     .slice(0, 5);
 
@@ -341,6 +342,7 @@ export default function ResumeTab({
       {/* Pie Chart - Répartition */}
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative animate-fade-in-up stagger-6" style={cardStyle}>
         <button
+          type="button"
           onClick={() => onExpandChart('pie-resume')}
           className="absolute top-3 right-3 p-1.5 rounded-lg transition-all hover:scale-110"
           style={{ background: `${theme.colors.primary}20` }}
@@ -393,6 +395,7 @@ export default function ResumeTab({
       {/* Bar Chart - Bilan */}
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative animate-fade-in-up stagger-7" style={cardStyle}>
         <button
+          type="button"
           onClick={() => onExpandChart('bar-resume')}
           className="absolute top-3 right-3 p-1.5 rounded-lg transition-all hover:scale-110"
           style={{ background: `${theme.colors.primary}20` }}
@@ -437,19 +440,17 @@ export default function ResumeTab({
         </div>
       </div>
 
-      {/* Top 5 transactions */}
-      {top5.length > 0 && (
+      {/* Top 5 sorties (Factures + Dépenses uniquement) */}
+      {top5Sorties.length > 0 && (
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-fade-in-up stagger-8" style={cardStyle}>
           <h3 className="text-sm font-semibold mb-3" style={textPrimary}>
-            Top 5 sorties
+            🔥 Top 5 dépenses
           </h3>
           <div className="space-y-2">
-            {top5.map((t, i) => {
-              const color = t.type === 'Facture' 
+            {top5Sorties.map((t, i) => {
+              const color = t.type === 'Factures' 
                 ? COLORS_TYPE.factures 
-                : t.type === 'Épargne' 
-                  ? COLORS_TYPE.epargnes 
-                  : COLORS_TYPE.depenses;
+                : COLORS_TYPE.depenses;
               
               return (
                 <div 
@@ -471,7 +472,7 @@ export default function ResumeTab({
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium truncate" style={textPrimary}>{t.categorie}</p>
                       <p className="text-[9px]" style={textSecondary}>
-                        {t.date ? new Date(t.date).toLocaleDateString('fr-FR') : '-'}
+                        {t.type} • {t.date ? new Date(t.date).toLocaleDateString('fr-FR') : '-'}
                       </p>
                     </div>
                   </div>

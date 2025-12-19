@@ -1,7 +1,7 @@
 // Types
 export interface Transaction {
   id: string;
-  type: 'Revenu' | 'Facture' | 'Dépense' | 'Épargne';
+  type: 'Revenus' | 'Factures' | 'Dépenses' | 'Épargnes';
   categorie: string;
   montant: string;
   date?: string;
@@ -14,7 +14,7 @@ export interface Transaction {
 export interface ObjectifBudget {
   id: string;
   categorie: string;
-  type: 'Dépense' | 'Facture' | 'Épargne';
+  type: 'Dépenses' | 'Factures' | 'Épargnes';
   montant: number;
 }
 

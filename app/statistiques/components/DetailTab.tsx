@@ -27,25 +27,27 @@ export default function DetailTab({
   selectedYear,
   onExpandChart
 }: DetailTabProps) {
-  const { theme } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme, isDarkMode } = useTheme() as any;
 
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
 
+  // Couleurs fixes pour le tooltip (éviter transparence)
   const tooltipStyle = {
     fontSize: '10px',
-    backgroundColor: theme.colors.cardBackground,
-    border: `1px solid ${theme.colors.cardBorder}`,
+    backgroundColor: isDarkMode ? '#1a1a2e' : '#ffffff',
+    border: `1px solid ${isDarkMode ? '#2d2d44' : '#e5e5e5'}`,
     borderRadius: '8px',
     color: theme.colors.textPrimary
   };
 
   const typeMapping: Record<string, string> = {
-    'Revenus': 'Revenu',
-    'Factures': 'Facture',
-    'Dépenses': 'Dépense',
-    'Épargnes': 'Épargne'
+    'Revenus': 'Revenus',
+    'Factures': 'Factures',
+    'Dépenses': 'Dépenses',
+    'Épargnes': 'Épargnes'
   };
   const actualType = typeMapping[type];
 
@@ -118,6 +120,17 @@ export default function DetailTab({
     .sort((a, b) => parseFloat(b.montant || '0') - parseFloat(a.montant || '0'))
     .slice(0, 5);
 
+  // Libellé adapté selon le type
+  const getTop5Label = () => {
+    switch (type) {
+      case 'Revenus': return '💰 Top 5 revenus';
+      case 'Factures': return '📄 Top 5 factures';
+      case 'Dépenses': return '🔥 Top 5 dépenses';
+      case 'Épargnes': return '🐷 Top 5 épargnes';
+      default: return `Top 5 ${type}`;
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Total avec variation */}
@@ -139,6 +152,7 @@ export default function DetailTab({
       {/* Pie Chart */}
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border relative animate-fade-in-up stagger-2" style={cardStyle}>
         <button
+          type="button"
           onClick={() => onExpandChart(`pie-${type.toLowerCase()}`)}
           className="absolute top-3 right-3 p-1.5 rounded-lg transition-all hover:scale-110"
           style={{ background: `${theme.colors.primary}20` }}
@@ -254,18 +268,18 @@ export default function DetailTab({
       {top5.length > 0 && (
         <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border animate-fade-in-up stagger-4" style={cardStyle}>
           <h3 className="text-sm font-semibold mb-3" style={textPrimary}>
-            Top 5 {type}
+            {getTop5Label()}
           </h3>
           <div className="space-y-2">
             {top5.map((t, i) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between p-2 rounded-xl"
+                className="flex items-center justify-between p-2 rounded-xl transition-all duration-300 hover:scale-[1.02]"
                 style={{ background: i === 0 ? `${color}15` : 'transparent', borderBottom: i < 4 ? `1px solid ${theme.colors.cardBorder}30` : 'none' }}
               >
                 <div className="flex items-center gap-2 flex-1">
                   <span
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${i === 0 ? 'animate-pulse' : ''}`}
                     style={{ background: `${color}20`, color }}
                   >
                     {i + 1}

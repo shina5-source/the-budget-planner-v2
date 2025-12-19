@@ -122,7 +122,8 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
               className="text-[10px]"
               style={{ color: `${theme.colors.primary}50` }}
             >
-              Créé avec ❤️ Shina5
+              Créé avec ❤️ by Shina5
+              
             </p>
           </div>
         </div>
