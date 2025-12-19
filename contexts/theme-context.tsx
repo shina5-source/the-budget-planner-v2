@@ -67,13 +67,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const root = document.documentElement;
     
     Object.keys(resolvedColors).forEach(key => {
-      const cssVar = `--color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
-      root.style.setProperty(cssVar, resolvedColors[key as keyof typeof resolvedColors]);
+      const value = resolvedColors[key as keyof typeof resolvedColors];
+      if (value) {
+        const cssVar = `--color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+        root.style.setProperty(cssVar, value);
+      }
     });
 
-    // NOUVEAU : Appliquer le fond dégradé sur le body
-    document.body.style.background = `linear-gradient(180deg, ${resolvedColors.backgroundGradientFrom} 0%, ${resolvedColors.backgroundGradientTo} 50%, ${resolvedColors.backgroundGradientFrom} 100%)`;
-    document.body.style.minHeight = '100vh';
+    // Appliquer le fond dégradé sur le body
+    if (resolvedColors.backgroundGradientFrom && resolvedColors.backgroundGradientTo) {
+      document.body.style.background = `linear-gradient(180deg, ${resolvedColors.backgroundGradientFrom} 0%, ${resolvedColors.backgroundGradientTo} 50%, ${resolvedColors.backgroundGradientFrom} 100%)`;
+      document.body.style.minHeight = '100vh';
+    }
 
     localStorage.setItem(STORAGE_KEY, themeKey);
   }, [themeKey, resolvedColors, mounted]);

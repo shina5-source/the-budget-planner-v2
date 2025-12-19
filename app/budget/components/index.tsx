@@ -13,5 +13,8 @@ export { MonthSelector, monthsShort, monthsFull, years } from './MonthSelector';
 export { TabSelector } from './TabSelector';
 export type { TabType } from './TabSelector';
 
+// Nouveau composant Confetti
+export { Confetti } from './Confetti';
+
 // Shared utilities
 export { animationStyles, COLORS_TYPE, COLORS } from './animations';

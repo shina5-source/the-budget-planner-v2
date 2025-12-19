@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Lightbulb, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle, 
   TrendingUp, TrendingDown, PiggyBank, CreditCard, Calendar, Target,
   Award, Flame, Coffee, ShoppingBag, Clock, Bell, Wallet, BarChart3,
-  Heart, Star, Zap, Gift, AlertCircle, Info, Sparkles
+  Heart, Star, Zap, Gift, AlertCircle, Sparkles
 } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 
@@ -60,14 +60,16 @@ export default function SmartTips({
   autoRotate = true, 
   rotateInterval = 6000 
 }: SmartTipsProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme } = useTheme() as any;
+  // Utiliser isDarkMode directement du contexte !
+  const { theme, isDarkMode } = useTheme();
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [tips, setTips] = useState<Tip[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
   const [objectifs, setObjectifs] = useState<Objectif[]>([]);
   const [devise, setDevise] = useState('€');
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Charger les données
   useEffect(() => {
@@ -86,6 +88,41 @@ export default function SmartTips({
       if (params.devise) setDevise(params.devise);
     }
   }, []);
+
+  // === STYLES DYNAMIQUES - Utilise isDarkMode du contexte ===
+  const getTypeStyles = useMemo(() => {
+    return (type: string) => {
+      if (isDarkMode) {
+        // === THÈME SOMBRE : texte TRÈS clair ===
+        switch (type) {
+          case 'danger': 
+            return { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 0.5)', text: '#FECACA', icon: '#FCA5A5', textSecondary: '#FECACA' };
+          case 'warning': 
+            return { bg: 'rgba(249, 115, 22, 0.2)', border: 'rgba(249, 115, 22, 0.5)', text: '#FED7AA', icon: '#FDBA74', textSecondary: '#FED7AA' };
+          case 'success': 
+            return { bg: 'rgba(34, 197, 94, 0.2)', border: 'rgba(34, 197, 94, 0.5)', text: '#BBF7D0', icon: '#86EFAC', textSecondary: '#BBF7D0' };
+          case 'motivation': 
+            return { bg: 'rgba(168, 85, 247, 0.2)', border: 'rgba(168, 85, 247, 0.5)', text: '#E9D5FF', icon: '#D8B4FE', textSecondary: '#E9D5FF' };
+          default:
+            return { bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.4)', text: '#F1F5F9', icon: '#94A3B8', textSecondary: '#E2E8F0' };
+        }
+      } else {
+        // === THÈME CLAIR : texte TRÈS foncé ===
+        switch (type) {
+          case 'danger': 
+            return { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#7F1D1D', icon: '#DC2626', textSecondary: '#991B1B' };
+          case 'warning': 
+            return { bg: 'rgba(249, 115, 22, 0.15)', border: 'rgba(249, 115, 22, 0.4)', text: '#7C2D12', icon: '#EA580C', textSecondary: '#9A3412' };
+          case 'success': 
+            return { bg: 'rgba(34, 197, 94, 0.15)', border: 'rgba(34, 197, 94, 0.4)', text: '#14532D', icon: '#16A34A', textSecondary: '#166534' };
+          case 'motivation': 
+            return { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.4)', text: '#581C87', icon: '#9333EA', textSecondary: '#6B21A8' };
+          default:
+            return { bg: 'rgba(71, 85, 105, 0.1)', border: 'rgba(71, 85, 105, 0.3)', text: '#1E293B', icon: '#475569', textSecondary: '#334155' };
+        }
+      }
+    };
+  }, [isDarkMode]);
 
   // Helpers de calcul
   const now = new Date();
@@ -119,7 +156,6 @@ export default function SmartTips({
   const repriseEpargne = currentMonthTransactions.filter(t => t.type === 'Reprise d\'épargne').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const solde = revenus - depenses - epargne + repriseEpargne;
 
-  const revenusPrev = previousMonthTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
   const depensesPrev = previousMonthTransactions.filter(t => ['Factures', 'Dépenses'].includes(t.type)).reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
 
   const depensesPourcentage = revenus > 0 ? (depenses / revenus) * 100 : 0;
@@ -230,18 +266,51 @@ export default function SmartTips({
     return allTips.filter(tip => tip.category.includes(page)).sort((a, b) => a.priority - b.priority);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setTips(generateTips()); }, [transactions, recurring, objectifs, devise, page]);
-  useEffect(() => { if (!autoRotate || tips.length <= 1) return; const interval = setInterval(() => { setCurrentIndex(prev => (prev + 1) % tips.length); }, rotateInterval); return () => clearInterval(interval); }, [autoRotate, rotateInterval, tips.length]);
+  
+  useEffect(() => { 
+    if (!autoRotate || tips.length <= 1) return; 
+    const interval = setInterval(() => { 
+      setIsAnimating(true);
+      setTimeout(() => {
+        setCurrentIndex(prev => (prev + 1) % tips.length);
+        setIsAnimating(false);
+      }, 150);
+    }, rotateInterval); 
+    return () => clearInterval(interval); 
+  }, [autoRotate, rotateInterval, tips.length]);
 
-  const goToPrevious = () => setCurrentIndex(prev => (prev - 1 + tips.length) % tips.length);
-  const goToNext = () => setCurrentIndex(prev => (prev + 1) % tips.length);
+  const goToPrevious = () => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setCurrentIndex(prev => (prev - 1 + tips.length) % tips.length);
+      setIsAnimating(false);
+    }, 150);
+  };
 
+  const goToNext = () => {
+    setIsAnimating(true);
+    setTimeout(() => {
+      setCurrentIndex(prev => (prev + 1) % tips.length);
+      setIsAnimating(false);
+    }, 150);
+  };
+
+  // Empty state
   if (tips.length === 0) {
     return (
-      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}>
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4" style={{ color: theme.colors.primary }} />
-          <p className="text-xs" style={{ color: theme.colors.textPrimary }}>Tout va bien ! Continuez comme ça 👍</p>
+      <div 
+        className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" 
+        style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl" style={{ background: `${theme.colors.primary}20` }}>
+            <Sparkles className="w-4 h-4" style={{ color: theme.colors.primary }} />
+          </div>
+          <p className="text-xs font-medium" style={{ color: theme.colors.textPrimary }}>
+            Tout va bien ! Continuez comme ça 👍
+          </p>
         </div>
       </div>
     );
@@ -249,43 +318,49 @@ export default function SmartTips({
 
   const currentTip = tips[currentIndex];
   const IconComponent = currentTip?.icon || Lightbulb;
-
-  // Couleurs selon le type - UTILISANT LE THÈME
-  const getTypeStyles = (type: string) => {
-    switch (type) {
-      case 'danger': return { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#EF4444', icon: '#EF4444' };
-      case 'warning': return { bg: 'rgba(249, 115, 22, 0.15)', border: 'rgba(249, 115, 22, 0.4)', text: '#F97316', icon: '#F97316' };
-      case 'success': return { bg: 'rgba(34, 197, 94, 0.15)', border: 'rgba(34, 197, 94, 0.4)', text: '#22C55E', icon: '#22C55E' };
-      case 'motivation': return { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.4)', text: '#A855F7', icon: '#A855F7' };
-      default: return { bg: `${theme.colors.primary}15`, border: `${theme.colors.primary}40`, text: theme.colors.primary, icon: theme.colors.primary };
-    }
-  };
-
   const styles = getTypeStyles(currentTip.type);
 
   return (
-    <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" style={{ background: styles.bg, borderColor: styles.border }}>
+    <div 
+      className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border" 
+      style={{ background: styles.bg, borderColor: styles.border }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Lightbulb className="w-4 h-4" style={{ color: styles.icon }} />
-          <h4 className="text-xs font-semibold" style={{ color: styles.text }}>💡 Conseils</h4>
+          <div className="p-1.5 rounded-lg" style={{ background: `${styles.icon}25` }}>
+            <Lightbulb className="w-3.5 h-3.5" style={{ color: styles.icon }} />
+          </div>
+          <h4 className="text-xs font-semibold" style={{ color: styles.text }}>Conseils</h4>
         </div>
         {tips.length > 1 && (
-          <span className="text-[9px]" style={{ color: styles.text, opacity: 0.7 }}>{currentIndex + 1}/{tips.length}</span>
+          <span 
+            className="text-[10px] px-2 py-0.5 rounded-full font-medium" 
+            style={{ background: `${styles.icon}20`, color: styles.text }}
+          >
+            {currentIndex + 1}/{tips.length}
+          </span>
         )}
       </div>
 
       {/* Conseil actuel */}
-      <div className="flex items-start gap-3 mb-3">
-        <IconComponent className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: styles.icon }} />
-        <p className="text-xs leading-relaxed" style={{ color: styles.text }}>{currentTip.message}</p>
+      <div className={`flex items-start gap-3 mb-3 transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="p-2 rounded-xl flex-shrink-0" style={{ background: `${styles.icon}20` }}>
+          <IconComponent className="w-4 h-4" style={{ color: styles.icon }} />
+        </div>
+        <p className="text-xs leading-relaxed pt-1 font-medium" style={{ color: styles.text }}>
+          {currentTip.message}
+        </p>
       </div>
 
       {/* Navigation */}
       {tips.length > 1 && (
         <div className="flex items-center justify-between">
-          <button onClick={goToPrevious} className="p-1 rounded-lg transition-opacity hover:opacity-70" style={{ color: styles.text }}>
+          <button 
+            onClick={goToPrevious} 
+            className="p-1.5 rounded-lg transition-all hover:scale-110" 
+            style={{ background: `${styles.icon}15`, color: styles.text }}
+          >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
@@ -293,18 +368,30 @@ export default function SmartTips({
             {tips.slice(0, Math.min(tips.length, 7)).map((_, i) => (
               <button
                 key={i}
-                onClick={() => setCurrentIndex(i)}
-                className="w-2 h-2 rounded-full transition-all"
+                onClick={() => {
+                  setIsAnimating(true);
+                  setTimeout(() => {
+                    setCurrentIndex(i);
+                    setIsAnimating(false);
+                  }, 150);
+                }}
+                className="w-2 h-2 rounded-full transition-all duration-300"
                 style={{ 
-                  backgroundColor: i === currentIndex ? styles.icon : `${theme.colors.textSecondary}50`,
-                  transform: i === currentIndex ? 'scale(1.2)' : 'scale(1)'
+                  backgroundColor: i === currentIndex ? styles.icon : `${styles.icon}40`,
+                  transform: i === currentIndex ? 'scale(1.3)' : 'scale(1)'
                 }}
               />
             ))}
-            {tips.length > 7 && <span className="text-[8px]" style={{ color: styles.text }}>...</span>}
+            {tips.length > 7 && (
+              <span className="text-[10px] font-medium" style={{ color: styles.text }}>+{tips.length - 7}</span>
+            )}
           </div>
 
-          <button onClick={goToNext} className="p-1 rounded-lg transition-opacity hover:opacity-70" style={{ color: styles.text }}>
+          <button 
+            onClick={goToNext} 
+            className="p-1.5 rounded-lg transition-all hover:scale-110" 
+            style={{ background: `${styles.icon}15`, color: styles.text }}
+          >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

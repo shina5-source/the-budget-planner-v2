@@ -13,6 +13,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.86.0",
     "dom-to-image-more": "^3.7.2",
+    "html2canvas": "^1.4.1",
     "lucide-react": "^0.555.0",
     "next": "^16.0.10",
     "react": "19.2.0",
