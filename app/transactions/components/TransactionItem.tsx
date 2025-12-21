@@ -138,8 +138,12 @@ export default function TransactionItem({
             <span className="text-xs ml-0.5">{devise}</span>
           </p>
           
-          {/* Boutons avec animation fluide améliorée */}
-          <div className="flex gap-1 mt-2 transform transition-all duration-300 ease-out opacity-0 translate-y-2 scale-95 group-hover:opacity-100 group-hover:translate-y-0 group-hover:scale-100">
+          {/* Boutons - Toujours visibles en mobile, hover en desktop */}
+          <div className="flex gap-1 mt-2 transition-all duration-300 ease-out 
+            opacity-100 
+            md:opacity-0 md:translate-y-2 md:scale-95 
+            md:group-hover:opacity-100 md:group-hover:translate-y-0 md:group-hover:scale-100"
+          >
             <button 
               onClick={() => onEdit(transaction)} 
               className="p-2 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"

@@ -1,49 +1,49 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import ReactConfetti from 'react-confetti';
 import { useTheme } from '@/contexts/theme-context';
-
-interface ConfettiPiece {
-  id: number;
-  x: number;
-  color: string;
-  delay: number;
-  duration: number;
-  size: number;
-  rotation: number;
-}
 
 interface ConfettiProps {
   trigger: boolean;
-  duration?: number;
-  particleCount?: number;
-  colors?: string[]; // Optionnel - si non fourni, utilise les couleurs du thème
 }
 
-export default function Confetti({ 
-  trigger, 
-  duration = 3500, 
-  particleCount = 60,
-  colors: customColors 
-}: ConfettiProps) {
+export default function Confetti({ trigger }: ConfettiProps) {
+  const [isRunning, setIsRunning] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme } = useTheme() as any;
-  const [pieces, setPieces] = useState<ConfettiPiece[]>([]);
-  const [isActive, setIsActive] = useState(false);
+  const { theme, isDark } = useTheme() as any;
 
-  // Générer les couleurs basées sur le thème si non fournies
-  const colors = useMemo(() => {
-    if (customColors && customColors.length > 0) {
-      return customColors;
+  // Gérer la taille de la fenêtre
+  useEffect(() => {
+    const updateSize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
+
+  useEffect(() => {
+    if (trigger) {
+      setIsRunning(true);
+      const timer = setTimeout(() => {
+        setIsRunning(false);
+      }, 4000);
+
+      return () => clearTimeout(timer);
     }
+  }, [trigger]);
 
+  // Générer les couleurs basées sur le thème actif
+  const getThemeColors = useCallback(() => {
     const primary = theme?.colors?.primary || '#D4AF37';
-    const accent = theme?.colors?.accent || primary;
-
+    const accent = theme?.colors?.accent || '#4ECDC4';
+    
     // Fonction pour éclaircir une couleur
     const lighten = (color: string, amount: number): string => {
       try {
-        const hex = color.replace('#', '');
+        const hex = color.startsWith('#') ? color.slice(1) : color;
         const r = Math.min(255, parseInt(hex.slice(0, 2), 16) + amount);
         const g = Math.min(255, parseInt(hex.slice(2, 4), 16) + amount);
         const b = Math.min(255, parseInt(hex.slice(4, 6), 16) + amount);
@@ -56,7 +56,7 @@ export default function Confetti({
     // Fonction pour assombrir une couleur
     const darken = (color: string, amount: number): string => {
       try {
-        const hex = color.replace('#', '');
+        const hex = color.startsWith('#') ? color.slice(1) : color;
         const r = Math.max(0, parseInt(hex.slice(0, 2), 16) - amount);
         const g = Math.max(0, parseInt(hex.slice(2, 4), 16) - amount);
         const b = Math.max(0, parseInt(hex.slice(4, 6), 16) - amount);
@@ -66,122 +66,67 @@ export default function Confetti({
       }
     };
 
-    return [
-      primary,                    // Couleur primaire du thème
-      accent,                     // Couleur accent
-      lighten(primary, 60),       // Version claire
-      darken(primary, 40),        // Version foncée
-      '#4CAF50',                  // Vert succès (universel)
-      '#FFD700',                  // Or célébration (universel)
-      '#FF6B6B',                  // Rouge festif
-      '#4ECDC4',                  // Turquoise
-    ];
-  }, [theme?.colors?.primary, theme?.colors?.accent, customColors]);
-
-  useEffect(() => {
-    if (trigger && !isActive) {
-      setIsActive(true);
-      
-      // Générer les confettis
-      const newPieces: ConfettiPiece[] = [];
-      for (let i = 0; i < particleCount; i++) {
-        newPieces.push({
-          id: i,
-          x: Math.random() * 100,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          delay: Math.random() * 0.5,
-          duration: 2 + Math.random() * 2,
-          size: 6 + Math.random() * 8,
-          rotation: Math.random() * 360,
-        });
-      }
-      setPieces(newPieces);
-
-      // Nettoyer après l'animation
-      const timer = setTimeout(() => {
-        setIsActive(false);
-        setPieces([]);
-      }, duration);
-
-      return () => clearTimeout(timer);
+    // Couleurs adaptées au mode clair/sombre
+    if (isDark) {
+      // Mode sombre : couleurs vives et lumineuses
+      return [
+        primary,
+        accent,
+        lighten(primary, 60),
+        lighten(accent, 40),
+        '#FFD700', // Or
+        '#FF6B6B', // Rouge corail
+        '#4CAF50', // Vert
+        '#E0E0E0', // Gris clair
+      ];
+    } else {
+      // Mode clair : couleurs plus saturées et profondes
+      return [
+        primary,
+        accent,
+        darken(primary, 30),
+        darken(accent, 20),
+        '#DAA520', // Or foncé
+        '#DC143C', // Cramoisi
+        '#228B22', // Vert forêt
+        '#4A4A4A', // Gris foncé
+      ];
     }
-  }, [trigger, duration, isActive, colors, particleCount]);
+  }, [theme?.colors?.primary, theme?.colors?.accent, isDark]);
 
-  // Reset quand trigger passe à false
-  useEffect(() => {
-    if (!trigger && isActive) {
-      // Laisser l'animation finir naturellement
-    }
-  }, [trigger, isActive]);
-
-  if (!isActive || pieces.length === 0) return null;
+  if (!isRunning || windowSize.width === 0) {
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      <style>{`
-        @keyframes confetti-fall {
-          0% {
-            transform: translateY(-10vh) rotate(0deg);
-            opacity: 1;
-          }
-          80% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(110vh) rotate(720deg);
-            opacity: 0;
-          }
-        }
-        @keyframes confetti-shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-12px); }
-          75% { transform: translateX(12px); }
-        }
-        .confetti-piece {
-          position: absolute;
-          top: -20px;
-          animation: confetti-fall linear forwards, confetti-shake 0.5s ease-in-out infinite;
-          border-radius: 2px;
-        }
-        .confetti-circle {
-          border-radius: 50%;
-        }
-        .confetti-ribbon {
-          border-radius: 1px;
-        }
-      `}</style>
-      
-      {pieces.map((piece) => {
-        // Varier les formes
-        const shapeClass = piece.id % 3 === 0 
-          ? 'confetti-circle' 
-          : piece.id % 3 === 1 
-            ? 'confetti-ribbon' 
-            : '';
-        
-        const height = piece.id % 3 === 1 
-          ? piece.size * 0.3  // Ribbon (plus fin)
-          : piece.size * 0.6; // Square/Circle
-
-        return (
-          <div
-            key={piece.id}
-            className={`confetti-piece ${shapeClass}`}
-            style={{
-              left: `${piece.x}%`,
-              width: piece.size,
-              height: height,
-              backgroundColor: piece.color,
-              animationDelay: `${piece.delay}s`,
-              animationDuration: `${piece.duration}s, 0.5s`,
-              transform: `rotate(${piece.rotation}deg)`,
-            }}
-          />
-        );
-      })}
-    </div>
+    <ReactConfetti
+      width={windowSize.width}
+      height={windowSize.height}
+      numberOfPieces={250}
+      recycle={false}
+      // Configuration pour effet EXPLOSION depuis le centre
+      confettiSource={{
+        x: windowSize.width / 2,
+        y: windowSize.height / 2,
+        w: 10,
+        h: 10
+      }}
+      initialVelocityX={15}
+      initialVelocityY={30}
+      gravity={0.12}
+      tweenDuration={100}
+      onConfettiComplete={() => setIsRunning(false)}
+      colors={getThemeColors()}
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        zIndex: 9999,
+        pointerEvents: 'none'
+      }}
+    />
   );
 }
 
-// Export nommé aussi pour compatibilité
+// Export nommé pour compatibilité
 export { Confetti };
