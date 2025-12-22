@@ -10,6 +10,7 @@ import {
   SkeletonLoader,
   Footer,
   GeneralSection,
+  PaieSection,
   CategorieSection,
   ComptesSection,
   DataSection,
@@ -141,6 +142,14 @@ function ParametresContent() {
         <GeneralSection 
           parametres={parametres} 
           onSave={saveParametres} 
+        />
+
+        {/* Section Gestion des Paies - NOUVEAU */}
+        <PaieSection
+          parametres={parametres}
+          onSave={saveParametres}
+          isActive={activeSection === 'paie'}
+          onToggle={() => toggleSection('paie')}
         />
 
         {/* Section Comptes */}

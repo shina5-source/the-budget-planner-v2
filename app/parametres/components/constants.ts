@@ -1,6 +1,15 @@
 // Constantes pour la page Paramètres
 
-import { ParametresData } from './types';
+import { ParametresData, ConfigurationPaie } from './types';
+
+// Configuration par défaut des paies
+export const defaultConfigurationPaie: ConfigurationPaie = {
+  jourPaieDefaut: 1, // Par défaut le 1er du mois (comportement classique)
+  paiesPersonnalisees: [],
+  detectionAutoActive: false,
+  montantMinimumDetection: 500,
+  categoriesDetection: ['Salaire', 'Revenus Secondaires', 'Allocations']
+};
 
 export const defaultParametres: ParametresData = {
   dateDepart: new Date().toISOString().split('T')[0],
@@ -13,7 +22,8 @@ export const defaultParametres: ParametresData = {
   comptesBancaires: [
     { id: 1, nom: 'Compte Principal', soldeDepart: 0, isEpargne: false },
     { id: 2, nom: 'Livret A', soldeDepart: 0, isEpargne: true },
-  ]
+  ],
+  configurationPaie: defaultConfigurationPaie
 };
 
 export const devises = [
@@ -21,6 +31,23 @@ export const devises = [
   { value: '$', label: '$ Dollar' },
   { value: '£', label: '£ Livre' },
   { value: 'CHF', label: 'CHF Franc Suisse' }
+];
+
+// Jours du mois pour le sélecteur
+export const joursOptions = Array.from({ length: 31 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1}`
+}));
+
+// Noms des mois
+export const nomsMois = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+];
+
+export const nomsMoisCourts = [
+  'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
+  'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'
 ];
 
 // Animations CSS

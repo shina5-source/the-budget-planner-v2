@@ -6,6 +6,8 @@ export { default as CategorieSection } from './CategorieSection';
 export { default as ComptesSection } from './ComptesSection';
 export { default as DataSection } from './DataSection';
 export { default as CompteFormModal } from './CompteFormModal';
+export { default as PaieSection } from './PaieSection';
+export { joursOptions, nomsMois, nomsMoisCourts } from './constants';
 
 // Export types
 export type { 
