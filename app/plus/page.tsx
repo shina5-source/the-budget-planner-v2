@@ -24,14 +24,13 @@ const animationStyles = `
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.15); }
   }
-  @keyframes tap-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(0.97); }
-    100% { transform: scale(1); }
+  @keyframes icon-pulse-subtle {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(var(--glow-rgb), 0.4); }
+    50% { transform: scale(1.02); box-shadow: 0 0 15px 3px rgba(var(--glow-rgb), 0.2); }
   }
   @keyframes glow-pulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 1; }
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
   }
   .animate-fade-in-up {
     animation: fadeInUp 0.4s ease-out forwards;
@@ -66,8 +65,26 @@ const animationStyles = `
     pointer-events: none;
   }
   
+  /* Icon container - toujours visible avec couleur */
+  .icon-container {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  /* Glow border - légèrement visible par défaut sur mobile */
+  .glow-border {
+    position: absolute;
+    inset: -1px;
+    border-radius: 1rem;
+    opacity: 0.15;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  
   /* Desktop hover effects */
   @media (hover: hover) and (pointer: fine) {
+    .glow-border {
+      opacity: 0;
+    }
     .menu-card:hover::before {
       animation: shine 0.8s ease-in-out;
     }
@@ -85,12 +102,23 @@ const animationStyles = `
     }
   }
   
+  /* Mobile/Touch - couleurs toujours visibles */
+  @media (hover: none) and (pointer: coarse) {
+    .glow-border {
+      opacity: 0.2;
+      animation: glow-pulse 3s ease-in-out infinite;
+    }
+    .icon-container {
+      box-shadow: 0 2px 8px rgba(var(--glow-rgb), 0.3);
+    }
+  }
+  
   /* Mobile/Touch active effects */
   .menu-card:active {
     transform: scale(0.98);
   }
   .menu-card:active .glow-border {
-    opacity: 1;
+    opacity: 0.8 !important;
   }
   .menu-card:active .icon-container {
     transform: scale(1.1);
@@ -104,27 +132,16 @@ const animationStyles = `
     transform: scale(0.98);
   }
   .menu-card.touched .glow-border {
-    opacity: 1;
-    animation: glow-pulse 0.3s ease-in-out;
+    opacity: 0.8 !important;
   }
   .menu-card.touched .icon-container {
     transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(var(--glow-rgb), 0.4);
   }
   .menu-card.touched::before {
     animation: shine 0.6s ease-in-out;
   }
   
-  .glow-border {
-    position: absolute;
-    inset: -1px;
-    border-radius: 1rem;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    pointer-events: none;
-  }
-  .icon-container {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
   .chevron-icon {
     transition: transform 0.2s ease;
   }
@@ -137,6 +154,14 @@ const animationStyles = `
   .stagger-7 { animation-delay: 0.21s; }
   .stagger-8 { animation-delay: 0.24s; }
 `;
+
+// Fonction pour convertir hex en RGB
+function hexToRgb(hex: string): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result 
+    ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`
+    : '139, 92, 246';
+}
 
 // Skeleton Loader
 function SkeletonLoader() {
@@ -210,6 +235,7 @@ function MenuItem({ icon: Icon, label, description, page, index, glowColor, onCl
   
   const textPrimary = { color: theme.colors.textPrimary };
   const textSecondary = { color: theme.colors.textSecondary };
+  const glowRgb = hexToRgb(glowColor);
 
   const handleTouchStart = () => {
     setIsTouched(true);
@@ -236,24 +262,27 @@ function MenuItem({ icon: Icon, label, description, page, index, glowColor, onCl
       className={`animate-fade-in-up stagger-${index + 1} menu-card backdrop-blur-sm rounded-2xl p-4 shadow-sm border w-full flex items-center gap-4 ${isTouched ? 'touched' : ''}`}
       style={{ 
         background: theme.colors.cardBackground, 
-        borderColor: theme.colors.cardBorder
-      }}
+        borderColor: theme.colors.cardBorder,
+        // CSS variable pour le glow RGB
+        '--glow-rgb': glowRgb
+      } as React.CSSProperties}
     >
-      {/* Glow border effect */}
+      {/* Glow border effect - visible par défaut sur mobile */}
       <div 
         className="glow-border"
         style={{ 
-          background: `linear-gradient(135deg, ${glowColor}50, ${glowColor}20, ${glowColor}50)`,
-          boxShadow: `0 0 25px ${glowColor}40, inset 0 0 15px ${glowColor}15`
+          background: `linear-gradient(135deg, ${glowColor}60, ${glowColor}30, ${glowColor}60)`,
+          boxShadow: `0 0 20px ${glowColor}30, inset 0 0 10px ${glowColor}10`
         }}
       />
       
-      {/* Icon container */}
+      {/* Icon container - TOUJOURS coloré */}
       <div 
         className="icon-container w-12 h-12 rounded-2xl flex items-center justify-center border relative z-10"
         style={{ 
-          background: `${glowColor}20`, 
-          borderColor: `${glowColor}40`
+          background: `${glowColor}25`, 
+          borderColor: `${glowColor}50`,
+          boxShadow: `0 2px 10px ${glowColor}20`
         }}
       >
         <Icon 
@@ -272,7 +301,7 @@ function MenuItem({ icon: Icon, label, description, page, index, glowColor, onCl
         </span>
       </div>
       
-      {/* Chevron */}
+      {/* Chevron - coloré */}
       <ChevronRight 
         className="chevron-icon w-5 h-5 relative z-10" 
         style={{ color: glowColor }} 

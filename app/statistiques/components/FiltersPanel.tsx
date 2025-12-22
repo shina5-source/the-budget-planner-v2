@@ -1,101 +1,99 @@
 'use client';
 
-import { Filter, X } from 'lucide-react';
+import { Filter, Download } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 
 interface FiltersPanelProps {
-  isOpen: boolean;
-  onToggle: () => void;
+  showFilters: boolean;
+  onToggleFilters: () => void;
   compteFilter: string;
+  onCompteFilterChange: (value: string) => void;
   moyenPaiementFilter: string;
-  onCompteChange: (value: string) => void;
-  onMoyenPaiementChange: (value: string) => void;
+  onMoyenPaiementFilterChange: (value: string) => void;
   comptes: string[];
   moyensPaiement: string[];
+  hasActiveFilters: boolean;
+  onExport: () => void;
 }
 
 export default function FiltersPanel({
-  isOpen,
-  onToggle,
+  showFilters,
+  onToggleFilters,
   compteFilter,
+  onCompteFilterChange,
   moyenPaiementFilter,
-  onCompteChange,
-  onMoyenPaiementChange,
+  onMoyenPaiementFilterChange,
   comptes,
-  moyensPaiement
+  moyensPaiement,
+  hasActiveFilters,
+  onExport
 }: FiltersPanelProps) {
-  const { theme } = useTheme();
-  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
+
   const cardStyle = { 
     background: theme.colors.cardBackground, 
     borderColor: theme.colors.cardBorder 
   };
-  const textPrimary = { color: theme.colors.textPrimary };
-  const textSecondary = { color: theme.colors.textSecondary };
   const inputStyle = { 
-    background: theme.colors.cardBackgroundLight || theme.colors.cardBackground, 
+    background: theme.colors.cardBackgroundLight, 
     borderColor: theme.colors.cardBorder, 
     color: theme.colors.textPrimary 
   };
 
-  const hasActiveFilters = compteFilter !== 'all' || moyenPaiementFilter !== 'all';
-
   return (
-    <div className="mb-4">
-      {/* Bouton toggle */}
-      <button
-        onClick={onToggle}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-        style={{ 
-          background: hasActiveFilters ? `${theme.colors.primary}30` : `${theme.colors.primary}10`,
-          color: theme.colors.primary 
-        }}
-      >
-        <Filter size={14} />
-        Filtres
-        {hasActiveFilters && (
-          <span 
-            className="w-2 h-2 rounded-full"
-            style={{ background: theme.colors.primary }}
-          />
-        )}
-      </button>
-      
-      {/* Panel filtres */}
-      {isOpen && (
+    <>
+      {/* Boutons Filtres + Export */}
+      <div className="flex items-center gap-2 mb-4 animate-fadeIn" style={{ animationDelay: '150ms' }}>
+        <button 
+          type="button"
+          onClick={onToggleFilters} 
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-300 hover:scale-105 active:scale-95"
+          style={{ 
+            borderColor: hasActiveFilters ? theme.colors.primary : theme.colors.cardBorder,
+            color: theme.colors.textPrimary,
+            background: hasActiveFilters ? `${theme.colors.primary}20` : 'transparent'
+          }}
+        >
+          <Filter size={14} />
+          Filtres
+          {hasActiveFilters && (
+            <span 
+              className="w-2 h-2 rounded-full animate-pulse" 
+              style={{ background: theme.colors.primary }} 
+            />
+          )}
+        </button>
+
+        <button 
+          type="button"
+          onClick={onExport} 
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all duration-300 hover:scale-105 active:scale-95" 
+          style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}
+        >
+          <Download size={14} />
+          Export
+        </button>
+      </div>
+
+      {/* Panel Filtres Expandable */}
+      {showFilters && (
         <div 
-          className="mt-3 p-4 rounded-2xl border space-y-3 animate-fade-in-up"
+          className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4 animate-fadeIn"
           style={cardStyle}
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold" style={textPrimary}>
-              Filtres avancés
-            </h3>
-            {hasActiveFilters && (
-              <button
-                onClick={() => {
-                  onCompteChange('all');
-                  onMoyenPaiementChange('all');
-                }}
-                className="text-[10px] px-2 py-1 rounded-full flex items-center gap-1"
-                style={{ background: `${theme.colors.primary}20`, color: theme.colors.primary }}
-              >
-                <X size={10} />
-                Réinitialiser
-              </button>
-            )}
-          </div>
-          
           <div className="grid grid-cols-2 gap-3">
-            {/* Filtre compte */}
             <div>
-              <label className="text-[10px] mb-1 block" style={textSecondary}>
+              <label 
+                className="text-[10px] mb-1 block font-medium"
+                style={{ color: theme.colors.textSecondary }}
+              >
                 Compte
               </label>
-              <select
-                value={compteFilter}
-                onChange={(e) => onCompteChange(e.target.value)}
-                className="w-full px-2 py-1.5 rounded-lg border text-xs"
+              <select 
+                value={compteFilter} 
+                onChange={(e) => onCompteFilterChange(e.target.value)} 
+                className="w-full px-2 py-1.5 rounded-lg border text-xs transition-all duration-200"
                 style={inputStyle}
               >
                 <option value="all">Tous les comptes</option>
@@ -104,16 +102,17 @@ export default function FiltersPanel({
                 ))}
               </select>
             </div>
-            
-            {/* Filtre moyen de paiement */}
             <div>
-              <label className="text-[10px] mb-1 block" style={textSecondary}>
+              <label 
+                className="text-[10px] mb-1 block font-medium"
+                style={{ color: theme.colors.textSecondary }}
+              >
                 Moyen de paiement
               </label>
-              <select
-                value={moyenPaiementFilter}
-                onChange={(e) => onMoyenPaiementChange(e.target.value)}
-                className="w-full px-2 py-1.5 rounded-lg border text-xs"
+              <select 
+                value={moyenPaiementFilter} 
+                onChange={(e) => onMoyenPaiementFilterChange(e.target.value)} 
+                className="w-full px-2 py-1.5 rounded-lg border text-xs transition-all duration-200"
                 style={inputStyle}
               >
                 <option value="all">Tous</option>
@@ -125,6 +124,6 @@ export default function FiltersPanel({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

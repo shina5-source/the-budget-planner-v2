@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { 
   Home, Wallet, ArrowLeftRight, BarChart3, Calendar, 
   Target, CreditCard, PiggyBank, Mail, Settings, 
@@ -31,17 +32,36 @@ const pageConfig: Record<string, { icon: React.ElementType; title: string; subti
 export default function PageTitle({ page, customTitle, customSubtitle }: PageTitleProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+  const [mounted, setMounted] = useState(false);
+
+  // Éviter l'erreur d'hydratation en attendant le montage côté client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const config = pageConfig[page] || pageConfig.accueil;
   const Icon = config.icon;
   const title = customTitle || config.title;
   const subtitle = customSubtitle || config.subtitle;
 
+  // Rendu initial identique côté serveur et client
+  if (!mounted) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center mb-6 w-full">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-2 bg-gray-200/20">
+          <Icon className="w-6 h-6 text-gray-400" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-200">{title}</h1>
+        <p className="text-xs mt-0.5 text-gray-400">{subtitle}</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center text-center mb-6 w-full">
+    <div className="flex flex-col items-center justify-center text-center mb-6 w-full animate-fadeIn">
       {/* Icône au-dessus du titre pour un centrage parfait */}
       <div 
-        className="w-12 h-12 rounded-xl flex items-center justify-center mb-2"
+        className="w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-all duration-300"
         style={{ background: `${theme.colors.primary}20` }}
       >
         <Icon className="w-6 h-6" style={{ color: theme.colors.primary }} />

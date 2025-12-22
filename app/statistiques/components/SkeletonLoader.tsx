@@ -3,17 +3,19 @@
 import { useTheme } from '@/contexts/theme-context';
 
 export default function StatsSkeletonLoader() {
-  const { theme } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
 
+  // Utiliser backgroundImage au lieu de background pour éviter le conflit
   const shimmerStyle = {
-    background: `linear-gradient(90deg, ${theme.colors.cardBackground} 25%, ${theme.colors.cardBorder}40 50%, ${theme.colors.cardBackground} 75%)`,
+    backgroundImage: `linear-gradient(90deg, ${theme.colors.cardBackground} 25%, ${theme.colors.cardBorder}40 50%, ${theme.colors.cardBackground} 75%)`,
     backgroundSize: '200% 100%',
     animation: 'shimmer 1.5s infinite'
   };
 
   return (
     <div className="min-h-screen p-4" style={{ background: theme.colors.cardBackground }}>
-      <style>{`
+      <style jsx global>{`
         @keyframes shimmer {
           0% {
             background-position: 200% 0;

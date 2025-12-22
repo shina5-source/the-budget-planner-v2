@@ -21,46 +21,61 @@ const tabs: { id: TabType; label: string }[] = [
 ];
 
 export default function TabsNavigation({ activeTab, onTabChange }: TabsNavigationProps) {
-  const { theme } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
 
   return (
-    <div 
-      style={{
-        display: 'flex',
-        gap: '8px',
-        overflowX: 'scroll',
-        paddingBottom: '8px',
-        marginBottom: '16px',
-        scrollbarWidth: 'none'
-      }}
-    >
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        
-        return (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '9999px',
-              fontSize: '12px',
-              fontWeight: 500,
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'all 0.3s',
-              background: isActive ? theme.colors.primary : `${theme.colors.primary}15`,
-              color: isActive ? '#ffffff' : theme.colors.primary,
-              transform: isActive ? 'scale(1.05)' : 'scale(1)',
-              boxShadow: isActive ? `0 4px 12px ${theme.colors.primary}40` : 'none'
-            }}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <style jsx global>{`
+        @keyframes tab-glow-stats {
+          0%, 100% { box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3); }
+          50% { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5); }
+        }
+        @keyframes emoji-pulse-stats {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+        }
+        .animate-tab-glow-stats {
+          animation: tab-glow-stats 2s ease-in-out infinite;
+        }
+        .animate-emoji-pulse-stats {
+          animation: emoji-pulse-stats 2s ease-in-out infinite;
+        }
+      `}</style>
+
+      <div 
+        className="backdrop-blur-sm rounded-2xl p-1 shadow-sm mb-4 flex border overflow-x-auto"
+        style={{ 
+          background: theme.colors.cardBackground, 
+          borderColor: theme.colors.cardBorder
+        }}
+      >
+        {tabs.map((tab, index) => {
+          const isActive = activeTab === tab.id;
+          const isEmoji = ['📅', '💸', '🎯'].includes(tab.label);
+          
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onTabChange(tab.id)}
+              className={`flex-1 py-2 px-2 rounded-xl text-xs font-medium transition-all duration-300 whitespace-nowrap hover:scale-[1.02] active:scale-[0.98] ${isActive ? 'animate-tab-glow-stats' : ''}`}
+              style={{
+                background: isActive ? theme.colors.primary : 'transparent',
+                color: isActive ? (theme.colors.textOnPrimary || '#ffffff') : theme.colors.textSecondary,
+                boxShadow: isActive ? `0 2px 10px ${theme.colors.primary}40` : 'none',
+                minWidth: isEmoji ? '36px' : 'auto'
+              }}
+            >
+              {isEmoji && isActive ? (
+                <span className="animate-emoji-pulse-stats inline-block">{tab.label}</span>
+              ) : (
+                tab.label
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }

@@ -1,8 +1,13 @@
 'use client';
 
+import { Plus, Sparkles } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 
-export default function EmptyState() {
+interface EmptyStateProps {
+  onAddClick?: () => void;
+}
+
+export default function EmptyState({ onAddClick }: EmptyStateProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
 
@@ -44,6 +49,26 @@ export default function EmptyState() {
             opacity: 0.1;
           }
         }
+        @keyframes sparkle-rotate-env {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(10deg) scale(1.1); }
+          50% { transform: rotate(0deg) scale(1); }
+          75% { transform: rotate(-10deg) scale(1.1); }
+        }
+        @keyframes button-pulse-env {
+          0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+          }
+          50% { 
+            transform: scale(1.03);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+          }
+        }
+        @keyframes button-shine-env {
+          0% { transform: translateX(-200%); }
+          100% { transform: translateX(200%); }
+        }
         .envelope-container {
           animation: envelopePulse 2s ease-in-out infinite;
         }
@@ -59,6 +84,31 @@ export default function EmptyState() {
         .ring-pulse-env-delayed {
           animation: ringPulseEnv 2s ease-in-out infinite;
           animation-delay: 0.5s;
+        }
+        .animate-sparkle-env {
+          animation: sparkle-rotate-env 2s ease-in-out infinite;
+        }
+        .animate-button-pulse-env {
+          animation: button-pulse-env 2s ease-in-out infinite;
+        }
+        .button-shine-env {
+          position: relative;
+          overflow: hidden;
+        }
+        .button-shine-env::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent
+          );
+          animation: button-shine-env 3s ease-in-out infinite;
         }
       `}</style>
 
@@ -96,6 +146,14 @@ export default function EmptyState() {
             {/* Emoji enveloppe avec animation float */}
             <span className="text-4xl envelope-icon">✉️</span>
           </div>
+
+          {/* Badge Sparkles */}
+          <div 
+            className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 animate-sparkle-env"
+            style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}
+          >
+            <Sparkles className="w-4 h-4" style={{ color: theme.colors.primary }} />
+          </div>
         </div>
 
         {/* Titre */}
@@ -108,11 +166,27 @@ export default function EmptyState() {
 
         {/* Sous-titre */}
         <p 
-          className="text-xs" 
+          className="text-xs mb-5" 
           style={{ color: theme.colors.textSecondary }}
         >
           Créez votre première enveloppe budgétaire
         </p>
+
+        {/* Bouton avec animation pulse + shine */}
+        {onAddClick && (
+          <button
+            onClick={onAddClick}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg animate-button-pulse-env button-shine-env"
+            style={{ 
+              background: theme.colors.primary, 
+              color: theme.colors.textOnPrimary,
+              boxShadow: `0 4px 20px ${theme.colors.primary}50`
+            }}
+          >
+            <Plus className="w-5 h-5" />
+            Nouvelle enveloppe
+          </button>
+        )}
       </div>
     </>
   );

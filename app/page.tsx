@@ -51,9 +51,15 @@ const animationStyles = `
   }
   @keyframes heartbeat {
     0%, 100% { transform: scale(1); }
-    25% { transform: scale(1.4); }
-    50% { transform: scale(1); }
-    75% { transform: scale(1.4); }
+    25% { transform: scale(1.3); }
+    35% { transform: scale(1); }
+    45% { transform: scale(1.2); }
+    55% { transform: scale(1); }
+  }
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
   .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
   .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
@@ -61,7 +67,8 @@ const animationStyles = `
   .animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
   .animate-logo-entrance { animation: logoEntrance 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
   .animate-logo-pulse { animation: logoPulse 3s ease-in-out infinite; }
-  .animate-heartbeat { animation: heartbeat 1.2s ease-in-out infinite; }
+  .animate-heartbeat { animation: heartbeat 1.5s ease-in-out infinite; }
+  .animate-gradient { animation: gradient-shift 3s ease infinite; }
   .stagger-1 { animation-delay: 0.05s; }
   .stagger-2 { animation-delay: 0.1s; }
   .stagger-3 { animation-delay: 0.15s; }
@@ -393,14 +400,25 @@ function AccueilContent() {
       <style>{animationStyles}</style>
       <Confetti trigger={showConfetti} />
 
-      {/* Logo + Toggle */}
-      <div className="flex items-center justify-between animate-fade-in-up opacity-0" style={{ animationFillMode: 'forwards' }}>
-        <div className="w-10" />
+      {/* Logo centré */}
+      <div className="flex flex-col items-center animate-fade-in-up opacity-0" style={{ animationFillMode: 'forwards' }}>
         <div className={`w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 ${logoLoaded ? 'animate-logo-pulse' : 'animate-logo-entrance'}`} style={{ borderColor: theme.colors.primary }}>
           <Image src="/logo-shina5.png" alt="Logo" width={64} height={64} className="w-full h-full object-cover" priority onLoad={() => setLogoLoaded(true)} />
         </div>
-        <button type="button" onClick={toggleCompactMode} className="p-2 rounded-xl border transition-all hover:scale-110 active:scale-95" style={{ ...cardStyle, borderColor: isCompactMode ? theme.colors.primary : theme.colors.cardBorder }} title={isCompactMode ? "Vue détaillée" : "Vue compacte"}>
-          {isCompactMode ? <Eye className="w-4 h-4" style={{ color: theme.colors.primary }} /> : <EyeOff className="w-4 h-4" style={textSecondary} />}
+        {/* Toggle vue compacte sous le logo */}
+        <button 
+          type="button" 
+          onClick={toggleCompactMode} 
+          className="mt-2 px-3 py-1 rounded-full border transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 text-[10px]" 
+          style={{ 
+            ...cardStyle, 
+            borderColor: isCompactMode ? theme.colors.primary : theme.colors.cardBorder,
+            color: isCompactMode ? theme.colors.primary : theme.colors.textSecondary
+          }} 
+          title={isCompactMode ? "Vue détaillée" : "Vue compacte"}
+        >
+          {isCompactMode ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+          {isCompactMode ? "Détaillée" : "Compacte"}
         </button>
       </div>
 
@@ -445,10 +463,41 @@ function AccueilContent() {
 
       <SmartTips page="accueil" />
       
-      {/* Footer avec cœur animé */}
-      <div className="text-center pt-4 pb-2 animate-fade-in opacity-0" style={{ animationDelay: '0.6s', animationFillMode: 'forwards' }}>
-        <p className="text-[10px]" style={textSecondary}>
-          Créé avec <span className="inline-block animate-heartbeat text-red-500 text-sm">❤️</span> by Shina5
+      {/* Footer avec cœur animé et gradient Shina5 */}
+      <div 
+        className="backdrop-blur-sm rounded-2xl p-4 mt-4 text-center border animate-fade-in-up opacity-0"
+        style={{ 
+          background: theme.colors.cardBackground, 
+          borderColor: theme.colors.cardBorder,
+          animationDelay: '0.5s',
+          animationFillMode: 'forwards'
+        }}
+      >
+        <p className="text-xs" style={textSecondary}>
+          The Budget Planner
+        </p>
+        <p className="text-xs mt-1" style={textSecondary}>
+          Créé avec{' '}
+          <span 
+            className="text-red-400 text-sm inline-block"
+            style={{ animation: 'heartbeat 1.5s ease-in-out infinite' }}
+          >
+            ❤️
+          </span>
+          {' '}by{' '}
+          <span 
+            className="font-semibold"
+            style={{ 
+              background: 'linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6, #ec4899)',
+              backgroundSize: '300% 100%',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: 'gradient-shift 3s ease infinite'
+            }}
+          >
+            Shina5
+          </span>
         </p>
       </div>
     </div>
