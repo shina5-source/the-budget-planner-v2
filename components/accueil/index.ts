@@ -9,3 +9,4 @@ export { default as DailyInsight } from './DailyInsight';
 export { default as Shortcuts } from './Shortcuts';
 export { default as LastTransactions } from './LastTransactions';
 export { default as EmptyState } from './EmptyState';
+export { default as CustomShortcuts } from './CustomShortcuts';

@@ -619,46 +619,51 @@ export const themes: Record<ThemeKey, Theme> = {
       }
     },
   },
+
   'cerise': {
     key: 'cerise',
     name: 'Cerise',
     emoji: '🍒',
     colors: {
       light: {
-        primary: '#fce7f3',
-        primaryLight: '#fb7185',
-        secondary: '#9f1239',
-        secondaryLight: '#be123c',
-        accent: '#f472b6',
-        gradientFrom: '#fbcfe8',
-        gradientTo: '#fecaca',
-        backgroundGradientFrom: '#fff1f2',
-        backgroundGradientTo: '#fce7f3',
-        cardBackground: 'rgba(159, 18, 57, 0.1)',
-        cardBackgroundLight: 'rgba(159, 18, 57, 0.2)',
-        cardBorder: 'rgba(225, 29, 72, 0.3)',
-        textPrimary: '#831843',
-        textSecondary: 'rgba(131, 24, 67, 0.75)',
-        textOnPrimary: '#831843',
-        textOnSecondary: '#fce7f3',
+        // PRIMARY = couleur des boutons actifs
+        primary: '#be123c',           // Rouge cerise vif
+        primaryLight: '#e11d48',      // Rouge cerise plus clair
+        // SECONDARY = fond du header → TRÈS FONCÉ
+        secondary: '#6b1530',         // Bordeaux très foncé (header)
+        // SECONDARYLIGHT = fond du bottomNav → AUSSI FONCÉ
+        secondaryLight: '#7f1d3d',    // Bordeaux foncé (bottomNav) - était rose pâle !
+        accent: '#f472b6',            // Rose vif
+        gradientFrom: '#fecdd3',      // Rose pâle
+        gradientTo: '#fda4af',        // Rose saumon
+        backgroundGradientFrom: '#fdf2f8',  // Fond page rose très clair
+        backgroundGradientTo: '#fce7f3',    // Fond page rose pâle
+        cardBackground: 'rgba(255, 255, 255, 0.9)',  // Cartes blanches
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.95)',
+        cardBorder: 'rgba(190, 18, 60, 0.25)',
+        textPrimary: '#881337',       // Texte bordeaux foncé
+        textSecondary: 'rgba(136, 19, 55, 0.75)',
+        textOnPrimary: '#ffffff',     // Texte BLANC sur boutons
+        textOnSecondary: '#ffffff',   // Texte BLANC sur header/bottomNav
       },
       dark: {
-        primary: '#f472b6',
-        primaryLight: '#f9a8d4',
-        secondary: '#831843',
-        secondaryLight: '#9d174d',
-        accent: '#e11d48',
-        gradientFrom: '#f472b6',
-        gradientTo: '#db2777',
-        backgroundGradientFrom: '#831843',
-        backgroundGradientTo: '#831843',
-        cardBackground: 'rgba(157, 23, 77, 0.5)',
-        cardBackgroundLight: 'rgba(131, 24, 67, 0.7)',
-        cardBorder: 'rgba(244, 114, 182, 0.3)',
-        textPrimary: '#f9a8d4',
-        textSecondary: 'rgba(249, 168, 212, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#f472b6',
+        // MODE SOMBRE - PARFAIT, ON NE TOUCHE PLUS
+        primary: '#fb7185',           // Rose vif (boutons actifs)
+        primaryLight: '#fda4af',      // Rose clair
+        secondary: '#4c0519',         // Bordeaux très foncé (header/nav)
+        secondaryLight: '#881337',    // Bordeaux foncé (fond inputs)
+        accent: '#f472b6',            // Rose vif
+        gradientFrom: '#831843',      // Bordeaux
+        gradientTo: '#701a3a',        // Bordeaux foncé
+        backgroundGradientFrom: '#1c0a10',  // Fond très sombre
+        backgroundGradientTo: '#2d0a14',    // Fond sombre
+        cardBackground: 'rgba(76, 5, 25, 0.95)',  // Opaque
+        cardBackgroundLight: 'rgba(76, 5, 25, 0.98)',
+        cardBorder: 'rgba(251, 113, 133, 0.3)',
+        textPrimary: '#fecdd3',       // Texte rose pâle
+        textSecondary: 'rgba(254, 205, 211, 0.7)',
+        textOnPrimary: '#4c0519',     // Texte FONCÉ sur boutons
+        textOnSecondary: '#fecdd3',   // Texte rose sur header
       }
     },
   },

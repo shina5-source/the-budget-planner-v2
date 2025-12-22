@@ -67,37 +67,52 @@ export default function ObjectifFormModal({
 
   if (!isOpen) return null;
 
-  const modalStyle = { 
+  // ✅ Styles utilisant les COULEURS DU THÈME (pas de couleurs fixes)
+  const modalBackgroundStyle = { 
     background: isDarkMode ? theme.colors.cardBackground : theme.colors.secondary, 
     borderColor: theme.colors.cardBorder 
   };
+  
   const inputStyle = { 
     background: isDarkMode ? theme.colors.backgroundGradientFrom : theme.colors.secondaryLight, 
     borderColor: theme.colors.cardBorder, 
     color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
   };
+  
   const textStyle = { 
     color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
   };
+  
+  const textSecondaryStyle = {
+    color: isDarkMode ? theme.colors.textSecondary : `${theme.colors.textOnSecondary}99`
+  };
+
   const buttonOutlineStyle = { 
     borderColor: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary, 
     color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
+    <div 
+      className="fixed inset-0 flex items-start justify-center z-50 p-4 overflow-y-auto"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      onClick={onClose}
+    >
       <div 
-        className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20 shadow-2xl animate-slideUp"
-        style={modalStyle}
+        className="rounded-2xl p-5 w-full max-w-md border mb-20 mt-16 shadow-2xl"
+        style={modalBackgroundStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold" style={textStyle}>
             {isEditing ? 'Modifier' : 'Nouvel'} objectif
           </h2>
           <button 
+            type="button"
             onClick={onClose} 
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/10"
+            className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+            style={{ background: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
           >
             <X className="w-5 h-5" style={textStyle} />
           </button>
@@ -107,7 +122,7 @@ export default function ObjectifFormModal({
         <div className="space-y-4">
           {/* Nom */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={textStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Nom de l&apos;objectif
             </label>
             <input 
@@ -115,15 +130,15 @@ export default function ObjectifFormModal({
               placeholder="Ex: Voyage Japon, iPhone..." 
               value={formData.nom} 
               onChange={(e) => onFormChange({ nom: e.target.value })} 
-              className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none transition-all duration-200"
-              style={inputStyle} 
+              className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none focus:ring-2 transition-all duration-200"
+              style={inputStyle}
             />
           </div>
 
           {/* Montants */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium mb-1 block" style={textStyle}>
+              <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
                 Montant cible ({devise})
               </label>
               <input 
@@ -131,12 +146,12 @@ export default function ObjectifFormModal({
                 placeholder="0" 
                 value={formData.montantCible} 
                 onChange={(e) => onFormChange({ montantCible: e.target.value })} 
-                className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none transition-all duration-200"
+                className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
                 style={inputStyle} 
               />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block" style={textStyle}>
+              <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
                 Déjà épargné ({devise})
               </label>
               <input 
@@ -144,7 +159,7 @@ export default function ObjectifFormModal({
                 placeholder="0" 
                 value={formData.montantActuel} 
                 onChange={(e) => onFormChange({ montantActuel: e.target.value })} 
-                className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none transition-all duration-200"
+                className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
                 style={inputStyle} 
               />
             </div>
@@ -152,29 +167,30 @@ export default function ObjectifFormModal({
 
           {/* Date échéance */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={textStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Date d&apos;échéance (optionnel)
             </label>
             <input 
               type="date" 
               value={formData.dateEcheance} 
               onChange={(e) => onFormChange({ dateEcheance: e.target.value })} 
-              className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none transition-all duration-200"
+              className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
               style={inputStyle} 
             />
           </div>
 
           {/* Type */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={textStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Type d&apos;objectif
             </label>
             <div className="grid grid-cols-2 gap-2">
               {(['court', 'long'] as const).map((t) => (
                 <button 
-                  key={t} 
+                  key={t}
+                  type="button"
                   onClick={() => onFormChange({ type: t })} 
-                  className="py-2 rounded-xl text-xs font-medium border transition-all duration-200 hover:scale-[1.02]"
+                  className="py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 hover:scale-[1.02]"
                   style={formData.type === t 
                     ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                     : inputStyle
@@ -188,15 +204,16 @@ export default function ObjectifFormModal({
 
           {/* Priorité */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={textStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Priorité
             </label>
             <div className="grid grid-cols-3 gap-2">
               {(['haute', 'moyenne', 'basse'] as const).map((p) => (
                 <button 
-                  key={p} 
+                  key={p}
+                  type="button"
                   onClick={() => onFormChange({ priorite: p })} 
-                  className="py-2 rounded-xl text-xs font-medium border transition-all duration-200 hover:scale-[1.02]"
+                  className="py-2.5 rounded-xl text-xs font-medium border transition-all duration-200 hover:scale-[1.02]"
                   style={formData.priorite === p 
                     ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                     : inputStyle
@@ -210,21 +227,23 @@ export default function ObjectifFormModal({
 
           {/* Couleur */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={textStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Couleur
             </label>
             <div className="grid grid-cols-4 gap-2">
               {couleursDisponibles.map((couleurOption) => {
                 const displayColor = isDarkMode ? couleurOption.dark : couleurOption.light;
+                const isSelected = formData.couleur === couleurOption.id;
                 return (
                   <button 
-                    key={couleurOption.id} 
+                    key={couleurOption.id}
+                    type="button"
                     onClick={() => onFormChange({ couleur: couleurOption.id })} 
-                    className="h-10 rounded-xl border-2 transition-all duration-200 hover:scale-105"
+                    className="h-12 rounded-xl border-2 transition-all duration-200 hover:scale-105"
                     style={{ 
                       backgroundColor: displayColor.bg,
-                      borderColor: formData.couleur === couleurOption.id ? theme.colors.primary : displayColor.border,
-                      boxShadow: formData.couleur === couleurOption.id ? `0 0 0 2px ${theme.colors.primary}` : 'none'
+                      borderColor: isSelected ? theme.colors.primary : displayColor.border,
+                      boxShadow: isSelected ? `0 0 0 3px ${theme.colors.primary}40` : 'none'
                     }}
                   />
                 );
@@ -234,18 +253,20 @@ export default function ObjectifFormModal({
 
           {/* Icône */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={textStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Icône
             </label>
             <div className="grid grid-cols-6 gap-2">
               {iconesDisponibles.map((icone) => { 
-                const IconComp = icone.icon; 
+                const IconComp = icone.icon;
+                const isSelected = formData.icone === icone.id;
                 return (
                   <button 
-                    key={icone.id} 
+                    key={icone.id}
+                    type="button"
                     onClick={() => onFormChange({ icone: icone.id })} 
-                    className="h-10 rounded-xl flex items-center justify-center border transition-all duration-200 hover:scale-105"
-                    style={formData.icone === icone.id 
+                    className="h-11 rounded-xl flex items-center justify-center border transition-all duration-200 hover:scale-105"
+                    style={isSelected 
                       ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                       : inputStyle
                     }
@@ -259,17 +280,19 @@ export default function ObjectifFormModal({
 
           {/* Récurrence */}
           <div 
-            className="p-3 rounded-xl border transition-all duration-200" 
+            className="p-4 rounded-xl border transition-all duration-200" 
             style={formData.recurrenceActif 
-              ? { borderColor: theme.colors.primary, background: `${theme.colors.primary}20` } 
-              : inputStyle
+              ? { borderColor: theme.colors.primary, background: `${theme.colors.primary}15` } 
+              : { ...inputStyle, background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }
             }
           >
             <div className="flex items-center justify-between mb-3">
               <label className="text-xs font-medium flex items-center gap-2" style={textStyle}>
-                <RefreshCw className="w-4 h-4" />Versement récurrent
+                <RefreshCw className="w-4 h-4" />
+                Versement récurrent
               </label>
               <button 
+                type="button"
                 onClick={() => onFormChange({ recurrenceActif: !formData.recurrenceActif })} 
                 className="w-12 h-6 rounded-full transition-colors"
                 style={{ backgroundColor: formData.recurrenceActif ? '#22c55e' : (isDarkMode ? '#4b5563' : '#d1d5db') }}
@@ -282,15 +305,16 @@ export default function ObjectifFormModal({
             </div>
             
             {formData.recurrenceActif && (
-              <div className="space-y-3 animate-fadeIn">
+              <div className="space-y-3 pt-2">
                 <div>
-                  <label className="text-[10px] block mb-1" style={textStyle}>Fréquence</label>
+                  <label className="text-[10px] block mb-1.5" style={textSecondaryStyle}>Fréquence</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['mensuel', 'bimensuel', 'hebdomadaire'] as const).map((f) => (
                       <button 
-                        key={f} 
+                        key={f}
+                        type="button"
                         onClick={() => onFormChange({ recurrenceFrequence: f, recurrenceJour: '1' })} 
-                        className="py-1.5 rounded-lg text-[10px] font-medium border transition-all duration-200"
+                        className="py-2 rounded-lg text-[10px] font-medium border transition-all duration-200"
                         style={formData.recurrenceFrequence === f 
                           ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                           : inputStyle
@@ -304,7 +328,7 @@ export default function ObjectifFormModal({
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] block mb-1" style={textStyle}>
+                    <label className="text-[10px] block mb-1.5" style={textSecondaryStyle}>
                       Montant ({devise})
                     </label>
                     <input 
@@ -312,18 +336,18 @@ export default function ObjectifFormModal({
                       placeholder="0" 
                       value={formData.recurrenceMontant} 
                       onChange={(e) => onFormChange({ recurrenceMontant: e.target.value })} 
-                      className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl px-3 py-2.5 text-xs border focus:outline-none transition-all duration-200"
                       style={inputStyle} 
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] block mb-1" style={textStyle}>
+                    <label className="text-[10px] block mb-1.5" style={textSecondaryStyle}>
                       {formData.recurrenceFrequence === 'hebdomadaire' ? 'Jour semaine' : 'Jour du mois'}
                     </label>
                     <select 
                       value={formData.recurrenceJour} 
                       onChange={(e) => onFormChange({ recurrenceJour: e.target.value })} 
-                      className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl px-3 py-2.5 text-xs border focus:outline-none transition-all duration-200"
                       style={inputStyle}
                     >
                       {formData.recurrenceFrequence === 'hebdomadaire' 
@@ -338,8 +362,9 @@ export default function ObjectifFormModal({
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-3">
             <button 
+              type="button"
               onClick={onClose} 
               className="flex-1 py-3 border rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={buttonOutlineStyle}
@@ -347,6 +372,7 @@ export default function ObjectifFormModal({
               Annuler
             </button>
             <button 
+              type="button"
               onClick={onSubmit} 
               className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
               style={{ 

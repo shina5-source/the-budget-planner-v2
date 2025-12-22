@@ -67,15 +67,56 @@ const defaultFormData: FormData = {
   recurrenceActif: false, recurrenceFrequence: 'mensuel', recurrenceMontant: '', recurrenceJour: '1'
 };
 
+// Couleurs avec meilleure visibilité
 const couleursDisponibles = [
-  { id: 'rose-pale', nom: 'Rose pâle', light: { bg: '#F8E8E8', border: '#E8B4B8', text: '#8B4557', progress: '#E8B4B8' }, dark: { bg: '#3D2A2E', border: '#8B4557', text: '#E8B4B8', progress: '#8B4557' } },
-  { id: 'rose-poudre', nom: 'Rose poudré', light: { bg: '#F5D5D5', border: '#D4A5A5', text: '#7A3E4D', progress: '#D4A5A5' }, dark: { bg: '#3A2830', border: '#7A3E4D', text: '#D4A5A5', progress: '#7A3E4D' } },
-  { id: 'bordeaux-clair', nom: 'Bordeaux clair', light: { bg: '#E8D0D5', border: '#C4848F', text: '#722F37', progress: '#C4848F' }, dark: { bg: '#35252A', border: '#722F37', text: '#C4848F', progress: '#722F37' } },
-  { id: 'mauve-rose', nom: 'Mauve rosé', light: { bg: '#E8D8E8', border: '#C9A5C9', text: '#6B4570', progress: '#C9A5C9' }, dark: { bg: '#2E2535', border: '#6B4570', text: '#C9A5C9', progress: '#6B4570' } },
-  { id: 'corail-doux', nom: 'Corail doux', light: { bg: '#F8E0D8', border: '#E8A090', text: '#8B5040', progress: '#E8A090' }, dark: { bg: '#3A2A25', border: '#8B5040', text: '#E8A090', progress: '#8B5040' } },
-  { id: 'prune-pastel', nom: 'Prune pastel', light: { bg: '#E0D0E0', border: '#A888A8', text: '#5C4060', progress: '#A888A8' }, dark: { bg: '#2A2530', border: '#5C4060', text: '#A888A8', progress: '#5C4060' } },
-  { id: 'vieux-rose', nom: 'Vieux rose', light: { bg: '#E8D0D0', border: '#B89090', text: '#6B4545', progress: '#B89090' }, dark: { bg: '#322828', border: '#6B4545', text: '#B89090', progress: '#6B4545' } },
-  { id: 'framboise-pastel', nom: 'Framboise', light: { bg: '#F0D8E0', border: '#D898A8', text: '#7A4055', progress: '#D898A8' }, dark: { bg: '#352530', border: '#7A4055', text: '#D898A8', progress: '#7A4055' } },
+  { 
+    id: 'rose-pale', 
+    nom: 'Rose pâle', 
+    light: { bg: '#FADBD8', border: '#E8B4B8', text: '#8B4557', progress: '#E8B4B8' }, 
+    dark: { bg: '#3D2A2E', border: '#8B4557', text: '#E8B4B8', progress: '#8B4557' } 
+  },
+  { 
+    id: 'rose-poudre', 
+    nom: 'Rose poudré', 
+    light: { bg: '#F5B7B1', border: '#D4A5A5', text: '#7A3E4D', progress: '#D4A5A5' }, 
+    dark: { bg: '#3A2830', border: '#7A3E4D', text: '#D4A5A5', progress: '#7A3E4D' } 
+  },
+  { 
+    id: 'bordeaux-clair', 
+    nom: 'Bordeaux clair', 
+    light: { bg: '#D7BDE2', border: '#C4848F', text: '#722F37', progress: '#C4848F' }, 
+    dark: { bg: '#35252A', border: '#722F37', text: '#C4848F', progress: '#722F37' } 
+  },
+  { 
+    id: 'mauve-rose', 
+    nom: 'Mauve rosé', 
+    light: { bg: '#D2B4DE', border: '#C9A5C9', text: '#6B4570', progress: '#C9A5C9' }, 
+    dark: { bg: '#2E2535', border: '#6B4570', text: '#C9A5C9', progress: '#6B4570' } 
+  },
+  { 
+    id: 'corail-doux', 
+    nom: 'Corail doux', 
+    light: { bg: '#F5CBA7', border: '#E8A090', text: '#8B5040', progress: '#E8A090' }, 
+    dark: { bg: '#3A2A25', border: '#8B5040', text: '#E8A090', progress: '#8B5040' } 
+  },
+  { 
+    id: 'prune-pastel', 
+    nom: 'Prune pastel', 
+    light: { bg: '#D7BDE2', border: '#A888A8', text: '#5C4060', progress: '#A888A8' }, 
+    dark: { bg: '#2A2530', border: '#5C4060', text: '#A888A8', progress: '#5C4060' } 
+  },
+  { 
+    id: 'vieux-rose', 
+    nom: 'Vieux rose', 
+    light: { bg: '#E6B0AA', border: '#B89090', text: '#6B4545', progress: '#B89090' }, 
+    dark: { bg: '#322828', border: '#6B4545', text: '#B89090', progress: '#6B4545' } 
+  },
+  { 
+    id: 'framboise-pastel', 
+    nom: 'Framboise', 
+    light: { bg: '#F1948A', border: '#D898A8', text: '#7A4055', progress: '#D898A8' }, 
+    dark: { bg: '#352530', border: '#7A4055', text: '#D898A8', progress: '#7A4055' } 
+  },
 ];
 
 function ObjectifsContent() {

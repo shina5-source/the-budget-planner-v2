@@ -5,7 +5,7 @@ import { X, Download, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, LineChart, Line, CartesianGrid, AreaChart, Area } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell } from '@/components';
+import { AppShell, PageTitle } from '@/components';
 
 import {
   ResumeTab,
@@ -187,14 +187,13 @@ function StatistiquesContent() {
     setSelectedMonth(index);
   };
 
-  // Export image - Utilise dom-to-image-more (meilleur support SVG)
+  // Export image
   const handleExport = async () => {
     if (!statsRef.current) return;
     
     try {
       const element = statsRef.current;
       
-      // 1. Désactiver les animations temporairement
       const style = document.createElement('style');
       style.id = 'export-fix';
       style.textContent = `
@@ -206,10 +205,8 @@ function StatistiquesContent() {
       `;
       document.head.appendChild(style);
       
-      // 2. Attendre un frame
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // 3. Utiliser dom-to-image-more
       const domtoimage = await import('dom-to-image-more');
       
       const dataUrl = await domtoimage.toPng(element, {
@@ -220,15 +217,12 @@ function StatistiquesContent() {
           opacity: '1'
         },
         filter: (node: Node) => {
-          // Exclure les éléments problématiques si nécessaire
           return true;
         }
       });
       
-      // 4. Restaurer les animations
       document.getElementById('export-fix')?.remove();
       
-      // 5. Télécharger
       const link = document.createElement('a');
       link.download = `statistiques-${selectedYear}-${selectedMonth !== null ? selectedMonth + 1 : 'annee'}.png`;
       link.href = dataUrl;
@@ -237,10 +231,8 @@ function StatistiquesContent() {
     } catch (error) {
       console.error('Erreur export:', error);
       
-      // Restaurer les animations en cas d'erreur
       document.getElementById('export-fix')?.remove();
       
-      // Fallback : essayer avec html2canvas basique
       try {
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(statsRef.current!, {
@@ -248,7 +240,6 @@ function StatistiquesContent() {
           scale: 2,
           logging: false,
           ignoreElements: (el) => {
-            // Ignorer les SVG problématiques
             return el.tagName === 'svg';
           }
         });
@@ -279,7 +270,6 @@ function StatistiquesContent() {
   const renderFullscreenModal = () => {
     if (!fullscreenChart) return null;
 
-    // Couleurs fixes pour éviter les problèmes de transparence
     const modalBg = isDarkMode ? '#1a1a2e' : '#ffffff';
     const modalBorder = isDarkMode ? '#2d2d44' : '#e5e5e5';
 
@@ -410,20 +400,7 @@ function StatistiquesContent() {
     <>
       <div className="pb-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-lg font-medium flex items-center gap-2" style={textPrimary}>
-            📊 Statistiques
-          </h1>
-          <button 
-            type="button"
-            onClick={handleExport} 
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all hover:scale-105 active:scale-95" 
-            style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}
-          >
-            <Download size={14} />
-            Export
-          </button>
-        </div>
+        <PageTitle page="statistiques" />
 
         {/* MonthSelector harmonisé */}
         <div className="backdrop-blur-sm rounded-2xl p-3 shadow-sm border mb-4" style={cardStyle}>
@@ -518,23 +495,35 @@ function StatistiquesContent() {
           </div>
         </div>
 
-        {/* Bouton Filtres */}
-        <button 
-          type="button"
-          onClick={() => setShowFilters(!showFilters)} 
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border mb-4 transition-all hover:scale-105"
-          style={{ 
-            borderColor: (compteFilter !== 'all' || moyenPaiementFilter !== 'all') ? theme.colors.primary : theme.colors.cardBorder,
-            color: theme.colors.textPrimary,
-            background: (compteFilter !== 'all' || moyenPaiementFilter !== 'all') ? `${theme.colors.primary}20` : 'transparent'
-          }}
-        >
-          <Filter size={14} />
-          Filtres
-          {(compteFilter !== 'all' || moyenPaiementFilter !== 'all') && (
-            <span className="w-2 h-2 rounded-full" style={{ background: theme.colors.primary }} />
-          )}
-        </button>
+        {/* Boutons Filtres + Export */}
+        <div className="flex items-center gap-2 mb-4">
+          <button 
+            type="button"
+            onClick={() => setShowFilters(!showFilters)} 
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all hover:scale-105"
+            style={{ 
+              borderColor: (compteFilter !== 'all' || moyenPaiementFilter !== 'all') ? theme.colors.primary : theme.colors.cardBorder,
+              color: theme.colors.textPrimary,
+              background: (compteFilter !== 'all' || moyenPaiementFilter !== 'all') ? `${theme.colors.primary}20` : 'transparent'
+            }}
+          >
+            <Filter size={14} />
+            Filtres
+            {(compteFilter !== 'all' || moyenPaiementFilter !== 'all') && (
+              <span className="w-2 h-2 rounded-full" style={{ background: theme.colors.primary }} />
+            )}
+          </button>
+
+          <button 
+            type="button"
+            onClick={handleExport} 
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all hover:scale-105 active:scale-95" 
+            style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}
+          >
+            <Download size={14} />
+            Export
+          </button>
+        </div>
 
         {/* Panel Filtres */}
         {showFilters && (

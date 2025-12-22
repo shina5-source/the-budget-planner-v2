@@ -3,5 +3,5 @@
 import { PageTitle } from '@/components';
 
 export default function PageHeader() {
-  return <PageTitle page="previsionnel" />;
+  return <PageTitle page="credits-dettes" />;
 }

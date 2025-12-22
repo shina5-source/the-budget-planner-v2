@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Home, CreditCard, Calendar, DollarSign, PiggyBank, Building2, FileText, Mail, Settings, BarChart3, LogOut } from 'lucide-react';
+import { X, Home, CreditCard, Calendar, DollarSign, PiggyBank, Target, Building2, FileText, Mail, Settings, BarChart3, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '../contexts/theme-context';
@@ -18,6 +18,7 @@ const menuItems = [
   { id: 'budget', icon: DollarSign, label: 'Budget' },
   { id: 'previsionnel', icon: Calendar, label: 'Prévisionnel' },
   { id: 'epargnes', icon: PiggyBank, label: 'Épargnes' },
+  { id: 'objectifs', icon: Target, label: 'Objectifs' },
   { id: 'credits-dettes', icon: Building2, label: 'Crédits & Dettes' },
   { id: 'memo', icon: FileText, label: 'Mémo' },
   { id: 'enveloppes', icon: Mail, label: 'Enveloppes' },
@@ -74,7 +75,7 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
         </div>
 
         {/* Menu */}
-        <nav className="mt-4 px-3">
+        <nav className="mt-4 px-3 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPage === item.id;

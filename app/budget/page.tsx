@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown, Home as HomeIcon, Mail, PiggyBank, FileText, 
 import { ResponsiveContainer, XAxis, YAxis, Tooltip, LineChart, Line, CartesianGrid, Legend } from 'recharts';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell, SmartTips } from '@/components';
+import { AppShell, SmartTips, PageTitle } from '@/components';
 
 // Import des composants extraits
 import {
@@ -725,11 +725,9 @@ function BudgetContent() {
   return (
     <div className="pb-4">
       <style>{animationStyles}</style>
-      <div className="text-center mb-4">
-        <h1 className="text-lg font-medium" style={textPrimary}>Budget</h1>
-        <p className="text-xs" style={textSecondary}>Vue d&apos;ensemble de {monthsFull[selectedMonth]} {selectedYear}</p>
-      </div>
-
+      <PageTitle page="budget" customSubtitle={`Vue d'ensemble de ${monthsFull[selectedMonth]} ${selectedYear}`} />
+        
+       
       <MonthSelector
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}

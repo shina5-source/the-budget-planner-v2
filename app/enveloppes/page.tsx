@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, X, ChevronLeft, ChevronRight, Plus, Trash2, Edit3, Mail, ShoppingCart, Utensils, Fuel, ShoppingBag, Film, Heart, Gift, Plane, Coffee, Smartphone, Car, Zap, Star, Lock, Unlock, Eye, TrendingUp, TrendingDown, Calendar, BarChart3, AlertTriangle, CheckCircle, Clock, ChevronDown, ChevronUp, Home, Briefcase, GraduationCap, Baby, PawPrint, Dumbbell, Music, Gamepad2, Book, Scissors, Wrench, Wifi } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell, SmartTips } from '@/components';
+import { AppShell, SmartTips, PageTitle } from '@/components';
 
 interface Enveloppe {
   id: number;
@@ -207,7 +207,7 @@ function EnveloppesContent() {
 
   return (
     <div className="pb-4">
-      <div className="text-center mb-4"><h1 className="text-lg font-medium" style={textPrimary}>Enveloppes</h1><p className="text-xs" style={textSecondary}>Gestion des enveloppes budgétaires</p></div>
+      <PageTitle page="enveloppes" />
 
       <div className="backdrop-blur-sm rounded-2xl p-4 shadow-sm border mb-4" style={cardStyle}>
         <div className="flex items-center justify-between mb-4"><button onClick={prevMonth} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button><div className="flex items-center gap-2"><span className="text-lg font-semibold" style={textPrimary}>{monthsFull[selectedMonth]}</span><select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>{years.map(year => (<option key={year} value={year}>{year}</option>))}</select></div><button onClick={nextMonth} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button></div>

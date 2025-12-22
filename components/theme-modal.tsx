@@ -112,8 +112,9 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
             {allThemes.map((t) => (
               <ThemeCard
                 key={t.key}
-                theme={t}
-                currentTheme={theme}
+                themeData={t}
+                currentPrimary={theme.colors.primary}
+                currentSecondaryLight={theme.colors.secondaryLight}
                 isSelected={pendingThemeKey === t.key}
                 onSelect={() => handleSelectTheme(t.key)}
               />
@@ -157,15 +158,18 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
 }
 
 interface ThemeCardProps {
-  theme: Theme;
-  currentTheme: Theme;
+  themeData: Theme;
+  currentPrimary: string;
+  currentSecondaryLight: string;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps) {
-  // Use the 'light' palette for the preview card
-  const displayColors = theme.colors.light;
+function ThemeCard({ themeData, currentPrimary, currentSecondaryLight, isSelected, onSelect }: ThemeCardProps) {
+  // Toujours utiliser le mode DARK pour l'aperçu des carrés (couleurs plus vives et visibles)
+  const previewColors = themeData.colors.dark;
+  // Utiliser light pour le fond de la carte
+  const bgColors = themeData.colors.light;
 
   return (
     <button
@@ -176,28 +180,45 @@ function ThemeCard({ theme, currentTheme, isSelected, onSelect }: ThemeCardProps
           : 'hover:shadow-md hover:scale-[1.01]'
       }`}
       style={{
-        background: `linear-gradient(135deg, ${displayColors.backgroundGradientFrom}, ${displayColors.backgroundGradientTo})`,
-        border: isSelected ? `2px solid ${currentTheme.colors.primary}` : `1px solid ${currentTheme.colors.primary}30`,
-        boxShadow: isSelected ? `0 0 0 2px ${currentTheme.colors.secondaryLight}, 0 0 0 4px ${currentTheme.colors.primary}` : undefined
+        background: `linear-gradient(135deg, ${bgColors.backgroundGradientFrom}, ${bgColors.backgroundGradientTo})`,
+        border: isSelected ? `2px solid ${currentPrimary}` : `1px solid ${currentPrimary}30`,
+        boxShadow: isSelected ? `0 0 0 2px ${currentSecondaryLight}, 0 0 0 4px ${currentPrimary}` : undefined
       }}
     >
       {isSelected && (
         <div
           className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: displayColors.primary }}
+          style={{ backgroundColor: bgColors.secondary }}
         >
-          <Check className="w-3 h-3" style={{ color: displayColors.textOnPrimary }} />
+          <Check className="w-3 h-3 text-white" />
         </div>
       )}
 
       <div className="flex gap-1 mb-2">
-        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: displayColors.primary }} />
-        <div className="w-6 h-6 rounded-lg" style={{ backgroundColor: displayColors.secondary }} />
-        <div className="w-6 h-6 rounded-lg" style={{ background: `linear-gradient(135deg, ${displayColors.gradientFrom}, ${displayColors.gradientTo})` }} />
+        {/* Carré 1: Primary du mode dark (plus visible) */}
+        <div 
+          className="w-6 h-6 rounded-lg border border-black/10" 
+          style={{ backgroundColor: previewColors.primary }} 
+        />
+        {/* Carré 2: Secondary du mode light (généralement foncé) */}
+        <div 
+          className="w-6 h-6 rounded-lg border border-black/10" 
+          style={{ backgroundColor: bgColors.secondary }} 
+        />
+        {/* Carré 3: Accent du mode dark (plus visible) */}
+        <div 
+          className="w-6 h-6 rounded-lg border border-black/10" 
+          style={{ backgroundColor: previewColors.accent }} 
+        />
       </div>
 
       <div className="text-left">
-        <span className="text-xs font-medium text-gray-700">{theme.emoji} {theme.name}</span>
+        <span 
+          className="text-xs font-medium"
+          style={{ color: bgColors.textPrimary }}
+        >
+          {themeData.emoji} {themeData.name}
+        </span>
       </div>
     </button>
   );

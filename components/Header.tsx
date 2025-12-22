@@ -16,7 +16,7 @@ export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
       className="fixed top-0 left-0 right-0 z-[999]"
       style={{ backgroundColor: theme.colors.secondary }}
     >
-      <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between relative">
         {/* Bouton menu à gauche */}
         <button
           onClick={onMenuClick}
@@ -26,9 +26,9 @@ export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
           <Menu className="w-5 h-5" style={{ color: theme.colors.primary }} />
         </button>
 
-        {/* Titre au centre */}
+        {/* Titre au centre (absolute pour être vraiment centré) */}
         <h1 
-          className="text-sm font-medium"
+          className="text-sm font-medium absolute left-1/2 -translate-x-1/2"
           style={{ color: theme.colors.primary }}
         >
           The Budget Planner

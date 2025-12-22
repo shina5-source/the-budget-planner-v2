@@ -17,7 +17,7 @@ import {
   ObjectifCard,
   TopCategories,
   DailyInsight,
-  Shortcuts,
+  CustomShortcuts,
   LastTransactions,
   EmptyState
 } from '@/components/accueil';
@@ -438,7 +438,7 @@ function AccueilContent() {
             </div>
           )}
           <DailyInsight citation={dailyInsight.citation} funFact={dailyInsight.funFact as string} appAge={appAge} />
-          <Shortcuts onNavigate={navigateTo} />
+          <CustomShortcuts onNavigate={navigateTo} />
           {!isCompactMode && <LastTransactions transactions={lastTransactions} devise={parametres.devise} onNavigate={navigateTo} />}
         </>
       )}

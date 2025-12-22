@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, X, Check, Trash2, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
-import { AppShell, SmartTips } from '@/components';
+import { AppShell, SmartTips, PageTitle } from '@/components';
 
 interface MemoItem {
   id: number;
@@ -136,10 +136,8 @@ function MemoContent() {
   return (
     <>
       <div className="pb-4">
-        <div className="text-center mb-4">
-          <h1 className="text-lg font-medium" style={textPrimary}>Mémo Budget</h1>
-          <p className="text-xs" style={textSecondary}>Calendrier annuel des dépenses prévues</p>
-        </div>
+        {/* Titre avec icône */}
+        <PageTitle page="memo" />
 
         <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4" style={cardStyle}>
           <div className="flex items-center justify-between mb-4">
@@ -172,7 +170,7 @@ function MemoContent() {
           </div>
         </div>
 
-        {/* SmartTips remplace l'ancienne carte conseils */}
+        {/* SmartTips */}
         <div className="mb-4">
           <SmartTips page="memo" />
         </div>
