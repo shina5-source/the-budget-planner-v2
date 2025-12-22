@@ -182,12 +182,12 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto"
-      style={{ background: 'rgba(0,0,0,0.7)' }}
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
-        className="w-full max-w-md mx-4 my-8 rounded-2xl shadow-2xl border animate-fadeIn"
+        className="w-full max-w-md rounded-2xl shadow-2xl border animate-fadeIn mt-20 mb-20"
         style={cardStyle}
       >
         {/* Header */}

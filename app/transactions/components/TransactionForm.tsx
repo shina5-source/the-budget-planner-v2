@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Check, Plus, Wallet, TrendingUp, TrendingDown, Receipt, CreditCard } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
+import confetti from 'canvas-confetti';
 
 interface Transaction {
   id: number;
@@ -53,6 +54,34 @@ interface TransactionFormProps {
   onAddMoyenPaiement: (name: string) => void;
 }
 
+// Configuration des types avec couleurs et icônes
+const TYPE_CONFIG: Record<string, { color: string; bgColor: string; icon: React.ElementType; label: string }> = {
+  'Revenus': { 
+    color: '#22c55e', 
+    bgColor: 'rgba(34, 197, 94, 0.2)', 
+    icon: TrendingUp, 
+    label: 'Revenu' 
+  },
+  'Factures': { 
+    color: '#f97316', 
+    bgColor: 'rgba(249, 115, 22, 0.2)', 
+    icon: Receipt, 
+    label: 'Facture' 
+  },
+  'Dépenses': { 
+    color: '#ff4757', 
+    bgColor: 'rgba(255, 71, 87, 0.2)', 
+    icon: TrendingDown, 
+    label: 'Dépense' 
+  },
+  'Épargnes': { 
+    color: '#3b82f6', 
+    bgColor: 'rgba(59, 130, 246, 0.2)', 
+    icon: Wallet, 
+    label: 'Épargne' 
+  }
+};
+
 export default function TransactionForm({
   isOpen,
   onClose,
@@ -69,7 +98,7 @@ export default function TransactionForm({
   onAddMoyenPaiement
 }: TransactionFormProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme } = useTheme() as any;
+  const { theme, isDarkMode } = useTheme() as any;
 
   const getInitialFormData = (): FormData => {
     if (editingTransaction) {
@@ -107,13 +136,6 @@ export default function TransactionForm({
   };
 
   const [formData, setFormData] = useState<FormData>(getInitialFormData);
-
-  // Reset form when editingTransaction changes
-  useEffect(() => {
-    setFormData(getInitialFormData());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingTransaction]);
-
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddCompteDepuis, setShowAddCompteDepuis] = useState(false);
   const [showAddCompteVers, setShowAddCompteVers] = useState(false);
@@ -121,11 +143,51 @@ export default function TransactionForm({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCompteName, setNewCompteName] = useState('');
   const [newMoyenPaiementName, setNewMoyenPaiementName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const modalInputStyle = { 
-    background: theme.colors.secondaryLight, 
+  // Reset form when editingTransaction changes
+  useEffect(() => {
+    setFormData(getInitialFormData());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingTransaction]);
+
+  const currentTypeConfig = useMemo(() => 
+    TYPE_CONFIG[formData.type] || TYPE_CONFIG['Dépenses'],
+    [formData.type]
+  );
+
+  // ✅ Styles utilisant les COULEURS DU THÈME (exactement comme ObjectifFormModal)
+  const modalBackgroundStyle = useMemo(() => ({ 
+    background: isDarkMode ? theme.colors.cardBackground : theme.colors.secondary, 
+    borderColor: theme.colors.cardBorder 
+  }), [isDarkMode, theme.colors.cardBackground, theme.colors.secondary, theme.colors.cardBorder]);
+  
+  const inputStyle = useMemo(() => ({ 
+    background: isDarkMode ? theme.colors.backgroundGradientFrom : theme.colors.secondaryLight, 
     borderColor: theme.colors.cardBorder, 
-    color: theme.colors.textOnSecondary 
+    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+  }), [isDarkMode, theme.colors.backgroundGradientFrom, theme.colors.secondaryLight, theme.colors.cardBorder, theme.colors.textPrimary, theme.colors.textOnSecondary]);
+  
+  const textStyle = useMemo(() => ({ 
+    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+  }), [isDarkMode, theme.colors.textPrimary, theme.colors.textOnSecondary]);
+  
+  const textSecondaryStyle = useMemo(() => ({
+    color: isDarkMode ? theme.colors.textSecondary : `${theme.colors.textOnSecondary}99`
+  }), [isDarkMode, theme.colors.textSecondary, theme.colors.textOnSecondary]);
+
+  const buttonOutlineStyle = useMemo(() => ({ 
+    borderColor: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary, 
+    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+  }), [isDarkMode, theme.colors.textPrimary, theme.colors.textOnSecondary]);
+
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: [currentTypeConfig.color, theme.colors.primary, '#fbbf24']
+    });
   };
 
   const handleAddCategory = () => {
@@ -155,104 +217,169 @@ export default function TransactionForm({
 
   const handleSubmit = () => {
     if (!formData.montant || !formData.categorie) return;
-    onSubmit(formData);
-    onClose();
+    setIsSubmitting(true);
+    
+    // Confetti pour les revenus
+    if (formData.type === 'Revenus' && !editingTransaction) {
+      triggerConfetti();
+    }
+    
+    setTimeout(() => {
+      onSubmit(formData);
+      setIsSubmitting(false);
+      onClose();
+    }, 300);
   };
 
   if (!isOpen) return null;
 
+  const IconComponent = currentTypeConfig.icon;
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
+    <div 
+      className="fixed inset-0 flex items-start justify-center z-50 p-4 overflow-y-auto"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      onClick={onClose}
+    >
       <div 
-        className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20"
-        style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}
+        className="rounded-2xl p-5 w-full max-w-md border mb-20 mt-16 shadow-2xl"
+        style={modalBackgroundStyle}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>
-            {editingTransaction ? 'Modifier la' : 'Nouvelle'} transaction
-          </h2>
-          <button onClick={onClose} className="p-1">
-            <X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} />
+        {/* Header amélioré */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300"
+              style={{ background: currentTypeConfig.bgColor }}
+            >
+              <IconComponent 
+                className="w-5 h-5" 
+                style={{ color: currentTypeConfig.color }} 
+              />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold" style={textStyle}>
+                {editingTransaction ? 'Modifier la' : 'Nouvelle'} transaction
+              </h2>
+              <p className="text-[10px]" style={textSecondaryStyle}>
+                {editingTransaction ? 'Modifiez les détails' : 'Ajoutez une nouvelle entrée'}
+              </p>
+            </div>
+          </div>
+          <button 
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
+            style={{ background: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+          >
+            <X className="w-5 h-5" style={textStyle} />
           </button>
         </div>
 
-        {/* Form */}
+        {/* Content */}
         <div className="space-y-4">
+          {/* Type selector - Boutons visuels */}
+          <div>
+            <label className="text-xs font-medium mb-2 block" style={textSecondaryStyle}>
+              Type de transaction
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              {types.map(t => {
+                const config = TYPE_CONFIG[t] || TYPE_CONFIG['Dépenses'];
+                const Icon = config.icon;
+                const isSelected = formData.type === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => { 
+                      setFormData({ ...formData, type: t, categorie: '' }); 
+                      setShowAddCategory(false); 
+                    }}
+                    className={`p-2 rounded-xl flex flex-col items-center gap-1 transition-all duration-200 border ${isSelected ? 'scale-[1.02]' : 'opacity-60 hover:opacity-80'}`}
+                    style={{ 
+                      background: isSelected ? config.bgColor : 'transparent',
+                      borderColor: isSelected ? config.color : theme.colors.cardBorder
+                    }}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: config.color }} />
+                    <span className="text-[10px] font-medium" style={{ color: config.color }}>
+                      {config.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Montant */}
+          <div>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+              Montant *
+            </label>
+            <div className="relative">
+              <input 
+                type="number" 
+                placeholder="0.00" 
+                value={formData.montant} 
+                onChange={(e) => setFormData({ ...formData, montant: e.target.value })} 
+                className="w-full px-4 py-3 pr-10 rounded-xl border text-lg font-semibold focus:outline-none transition-all duration-200"
+                style={inputStyle}
+              />
+              <span 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium"
+                style={textSecondaryStyle}
+              >
+                {devise}
+              </span>
+            </div>
+          </div>
+
           {/* Date */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Date
             </label>
             <input 
               type="date" 
               value={formData.date} 
               onChange={(e) => setFormData({ ...formData, date: e.target.value })} 
-              className="w-full rounded-xl px-3 py-2 text-sm border"
-              style={modalInputStyle}
+              className="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+              style={inputStyle}
             />
           </div>
 
-          {/* Type */}
+          {/* Catégorie - Pills cliquables */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-              Type
-            </label>
-            <select 
-              value={formData.type} 
-              onChange={(e) => { 
-                setFormData({ ...formData, type: e.target.value, categorie: '' }); 
-                setShowAddCategory(false); 
-              }} 
-              className="w-full rounded-xl px-3 py-2 text-sm border cursor-pointer"
-              style={modalInputStyle}
-            >
-              {types.map(t => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Montant */}
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-              Montant ({devise})
-            </label>
-            <input 
-              type="number" 
-              placeholder="0.00" 
-              value={formData.montant} 
-              onChange={(e) => setFormData({ ...formData, montant: e.target.value })} 
-              className="w-full rounded-xl px-3 py-2 text-sm border"
-              style={modalInputStyle}
-            />
-          </div>
-
-          {/* Catégorie */}
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-              Catégorie
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+              Catégorie *
             </label>
             {!showAddCategory ? (
-              <select 
-                value={formData.categorie} 
-                onChange={(e) => { 
-                  if (e.target.value === '__ADD__') { 
-                    setShowAddCategory(true); 
-                    setFormData({ ...formData, categorie: '' }); 
-                  } else {
-                    setFormData({ ...formData, categorie: e.target.value }); 
-                  }
-                }} 
-                className="w-full rounded-xl px-3 py-2 text-sm border cursor-pointer"
-                style={modalInputStyle}
-              >
-                <option value="">Sélectionner...</option>
+              <div className="flex flex-wrap gap-2">
                 {getCategoriesForType(formData.type).map(c => (
-                  <option key={c} value={c}>{c}</option>
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, categorie: c })}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border"
+                    style={formData.categorie === c 
+                      ? { background: currentTypeConfig.color, color: '#ffffff', borderColor: currentTypeConfig.color }
+                      : { ...inputStyle, background: 'transparent' }
+                    }
+                  >
+                    {c}
+                  </button>
                 ))}
-                <option value="__ADD__">➕ Ajouter une catégorie...</option>
-              </select>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategory(true)}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium border-2 border-dashed flex items-center gap-1 transition-all duration-200 hover:scale-105"
+                  style={{ borderColor: theme.colors.primary, color: theme.colors.primary }}
+                >
+                  <Plus className="w-3 h-3" /> Ajouter
+                </button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <input 
@@ -260,139 +387,148 @@ export default function TransactionForm({
                   value={newCategoryName} 
                   onChange={(e) => setNewCategoryName(e.target.value)} 
                   placeholder={`Nouvelle catégorie ${getTypeLabelForCategory(formData.type)}...`}
-                  className="flex-1 rounded-xl px-3 py-2 text-sm border"
-                  style={modalInputStyle}
+                  className="flex-1 px-4 py-3 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+                  style={inputStyle}
                   autoFocus
                 />
                 <button 
+                  type="button"
                   onClick={handleAddCategory} 
-                  className="px-3 py-2 rounded-xl"
+                  className="px-4 rounded-xl transition-all duration-200 hover:scale-105"
                   style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
                 >
                   <Check className="w-4 h-4" />
                 </button>
                 <button 
+                  type="button"
                   onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }} 
-                  className="px-3 py-2 rounded-xl border"
-                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}
+                  className="px-3 rounded-xl border transition-all duration-200 hover:scale-105"
+                  style={{ borderColor: theme.colors.cardBorder }}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" style={textSecondaryStyle} />
                 </button>
               </div>
             )}
           </div>
 
-          {/* Depuis */}
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-              Depuis
-            </label>
-            {!showAddCompteDepuis ? (
-              <select 
-                value={formData.depuis} 
-                onChange={(e) => { 
-                  if (e.target.value === '__ADD__') { 
-                    setShowAddCompteDepuis(true); 
-                    setFormData({ ...formData, depuis: '' }); 
-                  } else {
-                    setFormData({ ...formData, depuis: e.target.value }); 
-                  }
-                }} 
-                className="w-full rounded-xl px-3 py-2 text-sm border cursor-pointer"
-                style={modalInputStyle}
-              >
-                <option value="">Aucun</option>
-                {comptes.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-                <option value="__ADD__">➕ Ajouter un compte...</option>
-              </select>
-            ) : (
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={newCompteName} 
-                  onChange={(e) => setNewCompteName(e.target.value)} 
-                  placeholder="Nouveau compte..."
-                  className="flex-1 rounded-xl px-3 py-2 text-sm border"
-                  style={modalInputStyle}
-                  autoFocus
-                />
-                <button 
-                  onClick={() => handleAddCompte('depuis')} 
-                  className="px-3 py-2 rounded-xl"
-                  style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
+          {/* Comptes - 2 colonnes */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Depuis */}
+            <div>
+              <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+                Depuis
+              </label>
+              {!showAddCompteDepuis ? (
+                <select 
+                  value={formData.depuis} 
+                  onChange={(e) => { 
+                    if (e.target.value === '__ADD__') { 
+                      setShowAddCompteDepuis(true); 
+                      setFormData({ ...formData, depuis: '' }); 
+                    } else {
+                      setFormData({ ...formData, depuis: e.target.value }); 
+                    }
+                  }} 
+                  className="w-full px-4 py-3 rounded-xl border text-sm cursor-pointer focus:outline-none transition-all duration-200"
+                  style={inputStyle}
                 >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => { setShowAddCompteDepuis(false); setNewCompteName(''); }} 
-                  className="px-3 py-2 rounded-xl border"
-                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </div>
+                  <option value="">Aucun</option>
+                  {comptes.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="__ADD__">➕ Ajouter...</option>
+                </select>
+              ) : (
+                <div className="flex gap-1">
+                  <input 
+                    type="text" 
+                    value={newCompteName} 
+                    onChange={(e) => setNewCompteName(e.target.value)} 
+                    placeholder="Compte..."
+                    className="flex-1 p-2 rounded-xl border text-xs focus:outline-none"
+                    style={inputStyle}
+                    autoFocus
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => handleAddCompte('depuis')} 
+                    className="p-2 rounded-xl"
+                    style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => { setShowAddCompteDepuis(false); setNewCompteName(''); }} 
+                    className="p-2 rounded-xl border"
+                    style={{ borderColor: theme.colors.cardBorder }}
+                  >
+                    <X className="w-3 h-3" style={textSecondaryStyle} />
+                  </button>
+                </div>
+              )}
+            </div>
 
-          {/* Vers */}
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-              Vers
-            </label>
-            {!showAddCompteVers ? (
-              <select 
-                value={formData.vers} 
-                onChange={(e) => { 
-                  if (e.target.value === '__ADD__') { 
-                    setShowAddCompteVers(true); 
-                    setFormData({ ...formData, vers: '' }); 
-                  } else {
-                    setFormData({ ...formData, vers: e.target.value }); 
-                  }
-                }} 
-                className="w-full rounded-xl px-3 py-2 text-sm border cursor-pointer"
-                style={modalInputStyle}
-              >
-                <option value="">Aucun</option>
-                {comptes.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-                <option value="__ADD__">➕ Ajouter un compte...</option>
-              </select>
-            ) : (
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={newCompteName} 
-                  onChange={(e) => setNewCompteName(e.target.value)} 
-                  placeholder="Nouveau compte..."
-                  className="flex-1 rounded-xl px-3 py-2 text-sm border"
-                  style={modalInputStyle}
-                  autoFocus
-                />
-                <button 
-                  onClick={() => handleAddCompte('vers')} 
-                  className="px-3 py-2 rounded-xl"
-                  style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
+            {/* Vers */}
+            <div>
+              <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+                Vers
+              </label>
+              {!showAddCompteVers ? (
+                <select 
+                  value={formData.vers} 
+                  onChange={(e) => { 
+                    if (e.target.value === '__ADD__') { 
+                      setShowAddCompteVers(true); 
+                      setFormData({ ...formData, vers: '' }); 
+                    } else {
+                      setFormData({ ...formData, vers: e.target.value }); 
+                    }
+                  }} 
+                  className="w-full px-4 py-3 rounded-xl border text-sm cursor-pointer focus:outline-none transition-all duration-200"
+                  style={inputStyle}
                 >
-                  <Check className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => { setShowAddCompteVers(false); setNewCompteName(''); }} 
-                  className="px-3 py-2 rounded-xl border"
-                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+                  <option value="">Aucun</option>
+                  {comptes.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                  <option value="__ADD__">➕ Ajouter...</option>
+                </select>
+              ) : (
+                <div className="flex gap-1">
+                  <input 
+                    type="text" 
+                    value={newCompteName} 
+                    onChange={(e) => setNewCompteName(e.target.value)} 
+                    placeholder="Compte..."
+                    className="flex-1 p-2 rounded-xl border text-xs focus:outline-none"
+                    style={inputStyle}
+                    autoFocus
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => handleAddCompte('vers')} 
+                    className="p-2 rounded-xl"
+                    style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => { setShowAddCompteVers(false); setNewCompteName(''); }} 
+                    className="p-2 rounded-xl border"
+                    style={{ borderColor: theme.colors.cardBorder }}
+                  >
+                    <X className="w-3 h-3" style={textSecondaryStyle} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Moyen de paiement */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
               Moyen de paiement
             </label>
             {!showAddMoyenPaiement ? (
@@ -406,14 +542,14 @@ export default function TransactionForm({
                     setFormData({ ...formData, moyenPaiement: e.target.value }); 
                   }
                 }} 
-                className="w-full rounded-xl px-3 py-2 text-sm border cursor-pointer"
-                style={modalInputStyle}
+                className="w-full px-4 py-3 rounded-xl border text-sm cursor-pointer focus:outline-none transition-all duration-200"
+                style={inputStyle}
               >
                 <option value="">Sélectionner...</option>
                 {moyensPaiement.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
-                <option value="__ADD__">➕ Ajouter un moyen...</option>
+                <option value="__ADD__">➕ Ajouter...</option>
               </select>
             ) : (
               <div className="flex gap-2">
@@ -422,99 +558,119 @@ export default function TransactionForm({
                   value={newMoyenPaiementName} 
                   onChange={(e) => setNewMoyenPaiementName(e.target.value)} 
                   placeholder="Nouveau moyen de paiement..."
-                  className="flex-1 rounded-xl px-3 py-2 text-sm border"
-                  style={modalInputStyle}
+                  className="flex-1 px-4 py-3 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+                  style={inputStyle}
                   autoFocus
                 />
                 <button 
+                  type="button"
                   onClick={handleAddMoyenPaiement} 
-                  className="px-3 py-2 rounded-xl"
+                  className="px-4 rounded-xl transition-all duration-200 hover:scale-105"
                   style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
                 >
                   <Check className="w-4 h-4" />
                 </button>
                 <button 
+                  type="button"
                   onClick={() => { setShowAddMoyenPaiement(false); setNewMoyenPaiementName(''); }} 
-                  className="px-3 py-2 rounded-xl border"
-                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}
+                  className="px-3 rounded-xl border transition-all duration-200 hover:scale-105"
+                  style={{ borderColor: theme.colors.cardBorder }}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" style={textSecondaryStyle} />
                 </button>
               </div>
             )}
           </div>
 
-          {/* Checkbox Crédit */}
-          <div className="flex items-center gap-3">
-            <input 
-              type="checkbox" 
-              id="isCredit" 
-              checked={formData.isCredit} 
-              onChange={(e) => setFormData({ ...formData, isCredit: e.target.checked })} 
-              className="w-5 h-5 rounded accent-purple-500"
-            />
-            <label htmlFor="isCredit" className="text-xs font-medium" style={{ color: theme.colors.textOnSecondary }}>
-              C&apos;est un crédit
-            </label>
+          {/* Checkbox Crédit avec style amélioré */}
+          <div 
+            className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200 hover:scale-[1.01]"
+            style={{ 
+              background: formData.isCredit ? 'rgba(168, 85, 247, 0.1)' : (isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'),
+              borderColor: formData.isCredit ? '#a855f7' : theme.colors.cardBorder 
+            }}
+            onClick={() => setFormData({ ...formData, isCredit: !formData.isCredit })}
+          >
+            <div 
+              className="w-5 h-5 rounded flex items-center justify-center border-2 transition-all duration-200"
+              style={{ 
+                background: formData.isCredit ? '#a855f7' : 'transparent',
+                borderColor: formData.isCredit ? '#a855f7' : theme.colors.cardBorder
+              }}
+            >
+              {formData.isCredit && <Check className="w-3 h-3 text-white" />}
+            </div>
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" style={{ color: formData.isCredit ? '#a855f7' : (isDarkMode ? theme.colors.textSecondary : theme.colors.textOnSecondary) }} />
+              <span className="text-sm font-medium" style={{ color: formData.isCredit ? '#a855f7' : (isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary) }}>
+                C&apos;est un crédit
+              </span>
+            </div>
           </div>
 
           {/* Infos crédit (conditionnel) */}
           {formData.isCredit && (
             <div 
-              className="space-y-3 p-3 rounded-xl border"
-              style={{ background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder }}
+              className="space-y-3 p-4 rounded-xl border animate-fadeIn"
+              style={{ background: 'rgba(168, 85, 247, 0.05)', borderColor: '#a855f7' }}
             >
-              <p className="text-[10px] text-center font-medium" style={{ color: theme.colors.textOnSecondary }}>
-                Informations du crédit
-              </p>
+              <div className="flex items-center gap-2 mb-2">
+                <CreditCard className="w-4 h-4 text-purple-500" />
+                <p className="text-xs font-semibold text-purple-500">
+                  Informations du crédit
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-                    Capital
+                  <label className="text-xs font-medium mb-1 block" style={textSecondaryStyle}>
+                    Capital ({devise})
                   </label>
                   <input 
                     type="number" 
+                    placeholder="0.00"
                     value={formData.capitalTotal} 
                     onChange={(e) => setFormData({ ...formData, capitalTotal: e.target.value })} 
-                    className="w-full rounded-xl px-3 py-2 text-sm border"
-                    style={modalInputStyle}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+                  <label className="text-xs font-medium mb-1 block" style={textSecondaryStyle}>
                     Taux (%)
                   </label>
                   <input 
                     type="number" 
-                    step="0.1" 
+                    step="0.1"
+                    placeholder="0.0" 
                     value={formData.tauxInteret} 
                     onChange={(e) => setFormData({ ...formData, tauxInteret: e.target.value })} 
-                    className="w-full rounded-xl px-3 py-2 text-sm border"
-                    style={modalInputStyle}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+                  <label className="text-xs font-medium mb-1 block" style={textSecondaryStyle}>
                     Durée (mois)
                   </label>
                   <input 
-                    type="number" 
+                    type="number"
+                    placeholder="12" 
                     value={formData.dureeMois} 
                     onChange={(e) => setFormData({ ...formData, dureeMois: e.target.value })} 
-                    className="w-full rounded-xl px-3 py-2 text-sm border"
-                    style={modalInputStyle}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+                  <label className="text-xs font-medium mb-1 block" style={textSecondaryStyle}>
                     Date début
                   </label>
                   <input 
                     type="date" 
                     value={formData.dateDebut} 
                     onChange={(e) => setFormData({ ...formData, dateDebut: e.target.value })} 
-                    className="w-full rounded-xl px-3 py-2 text-sm border"
-                    style={modalInputStyle}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none transition-all duration-200"
+                    style={inputStyle}
                   />
                 </div>
               </div>
@@ -523,37 +679,49 @@ export default function TransactionForm({
 
           {/* Memo */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
-              Description
+            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+              Description (optionnel)
             </label>
             <textarea 
-              placeholder="Note optionnelle..." 
+              placeholder="Ajouter une note..." 
               value={formData.memo} 
               onChange={(e) => setFormData({ ...formData, memo: e.target.value })} 
-              className="w-full rounded-xl px-3 py-2 text-sm border resize-none"
-              style={modalInputStyle}
+              className="w-full px-4 py-3 rounded-xl border text-sm resize-none focus:outline-none transition-all duration-200"
+              style={inputStyle}
               rows={2}
             />
           </div>
+        </div>
 
-          {/* Boutons */}
-          <div className="flex gap-3 pt-2">
-            <button 
-              onClick={onClose} 
-              className="flex-1 py-3 rounded-xl font-medium border"
-              style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}
-            >
-              Annuler
-            </button>
-            <button 
-              onClick={handleSubmit} 
-              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
-              style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}
-            >
-              <Check className="w-5 h-5" />
-              {editingTransaction ? 'Modifier' : 'Créer'}
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="flex gap-3 pt-5">
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="flex-1 py-3 border rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            style={buttonOutlineStyle}
+          >
+            Annuler
+          </button>
+          <button 
+            type="button"
+            onClick={handleSubmit}
+            disabled={!formData.montant || !formData.categorie || isSubmitting}
+            className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ 
+              backgroundColor: theme.colors.primary, 
+              color: theme.colors.textOnPrimary
+            }}
+          >
+            {isSubmitting ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Check className="w-5 h-5" />
+                {editingTransaction ? 'Modifier' : 'Créer'}
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

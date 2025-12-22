@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Plus, X, Check, Trash2, Pencil, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
 import { AppShell, SmartTips, PageTitle } from '@/components';
+import confetti from 'canvas-confetti';
+import SkeletonLoader from './components/SkeletonLoader';
+import CalendarGrid from './components/CalendarGrid';
+import StatsCards from './components/StatsCards';
+import MonthDetail from './components/MonthDetail';
+import MemoForm from './components/MemoForm';
+import DeleteConfirmModal from './components/DeleteConfirmModal';
 
+// Types
 interface MemoItem {
   id: number;
   description: string;
@@ -17,7 +24,7 @@ interface MemoData {
   [yearMonth: string]: MemoItem[];
 }
 
-const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+// Constantes
 const months = [
   { id: 'janvier', label: 'Janvier', num: '01' },
   { id: 'fevrier', label: 'Février', num: '02' },
@@ -33,256 +40,332 @@ const months = [
   { id: 'decembre', label: 'Décembre', num: '12' },
 ];
 
-const years = Array.from({ length: 76 }, (_, i) => 2025 + i);
 const ITEMS_PER_PAGE = 50;
 
 function MemoContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+
+  // États
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [memoData, setMemoData] = useState<MemoData>({});
   const [showForm, setShowForm] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [formData, setFormData] = useState({ description: '', montant: '' });
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const [displayCounts, setDisplayCounts] = useState<{ [key: string]: number }>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [devise, setDevise] = useState('€');
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; monthNum: string; item: MemoItem | null }>({
+    isOpen: false,
+    monthNum: '',
+    item: null
+  });
 
-  const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
-  const textPrimary = { color: theme.colors.textPrimary };
-  const textSecondary = { color: theme.colors.textSecondary };
-  const inputStyle = { background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary };
-  const modalInputStyle = { background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary };
-
+  // Chargement des données
   useEffect(() => {
-    const saved = localStorage.getItem('budget-memo');
-    if (saved) setMemoData(JSON.parse(saved));
+    const loadData = async () => {
+      try {
+        const saved = localStorage.getItem('budget-memo');
+        if (saved) setMemoData(JSON.parse(saved));
+
+        const savedParams = localStorage.getItem('budget-parametres');
+        if (savedParams) {
+          const params = JSON.parse(savedParams);
+          if (params.devise) setDevise(params.devise);
+        }
+      } catch (error) {
+        console.error('Erreur chargement données:', error);
+      } finally {
+        setTimeout(() => setIsLoading(false), 500);
+      }
+    };
+    loadData();
   }, []);
 
+  // Reset on year change
   useEffect(() => {
     setDisplayCounts({});
+    setSelectedMonth(null);
   }, [selectedYear]);
 
-  const saveMemoData = (newData: MemoData) => {
+  // Helpers
+  const getMonthKey = useCallback((monthNum: string) => 
+    `${selectedYear}-${monthNum}`, 
+    [selectedYear]
+  );
+
+  const saveMemoData = useCallback((newData: MemoData) => {
     setMemoData(newData);
     localStorage.setItem('budget-memo', JSON.stringify(newData));
-  };
+  }, []);
 
-  const getMonthKey = (monthNum: string) => `${selectedYear}-${monthNum}`;
-  const getDisplayCount = (monthNum: string) => displayCounts[monthNum] || ITEMS_PER_PAGE;
-  const loadMoreForMonth = (monthNum: string) => setDisplayCounts(prev => ({ ...prev, [monthNum]: (prev[monthNum] || ITEMS_PER_PAGE) + ITEMS_PER_PAGE }));
+  // Calculs
+  const getMonthData = useCallback((monthNum: string) => {
+    const monthKey = getMonthKey(monthNum);
+    const items = memoData[monthKey] || [];
+    return {
+      count: items.length,
+      total: items.reduce((sum, item) => sum + (parseFloat(item.montant.replace(',', '.')) || 0), 0),
+      checkedCount: items.filter(i => i.checked).length
+    };
+  }, [memoData, getMonthKey]);
 
-  const openAddForm = (monthNum: string) => {
+  const yearStats = useMemo(() => {
+    let totalItems = 0;
+    let checkedItems = 0;
+    let yearTotal = 0;
+
+    months.forEach(month => {
+      const data = getMonthData(month.num);
+      totalItems += data.count;
+      checkedItems += data.checkedCount;
+      yearTotal += data.total;
+    });
+
+    return { totalItems, checkedItems, yearTotal };
+  }, [getMonthData]);
+
+  // Confetti
+  const triggerConfetti = useCallback(() => {
+    confetti({
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#22c55e', '#4ade80', '#86efac', theme.colors.primary, '#fbbf24']
+    });
+  }, [theme.colors.primary]);
+
+  // Handlers
+  const handleYearChange = useCallback((year: number) => {
+    setSelectedYear(year);
+  }, []);
+
+  const handlePrevYear = useCallback(() => {
+    if (selectedYear > 2020) setSelectedYear(prev => prev - 1);
+  }, [selectedYear]);
+
+  const handleNextYear = useCallback(() => {
+    if (selectedYear < 2100) setSelectedYear(prev => prev + 1);
+  }, [selectedYear]);
+
+  const handleMonthSelect = useCallback((monthNum: string) => {
+    setSelectedMonth(prev => prev === monthNum ? null : monthNum);
+  }, []);
+
+  const openAddForm = useCallback((monthNum: string) => {
     setSelectedMonth(monthNum);
     setFormData({ description: '', montant: '' });
     setEditingId(null);
     setShowForm(true);
-  };
+  }, []);
 
-  const handleSubmit = () => {
+  const handleFormSubmit = useCallback(() => {
     if (formData.description && selectedMonth) {
       const monthKey = getMonthKey(selectedMonth);
-      const newItem: MemoItem = { id: editingId || Date.now(), description: formData.description, montant: formData.montant || '0,00', checked: false };
+      const newItem: MemoItem = { 
+        id: editingId || Date.now(), 
+        description: formData.description, 
+        montant: formData.montant || '0,00', 
+        checked: false 
+      };
       const monthItems = memoData[monthKey] || [];
       let newData: MemoData;
+      
       if (editingId) {
         newData = { ...memoData, [monthKey]: monthItems.map(item => item.id === editingId ? newItem : item) };
       } else {
         newData = { ...memoData, [monthKey]: [...monthItems, newItem] };
       }
+      
       saveMemoData(newData);
       setShowForm(false);
       setFormData({ description: '', montant: '' });
       setEditingId(null);
     }
-  };
+  }, [formData, selectedMonth, editingId, memoData, getMonthKey, saveMemoData]);
 
-  const toggleCheck = (monthNum: string, itemId: number) => {
+  const handleToggleCheck = useCallback((monthNum: string, itemId: number) => {
     const monthKey = getMonthKey(monthNum);
-    const newData = { ...memoData, [monthKey]: (memoData[monthKey] || []).map(item => item.id === itemId ? { ...item, checked: !item.checked } : item) };
+    const items = memoData[monthKey] || [];
+    const newItems = items.map(item => 
+      item.id === itemId ? { ...item, checked: !item.checked } : item
+    );
+    const newData = { ...memoData, [monthKey]: newItems };
     saveMemoData(newData);
-  };
 
-  const deleteItem = (monthNum: string, itemId: number) => {
-    const monthKey = getMonthKey(monthNum);
-    const newData = { ...memoData, [monthKey]: (memoData[monthKey] || []).filter(item => item.id !== itemId) };
-    saveMemoData(newData);
-  };
+    // Confetti si tous complétés
+    const allChecked = newItems.every(item => item.checked);
+    if (allChecked && newItems.length > 0) {
+      setTimeout(() => triggerConfetti(), 200);
+    }
+  }, [memoData, getMonthKey, saveMemoData, triggerConfetti]);
 
-  const editItem = (monthNum: string, item: MemoItem) => {
+  const openDeleteModal = useCallback((monthNum: string, item: MemoItem) => {
+    setDeleteModal({ isOpen: true, monthNum, item });
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (deleteModal.item && deleteModal.monthNum) {
+      const monthKey = getMonthKey(deleteModal.monthNum);
+      const newData = { 
+        ...memoData, 
+        [monthKey]: (memoData[monthKey] || []).filter(item => item.id !== deleteModal.item!.id) 
+      };
+      saveMemoData(newData);
+    }
+    setDeleteModal({ isOpen: false, monthNum: '', item: null });
+  }, [deleteModal, memoData, getMonthKey, saveMemoData]);
+
+  const closeDeleteModal = useCallback(() => {
+    setDeleteModal({ isOpen: false, monthNum: '', item: null });
+  }, []);
+
+  const handleEdit = useCallback((monthNum: string, item: MemoItem) => {
     setSelectedMonth(monthNum);
     setFormData({ description: item.description, montant: item.montant });
     setEditingId(item.id);
     setShowForm(true);
-  };
+  }, []);
 
-  const getMonthTotal = (monthNum: string) => {
-    const monthKey = getMonthKey(monthNum);
-    const items = memoData[monthKey] || [];
-    return items.reduce((sum, item) => sum + (parseFloat(item.montant.replace(',', '.')) || 0), 0);
-  };
+  const handleFormClose = useCallback(() => {
+    setShowForm(false);
+    setFormData({ description: '', montant: '' });
+    setEditingId(null);
+  }, []);
 
-  const getYearTotal = () => months.reduce((sum, month) => sum + getMonthTotal(month.num), 0);
-  const getTotalItems = () => months.reduce((sum, month) => sum + (memoData[getMonthKey(month.num)]?.length || 0), 0);
-  const getCheckedItems = () => months.reduce((sum, month) => sum + (memoData[getMonthKey(month.num)]?.filter(item => item.checked).length || 0), 0);
-  const toggleMonth = (monthNum: string) => setExpandedMonth(expandedMonth === monthNum ? null : monthNum);
-  const prevYear = () => { if (selectedYear > 2020) { setSelectedYear(selectedYear - 1); setExpandedMonth(null); } };
-  const nextYear = () => { if (selectedYear < 2100) { setSelectedYear(selectedYear + 1); setExpandedMonth(null); } };
+  const loadMoreForMonth = useCallback((monthNum: string) => {
+    setDisplayCounts(prev => ({ 
+      ...prev, 
+      [monthNum]: (prev[monthNum] || ITEMS_PER_PAGE) + ITEMS_PER_PAGE 
+    }));
+  }, []);
 
-  const totalItems = getTotalItems();
-  const checkedItems = getCheckedItems();
-  const yearTotal = getYearTotal();
+  const getDisplayCount = useCallback((monthNum: string) => 
+    displayCounts[monthNum] || ITEMS_PER_PAGE,
+    [displayCounts]
+  );
+
+  const getMonthLabel = useCallback((monthNum: string) => {
+    return months.find(m => m.num === monthNum)?.label || '';
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="pb-4">
+        <PageTitle page="memo" />
+        <SkeletonLoader />
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="pb-4">
-        {/* Titre avec icône */}
+      {/* Animations CSS */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+        .animate-fadeInScale {
+          animation: fadeInScale 0.3s ease-out forwards;
+        }
+      `}</style>
+
+      <div className="pb-4 space-y-4">
+        {/* Titre */}
         <PageTitle page="memo" />
 
-        <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4" style={cardStyle}>
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={prevYear} className="p-1"><ChevronLeft className="w-5 h-5" style={textPrimary} /></button>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold" style={textPrimary}>Année</span>
-              <select value={selectedYear} onChange={(e) => { setSelectedYear(parseInt(e.target.value)); setExpandedMonth(null); }} className="rounded-lg px-3 py-1 text-lg font-semibold border" style={inputStyle}>
-                {years.map(year => (<option key={year} value={year}>{year}</option>))}
-              </select>
-            </div>
-            <button onClick={nextYear} className="p-1"><ChevronRight className="w-5 h-5" style={textPrimary} /></button>
+        {/* Calendrier Grille */}
+        <CalendarGrid
+          selectedYear={selectedYear}
+          selectedMonth={selectedMonth}
+          onYearChange={handleYearChange}
+          onPrevYear={handlePrevYear}
+          onNextYear={handleNextYear}
+          onMonthSelect={handleMonthSelect}
+          getMonthData={getMonthData}
+        />
+
+        {/* Stats Cards */}
+        <StatsCards
+          yearTotal={yearStats.yearTotal}
+          totalItems={yearStats.totalItems}
+          checkedItems={yearStats.checkedItems}
+          devise={devise}
+        />
+
+        {/* Détail du mois sélectionné */}
+        {selectedMonth && (
+          <MonthDetail
+            monthLabel={getMonthLabel(selectedMonth)}
+            monthNum={selectedMonth}
+            items={memoData[getMonthKey(selectedMonth)] || []}
+            total={getMonthData(selectedMonth).total}
+            onAddClick={() => openAddForm(selectedMonth)}
+            onToggleCheck={(itemId: number) => handleToggleCheck(selectedMonth, itemId)}
+            onEdit={(item: MemoItem) => handleEdit(selectedMonth, item)}
+            onDelete={(itemId: number) => {
+              const item = (memoData[getMonthKey(selectedMonth)] || []).find(i => i.id === itemId);
+              if (item) openDeleteModal(selectedMonth, item);
+            }}
+            devise={devise}
+            displayCount={getDisplayCount(selectedMonth)}
+            onLoadMore={() => loadMoreForMonth(selectedMonth)}
+          />
+        )}
+
+        {/* Message si aucun mois sélectionné */}
+        {!selectedMonth && (
+          <div 
+            className="rounded-2xl border p-8 text-center"
+            style={{ 
+              background: theme.colors.cardBackground, 
+              borderColor: theme.colors.cardBorder 
+            }}
+          >
+            <p 
+              className="text-sm"
+              style={{ color: theme.colors.textSecondary }}
+            >
+              👆 Sélectionnez un mois pour voir ou ajouter des mémos
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {monthsShort.map((month, index) => {
-              const monthNum = String(index + 1).padStart(2, '0');
-              const hasItems = (memoData[getMonthKey(monthNum)]?.length || 0) > 0;
-              return (
-                <button key={index} onClick={() => setExpandedMonth(monthNum)} className="px-3 py-1.5 rounded-full text-xs font-medium transition-colors border" style={expandedMonth === monthNum ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary } : hasItems ? { background: `${theme.colors.primary}20`, color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder } : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }}>{month}</button>
-              );
-            })}
-          </div>
-        </div>
+        )}
 
-        <div className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden mb-4 p-4 text-center" style={cardStyle}>
-          <p className="text-xs" style={textSecondary}>Total prévu pour {selectedYear}</p>
-          <p className="text-2xl font-semibold mt-1" style={textPrimary}>{yearTotal.toFixed(2)} €</p>
-          <div className="flex justify-center gap-6 mt-3">
-            <div><p className="text-[10px]" style={textSecondary}>Éléments</p><p className="text-xs font-medium" style={textPrimary}>{totalItems}</p></div>
-            <div><p className="text-[10px]" style={textSecondary}>Complétés</p><p className="text-xs font-medium" style={textPrimary}>{checkedItems} / {totalItems}</p></div>
-          </div>
-        </div>
-
-        {/* SmartTips */}
-        <div className="mb-4">
-          <SmartTips page="memo" />
-        </div>
-
-        <div className="space-y-3">
-          {months.map((month) => {
-            const monthKey = getMonthKey(month.num);
-            const items = memoData[monthKey] || [];
-            const total = getMonthTotal(month.num);
-            const isExpanded = expandedMonth === month.num;
-            const checkedCount = items.filter(i => i.checked).length;
-            const displayCount = getDisplayCount(month.num);
-            const displayedItems = items.slice(0, displayCount);
-            const hasMore = displayCount < items.length;
-            const remainingCount = items.length - displayCount;
-
-            return (
-              <div key={month.id} className="backdrop-blur-sm rounded-2xl shadow-sm border overflow-hidden" style={cardStyle}>
-                <div className="px-4 py-3 flex items-center justify-between cursor-pointer" style={{ background: theme.colors.cardBackgroundLight, borderBottomWidth: 1, borderColor: theme.colors.cardBorder }} onClick={() => toggleMonth(month.num)}>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold" style={textPrimary}>{month.label}</span>
-                    <span className="text-[10px]" style={textSecondary}>({items.length} élément{items.length > 1 ? 's' : ''})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium" style={textPrimary}>{total.toFixed(2)} €</span>
-                    <button onClick={(e) => { e.stopPropagation(); openAddForm(month.num); }} className="w-7 h-7 rounded-full flex items-center justify-center transition-colors border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
-                      <Plus className="w-4 h-4" style={textPrimary} />
-                    </button>
-                    {isExpanded ? <ChevronUp className="w-4 h-4" style={textPrimary} /> : <ChevronDown className="w-4 h-4" style={textPrimary} />}
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="p-3">
-                    {items.length === 0 ? (
-                      <p className="text-xs text-center py-4" style={textSecondary}>Aucun élément pour ce mois</p>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="flex items-center px-2 pb-1" style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}>
-                          <div className="w-6"></div>
-                          <div className="text-[10px] font-medium flex-1" style={textSecondary}>Description</div>
-                          <div className="text-[10px] font-medium w-20 text-right" style={textSecondary}>Montant</div>
-                          <div className="w-14"></div>
-                        </div>
-
-                        {displayedItems.map((item) => (
-                          <div key={item.id} className="flex items-center rounded-xl px-2 py-2 border" style={{ background: theme.colors.cardBackgroundLight, borderColor: theme.colors.cardBorder }}>
-                            <button onClick={() => toggleCheck(month.num, item.id)} className="w-5 h-5 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-colors" style={item.checked ? { background: theme.colors.primary, borderColor: theme.colors.primary } : { borderColor: theme.colors.cardBorder, background: 'transparent' }}>
-                              {item.checked && <Check className="w-3 h-3" style={{ color: theme.colors.textOnPrimary }} />}
-                            </button>
-                            <div className={`flex-1 px-3 text-sm ${item.checked ? 'line-through opacity-50' : ''}`} style={textPrimary}>{item.description}</div>
-                            <div className={`w-20 text-right text-sm font-medium ${item.checked ? 'opacity-50' : ''}`} style={textPrimary}>{item.montant} €</div>
-                            <div className="w-14 flex items-center justify-end gap-1">
-                              <button onClick={() => editItem(month.num, item)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
-                                <Pencil className="w-3 h-3" style={textPrimary} />
-                              </button>
-                              <button onClick={() => deleteItem(month.num, item.id)} className="p-1.5 rounded-lg border" style={{ background: `${theme.colors.primary}20`, borderColor: theme.colors.cardBorder }}>
-                                <Trash2 className="w-3 h-3" style={textPrimary} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-
-                        {hasMore && (
-                          <button onClick={() => loadMoreForMonth(month.num)} className="w-full py-3 mt-2 border-2 border-dashed rounded-xl text-sm font-medium transition-colors" style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textPrimary }}>
-                            Voir plus ({remainingCount} restant{remainingCount > 1 ? 's' : ''})
-                          </button>
-                        )}
-
-                        {items.length > 0 && (
-                          <div className="pt-2 mt-2 flex justify-between items-center" style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}>
-                            <span className="text-[10px]" style={textSecondary}>{checkedCount}/{items.length} complété(s){items.length > ITEMS_PER_PAGE && ` • ${displayedItems.length} sur ${items.length} affichés`}</span>
-                            <span className="text-xs font-semibold" style={textPrimary}>Total: {total.toFixed(2)} €</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {/* SmartTips en bas */}
+        <SmartTips page="memo" />
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-2xl p-4 border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>{editingId ? 'Modifier' : 'Ajouter'} - {months.find(m => m.num === selectedMonth)?.label} {selectedYear}</h3>
-              <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} /></button>
-            </div>
+      {/* Modal Formulaire */}
+      <MemoForm
+        isOpen={showForm}
+        onClose={handleFormClose}
+        onSubmit={handleFormSubmit}
+        formData={formData}
+        onFormChange={setFormData}
+        isEditing={!!editingId}
+        monthLabel={selectedMonth ? getMonthLabel(selectedMonth) : ''}
+        selectedYear={selectedYear}
+        devise={devise}
+      />
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Description</label>
-                <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} placeholder="Ex: Anniversaire de Maman" />
-              </div>
-              <div>
-                <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>Montant (€)</label>
-                <input type="text" value={formData.montant} onChange={(e) => setFormData({ ...formData, montant: e.target.value })} className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none" style={modalInputStyle} placeholder="0,00" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowForm(false)} className="flex-1 py-3 border rounded-xl font-medium" style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}>Annuler</button>
-                <button onClick={handleSubmit} className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2" style={{ background: theme.colors.primary, color: theme.colors.textOnPrimary }}>
-                  <Check className="w-5 h-5" />{editingId ? 'Modifier' : 'Ajouter'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal Confirmation Suppression */}
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        itemDescription={deleteModal.item?.description || ''}
+        itemMontant={deleteModal.item?.montant || '0'}
+        devise={devise}
+      />
     </>
   );
 }
@@ -290,13 +373,13 @@ function MemoContent() {
 export default function MemoPage() {
   const router = useRouter();
 
-  const handleNavigate = (page: string) => {
+  const handleNavigate = useCallback((page: string) => {
     if (page === 'accueil') {
       router.push('/');
     } else {
       router.push(`/${page}`);
     }
-  };
+  }, [router]);
 
   return (
     <AppShell currentPage="memo" onNavigate={handleNavigate}>

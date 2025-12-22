@@ -2,32 +2,17 @@
 
 import { useTheme } from '@/contexts/theme-context';
 
-interface EmptyStateProps {
-  activeFilter: 'tous' | 'court' | 'long';
+interface EmptyStateObjectifProps {
+  title?: string;
+  message?: string;
 }
 
-export default function EmptyState({ activeFilter }: EmptyStateProps) {
+export default function EmptyStateObjectif({ 
+  title = "Aucun objectif défini",
+  message = "Créez des objectifs pour suivre vos dépenses et épargnes" 
+}: EmptyStateObjectifProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
-
-  const cardStyle = { 
-    background: theme.colors.cardBackground, 
-    borderColor: theme.colors.cardBorder 
-  };
-  const textPrimary = { color: theme.colors.textPrimary };
-  const textSecondary = { color: theme.colors.textSecondary };
-
-  const getMessage = () => {
-    if (activeFilter === 'tous') return 'Créez des objectifs pour suivre vos dépenses et épargnes';
-    if (activeFilter === 'court') return 'Aucun objectif court terme défini';
-    return 'Aucun objectif long terme défini';
-  };
-
-  const getTitle = () => {
-    if (activeFilter === 'tous') return 'Aucun objectif défini';
-    if (activeFilter === 'court') return 'Aucun objectif court terme';
-    return 'Aucun objectif long terme';
-  };
 
   return (
     <>
@@ -45,12 +30,12 @@ export default function EmptyState({ activeFilter }: EmptyStateProps) {
         }
         @keyframes targetGlow {
           0%, 100% { 
-            box-shadow: 0 0 20px rgba(var(--glow-color), 0.3),
-                        0 0 40px rgba(var(--glow-color), 0.1);
+            box-shadow: 0 0 15px rgba(var(--glow-color), 0.2),
+                        0 0 30px rgba(var(--glow-color), 0.1);
           }
           50% { 
-            box-shadow: 0 0 30px rgba(var(--glow-color), 0.5),
-                        0 0 60px rgba(var(--glow-color), 0.2);
+            box-shadow: 0 0 25px rgba(var(--glow-color), 0.4),
+                        0 0 50px rgba(var(--glow-color), 0.2);
           }
         }
         @keyframes targetRotate {
@@ -63,69 +48,62 @@ export default function EmptyState({ activeFilter }: EmptyStateProps) {
             opacity: 0.3;
           }
           50% { 
-            transform: scale(1.2);
+            transform: scale(1.15);
             opacity: 0.1;
           }
         }
-        .target-container {
+        .target-container-sm {
           animation: targetPulse 2s ease-in-out infinite;
         }
-        .target-glow {
+        .target-glow-sm {
           animation: targetGlow 2s ease-in-out infinite;
         }
-        .target-icon {
+        .target-icon-sm {
           animation: targetRotate 8s linear infinite;
         }
-        .ring-pulse {
+        .ring-pulse-sm {
           animation: ringPulse 2s ease-in-out infinite;
         }
-        .ring-pulse-delayed {
+        .ring-pulse-delayed-sm {
           animation: ringPulse 2s ease-in-out infinite;
           animation-delay: 0.5s;
         }
       `}</style>
 
-      <div 
-        className="backdrop-blur-sm rounded-2xl p-6 shadow-sm border text-center py-10 mb-4"
-        style={cardStyle}
-      >
+      <div className="flex flex-col items-center justify-center py-4">
         {/* Container de l'icône avec effets */}
-        <div className="relative w-16 h-16 mx-auto mb-5">
+        <div className="relative w-12 h-12 mx-auto mb-3">
           {/* Cercles pulsants en arrière-plan */}
           <div 
-            className="absolute inset-0 rounded-full ring-pulse"
+            className="absolute inset-0 rounded-full ring-pulse-sm"
             style={{ background: `${theme.colors.primary}20` }}
           />
           <div 
-            className="absolute -inset-1.5 rounded-full ring-pulse-delayed"
+            className="absolute -inset-1 rounded-full ring-pulse-delayed-sm"
             style={{ background: `${theme.colors.primary}10` }}
-          />
-          <div 
-            className="absolute -inset-3 rounded-full ring-pulse"
-            style={{ background: `${theme.colors.primary}05` }}
           />
           
           {/* Container principal avec glow */}
           <div 
-            className="relative w-16 h-16 rounded-full flex items-center justify-center target-container target-glow"
+            className="relative w-12 h-12 rounded-full flex items-center justify-center target-container-sm target-glow-sm"
             style={{ 
               background: `linear-gradient(135deg, ${theme.colors.primary}30, ${theme.colors.primary}10)`,
               '--glow-color': theme.colors.primary.replace('#', '').match(/.{2}/g)?.map((x: string) => parseInt(x, 16)).join(', ') || '147, 51, 234'
             } as React.CSSProperties}
           >
             {/* Emoji cible avec flèche */}
-            <span className="text-3xl target-icon">🎯</span>
+            <span className="text-xl target-icon-sm">🎯</span>
           </div>
         </div>
 
         {/* Titre */}
-        <p className="text-base font-semibold mb-2" style={textPrimary}>
-          {getTitle()}
+        <p className="text-sm font-medium mb-1" style={{ color: theme.colors.textSecondary }}>
+          {title}
         </p>
 
         {/* Message */}
-        <p className="text-sm mb-1" style={textSecondary}>
-          {getMessage()}
+        <p className="text-[10px] text-center" style={{ color: theme.colors.textSecondary }}>
+          {message}
         </p>
       </div>
     </>

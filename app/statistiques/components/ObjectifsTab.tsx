@@ -5,6 +5,7 @@ import { Target, Plus, Trash2, Edit3, Check, X } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { SmartTips } from '@/components';
 import { Transaction, ObjectifBudget, COLORS_TYPE, monthsFull } from './types';
+import EmptyStateObjectif from './EmptyStateObjectif';
 
 interface ObjectifsTabProps {
   filteredTransactions: Transaction[];
@@ -16,9 +17,9 @@ interface ObjectifsTabProps {
 
 // Catégories par défaut
 const defaultCategories = {
-  Dépense: ['Courses', 'Restaurant', 'Essence', 'Shopping', 'Transport', 'Loisirs', 'Santé', 'Autres Dépenses'],
-  Facture: ['Loyer', 'Électricité', 'Eau', 'Internet', 'Mobile', 'Assurance', 'Impôts', 'Abonnements'],
-  Épargne: ['Livret A', 'PEL', 'Assurance Vie', 'Investissement', 'Épargne', 'Objectifs']
+  Dépenses: ['Courses', 'Restaurant', 'Essence', 'Shopping', 'Transport', 'Loisirs', 'Santé', 'Autres Dépenses'],
+  Factures: ['Loyer', 'Électricité', 'Eau', 'Internet', 'Mobile', 'Assurance', 'Impôts', 'Abonnements'],
+  Épargnes: ['Livret A', 'PEL', 'Assurance Vie', 'Investissement', 'Épargne', 'Objectifs']
 };
 
 export default function ObjectifsTab({
@@ -33,15 +34,15 @@ export default function ObjectifsTab({
   
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [newObjectif, setNewObjectif] = useState({ categorie: '', type: 'Dépense' as 'Dépense' | 'Facture' | 'Épargne', montant: '' });
+  const [newObjectif, setNewObjectif] = useState({ categorie: '', type: 'Dépenses' as 'Dépenses' | 'Factures' | 'Épargnes', montant: '' });
   const [editMontant, setEditMontant] = useState('');
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [showNewCategorieInput, setShowNewCategorieInput] = useState(false);
   const [newCategorieName, setNewCategorieName] = useState('');
   const [customCategories, setCustomCategories] = useState<Record<string, string[]>>({
-    Dépense: [],
-    Facture: [],
-    Épargne: []
+    Dépenses: [],
+    Factures: [],
+    Épargnes: []
   });
 
   const cardStyle = { background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder };
@@ -76,32 +77,20 @@ export default function ObjectifsTab({
 
   // Calculer le réel par catégorie
   const getReelParCategorie = (categorie: string, type: string) => {
-    const typeMapping: Record<string, string> = {
-      'Dépense': 'Dépenses',
-      'Facture': 'Factures',
-      'Épargne': 'Épargnes'
-    };
-    
     return filteredTransactions
-      .filter(t => t.type === typeMapping[type] && t.categorie === categorie)
+      .filter(t => t.type === type && t.categorie === categorie)
       .reduce((s, t) => s + parseFloat(t.montant || '0'), 0);
   };
 
   // Obtenir les catégories (défaut + transactions + personnalisées)
   const getCategoriesDisponibles = (type: string): string[] => {
-    const typeMapping: Record<string, string> = {
-      'Dépense': 'Dépenses',
-      'Facture': 'Factures',
-      'Épargne': 'Épargnes'
-    };
-    
     // Catégories par défaut
     const defaultCats = defaultCategories[type as keyof typeof defaultCategories] || [];
     
     // Catégories depuis les transactions existantes
     const transactionCats = new Set<string>();
     allTransactions
-      .filter(t => t.type === typeMapping[type])
+      .filter(t => t.type === type)
       .forEach(t => {
         if (t.categorie) transactionCats.add(t.categorie);
       });
@@ -142,7 +131,7 @@ export default function ObjectifsTab({
   const objectifsAvecReel = objectifsBudget.map(obj => {
     const reel = getReelParCategorie(obj.categorie, obj.type);
     const pourcentage = obj.montant > 0 ? (reel / obj.montant) * 100 : 0;
-    const estDepasse = obj.type === 'Épargne' ? reel < obj.montant : reel > obj.montant;
+    const estDepasse = obj.type === 'Épargnes' ? reel < obj.montant : reel > obj.montant;
     
     return { ...obj, reel, pourcentage, estDepasse };
   });
@@ -162,7 +151,7 @@ export default function ObjectifsTab({
     };
     
     setObjectifsBudget([...objectifsBudget, objectif]);
-    setNewObjectif({ categorie: '', type: 'Dépense', montant: '' });
+    setNewObjectif({ categorie: '', type: 'Dépenses', montant: '' });
     setIsAdding(false);
   };
 
@@ -195,9 +184,9 @@ export default function ObjectifsTab({
 
   const getColorForType = (type: string) => {
     switch (type) {
-      case 'Dépense': return COLORS_TYPE.depenses;
-      case 'Facture': return COLORS_TYPE.factures;
-      case 'Épargne': return COLORS_TYPE.epargnes;
+      case 'Dépenses': return COLORS_TYPE.depenses;
+      case 'Factures': return COLORS_TYPE.factures;
+      case 'Épargnes': return COLORS_TYPE.epargnes;
       default: return theme.colors.primary;
     }
   };
@@ -362,7 +351,7 @@ export default function ObjectifsTab({
             <div>
               <label className="text-[10px] mb-1 block" style={textSecondary}>Type</label>
               <div className="grid grid-cols-3 gap-2">
-                {(['Dépense', 'Facture', 'Épargne'] as const).map(type => (
+                {(['Dépenses', 'Factures', 'Épargnes'] as const).map(type => (
                   <button
                     key={type}
                     onClick={() => {
@@ -433,7 +422,7 @@ export default function ObjectifsTab({
             {/* Montant */}
             <div>
               <label className="text-[10px] mb-1 block" style={textSecondary}>
-                Montant {newObjectif.type === 'Épargne' ? 'minimum' : 'maximum'} (€)
+                Montant {newObjectif.type === 'Épargnes' ? 'minimum' : 'maximum'} (€)
               </label>
               <input
                 type="number"
@@ -473,16 +462,7 @@ export default function ObjectifsTab({
 
       {/* Message si aucun objectif */}
       {objectifsBudget.length === 0 && !isAdding && (
-        <div 
-          className="text-center py-8 rounded-2xl"
-          style={{ background: `${theme.colors.primary}05` }}
-        >
-          <Target size={40} className="mx-auto mb-3 opacity-30" style={{ color: theme.colors.primary }} />
-          <p className="text-sm" style={textSecondary}>Aucun objectif défini</p>
-          <p className="text-[10px]" style={textSecondary}>
-            Créez des objectifs pour suivre vos dépenses et épargnes
-          </p>
-        </div>
+        <EmptyStateObjectif />
       )}
 
       <SmartTips page="statistiques" />
