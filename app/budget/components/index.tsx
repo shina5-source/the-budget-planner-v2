@@ -1,4 +1,14 @@
 // Budget Components - Exports
+
+// Composants d'onglets
+import VueTab from './VueTab';
+import BilanTab from './BilanTab';
+import CorrectifsTab from './CorrectifsTab';
+import AnalyseTab from './AnalyseTab';
+
+export { VueTab, BilanTab, CorrectifsTab, AnalyseTab };
+
+// Composants UI existants
 export { EmptyState } from './EmptyState';
 export { VariationBadge } from './VariationBadge';
 export { CircularProgress } from './CircularProgress';
@@ -13,7 +23,7 @@ export { MonthSelector, monthsShort, monthsFull, years } from './MonthSelector';
 export { TabSelector } from './TabSelector';
 export type { TabType } from './TabSelector';
 
-// Nouveau composant Confetti
+// Composant Confetti
 export { Confetti } from './Confetti';
 
 // Shared utilities
