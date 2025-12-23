@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import RecurringTransactions from '@/components/RecurringTransactions';
 import { processRecurringTransactions } from '@/lib/recurring-transactions';
 import { useTheme } from '@/contexts/theme-context';
@@ -64,6 +64,8 @@ const ITEMS_PER_PAGE = 50;
 function TransactionsContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
   // State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -80,6 +82,9 @@ function TransactionsContent() {
   // Date state
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
+  
+  // 📅 Filtre par date spécifique (depuis query param)
+  const [filterDate, setFilterDate] = useState<string | null>(null);
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,6 +93,45 @@ function TransactionsContent() {
   const [filterDepuis, setFilterDepuis] = useState('');
   const [filterVers, setFilterVers] = useState('');
   const [filterMoyenPaiement, setFilterMoyenPaiement] = useState('');
+
+  // 📅 Lire le query param ?date=YYYY-MM-DD au chargement
+  useEffect(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam) {
+      // Valider le format YYYY-MM-DD
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (dateRegex.test(dateParam)) {
+        const date = new Date(dateParam);
+        if (!isNaN(date.getTime())) {
+          // Définir le filtre de date
+          setFilterDate(dateParam);
+          // Ajuster le mois et l'année sélectionnés
+          setSelectedYear(date.getFullYear());
+          setSelectedMonth(date.getMonth());
+        }
+      }
+    }
+  }, [searchParams]);
+
+  // 📅 Effacer le query param quand on change de mois manuellement
+  const handleMonthChange = useCallback((month: number | null) => {
+    setSelectedMonth(month);
+    // Effacer le filtre de date si on change de mois
+    if (filterDate) {
+      setFilterDate(null);
+      // Nettoyer l'URL sans recharger la page
+      router.replace('/transactions', { scroll: false });
+    }
+  }, [filterDate, router]);
+
+  const handleYearChange = useCallback((year: number) => {
+    setSelectedYear(year);
+    // Effacer le filtre de date si on change d'année
+    if (filterDate) {
+      setFilterDate(null);
+      router.replace('/transactions', { scroll: false });
+    }
+  }, [filterDate, router]);
 
   // Helpers
   const getMoyensPaiement = useCallback(() => parametres.moyensPaiement || defaultMoyensPaiement, [parametres.moyensPaiement]);
@@ -146,7 +190,7 @@ function TransactionsContent() {
 
   useEffect(() => {
     setDisplayCount(ITEMS_PER_PAGE);
-  }, [selectedMonth, selectedYear, searchQuery, filterType, filterCategorie, filterDepuis, filterVers, filterMoyenPaiement]);
+  }, [selectedMonth, selectedYear, searchQuery, filterType, filterCategorie, filterDepuis, filterVers, filterMoyenPaiement, filterDate]);
 
   // Save functions
   const saveTransactions = useCallback((t: Transaction[]) => {
@@ -161,15 +205,23 @@ function TransactionsContent() {
 
   // Filtered transactions with memoization
   const filteredTransactions = useMemo(() => {
-    const getMonthKey = () => selectedMonth === null 
-      ? null 
-      : `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
-    
-    const mk = getMonthKey();
-    
     return transactions.filter(t => {
-      if (mk && !t.date?.startsWith(mk)) return false;
-      if (selectedMonth === null && !t.date?.startsWith(`${selectedYear}`)) return false;
+      // 📅 Si filtre par date spécifique (depuis le calendrier)
+      if (filterDate) {
+        if (t.date !== filterDate) return false;
+      } else {
+        // Sinon, filtre par mois/année
+        const getMonthKey = () => selectedMonth === null 
+          ? null 
+          : `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
+        
+        const mk = getMonthKey();
+        
+        if (mk && !t.date?.startsWith(mk)) return false;
+        if (selectedMonth === null && !t.date?.startsWith(`${selectedYear}`)) return false;
+      }
+      
+      // Autres filtres
       if (searchQuery && !t.categorie?.toLowerCase().includes(searchQuery.toLowerCase()) && !t.memo?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (filterType && t.type !== filterType) return false;
       if (filterCategorie && t.categorie !== filterCategorie) return false;
@@ -178,7 +230,7 @@ function TransactionsContent() {
       if (filterMoyenPaiement && t.moyenPaiement !== filterMoyenPaiement) return false;
       return true;
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, selectedMonth, selectedYear, searchQuery, filterType, filterCategorie, filterDepuis, filterVers, filterMoyenPaiement]);
+  }, [transactions, selectedMonth, selectedYear, searchQuery, filterType, filterCategorie, filterDepuis, filterVers, filterMoyenPaiement, filterDate]);
 
   // Displayed transactions
   const displayedTransactions = useMemo(() => filteredTransactions.slice(0, displayCount), [filteredTransactions, displayCount]);
@@ -290,12 +342,28 @@ function TransactionsContent() {
     setFilterDepuis('');
     setFilterVers('');
     setFilterMoyenPaiement('');
-  }, []);
+    // 📅 Aussi effacer le filtre de date
+    if (filterDate) {
+      setFilterDate(null);
+      router.replace('/transactions', { scroll: false });
+    }
+  }, [filterDate, router]);
 
   const handleOpenForm = useCallback(() => {
     setEditingTransaction(null);
     setShowForm(true);
   }, []);
+
+  // 📅 Formater la date pour l'affichage
+  const formatDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { 
+      weekday: 'long', 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    });
+  };
 
   return (
     <>
@@ -306,12 +374,44 @@ function TransactionsContent() {
         {/* Header */}
         <PageHeader transactionCount={filteredTransactions.length} />
 
+        {/* 📅 Indicateur de filtre par date */}
+        {filterDate && (
+          <div 
+            className="flex items-center justify-between mb-3 py-2 px-3 rounded-xl text-xs animate-fade-in"
+            style={{ 
+              background: `${theme.colors.primary}15`, 
+              border: `1px solid ${theme.colors.primary}30` 
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span>📅</span>
+              <span style={{ color: theme.colors.textPrimary }}>
+                Filtre: <strong>{formatDateLabel(filterDate)}</strong>
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setFilterDate(null);
+                router.replace('/transactions', { scroll: false });
+              }}
+              className="px-2 py-1 rounded-lg text-[10px] font-medium transition-all hover:scale-105"
+              style={{ 
+                background: theme.colors.cardBackground, 
+                color: theme.colors.textSecondary,
+                border: `1px solid ${theme.colors.cardBorder}`
+              }}
+            >
+              ✕ Effacer
+            </button>
+          </div>
+        )}
+
         {/* Month Selector */}
         <MonthSelector
           selectedYear={selectedYear}
           selectedMonth={selectedMonth}
-          onYearChange={setSelectedYear}
-          onMonthChange={setSelectedMonth}
+          onYearChange={handleYearChange}
+          onMonthChange={handleMonthChange}
         />
 
         {/* Summary Cards */}
