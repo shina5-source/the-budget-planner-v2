@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Eye, EyeOff, Pencil, X, Check } from 'lucide-react';
+import { Eye, EyeOff, Pencil, X, Check, Calendar } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/contexts/theme-context';
 import { AppShell, SmartTips } from '@/components';
 import { SkeletonCard, Confetti } from '@/components/ui';
+import { useBudgetPeriod } from '@/hooks/useBudgetPeriod';
 import {
   HeroCard,
   MonthSelector,
@@ -106,15 +107,24 @@ interface Objectif {
 
 interface ParametresData {
   devise: string;
+  budgetAvantPremier?: boolean;
 }
 
-const defaultParametres: ParametresData = { devise: '€' };
+const defaultParametres: ParametresData = { devise: '€', budgetAvantPremier: false };
 
 // === COMPOSANT PRINCIPAL ===
 function AccueilContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
   const router = useRouter();
+  
+  // Hook pour la gestion des périodes de budget
+  const { 
+    configurationPaie, 
+    isLoaded: isPaieConfigLoaded,
+    getPeriodeBudget,
+    filtrerTransactionsPourPeriode
+  } = useBudgetPeriod();
   
   // États
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -189,18 +199,48 @@ function AccueilContent() {
 
   const navigateTo = useCallback((page: string) => router.push(`/${page}`), [router]);
 
-  // === CALCULS ===
-  const getMonthKey = (year: number, month: number) => `${year}-${(month + 1).toString().padStart(2, '0')}`;
-  const currentMonthKey = useMemo(() => getMonthKey(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
-  const filteredTransactions = useMemo(() => transactions.filter(t => t.date?.startsWith(currentMonthKey)), [transactions, currentMonthKey]);
+  // ========== Période de budget personnalisée ==========
+  const periodeBudget = useMemo(() => {
+    return getPeriodeBudget(selectedMonth, selectedYear);
+  }, [getPeriodeBudget, selectedMonth, selectedYear]);
 
-  const prevMonthKey = useMemo(() => {
+  const periodeLabel = useMemo(() => {
+    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      return `${moisNoms[selectedMonth]} ${selectedYear}`;
+    }
+    return periodeBudget.label;
+  }, [parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+
+  // Helper pour filtrer les transactions
+  const getMonthKey = (year: number, month: number) => `${year}-${(month + 1).toString().padStart(2, '0')}`;
+
+  const filteredTransactions = useMemo(() => {
+    // Si toggle OFF ou jour de paie = 1, filtrage standard
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      const currentMonthKey = getMonthKey(selectedYear, selectedMonth);
+      return transactions.filter(t => t.date?.startsWith(currentMonthKey));
+    }
+    
+    // Sinon, filtrage par période personnalisée
+    return filtrerTransactionsPourPeriode(transactions, periodeBudget);
+  }, [transactions, selectedYear, selectedMonth, parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, filtrerTransactionsPourPeriode, periodeBudget]);
+
+  const prevMonthTransactions = useMemo(() => {
     let m = selectedMonth - 1, y = selectedYear;
     if (m < 0) { m = 11; y--; }
-    return getMonthKey(y, m);
-  }, [selectedYear, selectedMonth]);
-
-  const prevMonthTransactions = useMemo(() => transactions.filter(t => t.date?.startsWith(prevMonthKey)), [transactions, prevMonthKey]);
+    
+    // Si toggle OFF ou jour de paie = 1, filtrage standard
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      const prevMonthKey = getMonthKey(y, m);
+      return transactions.filter(t => t.date?.startsWith(prevMonthKey));
+    }
+    
+    // Sinon, filtrage par période personnalisée
+    const prevPeriode = getPeriodeBudget(m, y);
+    return filtrerTransactionsPourPeriode(transactions, prevPeriode);
+  }, [transactions, selectedYear, selectedMonth, parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, getPeriodeBudget, filtrerTransactionsPourPeriode]);
+  // =====================================================
 
   const totals = useMemo(() => {
     const totalRevenus = filteredTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -376,7 +416,7 @@ function AccueilContent() {
   }, [filteredTransactions, totals, financialData, weekData, parametres.devise]);
 
   // === SKELETON ===
-  if (!dataLoaded) {
+  if (!dataLoaded || !isPaieConfigLoaded) {
     return (
       <div className="pb-4 space-y-3">
         <style>{animationStyles}</style>
@@ -438,6 +478,17 @@ function AccueilContent() {
           </div>
         )}
       </div>
+
+      {/* Indicateur de période personnalisée */}
+      {parametres.budgetAvantPremier && configurationPaie.jourPaieDefaut !== 1 && (
+        <div 
+          className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs animate-fade-in-up stagger-2 opacity-0"
+          style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', animationFillMode: 'forwards' }}
+        >
+          <Calendar className="w-4 h-4 text-green-500" />
+          <span className="text-green-600">Période : {periodeLabel}</span>
+        </div>
+      )}
 
       {/* Contenu */}
       {!hasAnyData ? (

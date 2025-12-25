@@ -82,6 +82,9 @@ const TYPE_CONFIG: Record<string, { color: string; bgColor: string; icon: React.
   }
 };
 
+// Types valides (pour filtrer les doublons)
+const VALID_TYPES = ['Revenus', 'Factures', 'Dépenses', 'Épargnes'];
+
 export default function TransactionForm({
   isOpen,
   onClose,
@@ -100,6 +103,7 @@ export default function TransactionForm({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme, isDarkMode } = useTheme() as any;
 
+  // Fonction pour obtenir les données initiales du formulaire
   const getInitialFormData = (): FormData => {
     if (editingTransaction) {
       return {
@@ -118,11 +122,12 @@ export default function TransactionForm({
         dateDebut: editingTransaction.dateDebut || ''
       };
     }
+    // CORRECTION: Tous les champs vides sauf la date
     return {
       date: new Date().toISOString().split('T')[0],
-      montant: '',
+      montant: '',  // Vide au lieu de '0.00'
       type: 'Dépenses',
-      categorie: '',
+      categorie: '',  // Vide
       depuis: '',
       vers: '',
       moyenPaiement: '',
@@ -145,16 +150,32 @@ export default function TransactionForm({
   const [newMoyenPaiementName, setNewMoyenPaiementName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Reset form when editingTransaction changes
+  // CORRECTION: Reset form when modal opens (isOpen changes to true)
   useEffect(() => {
-    setFormData(getInitialFormData());
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      // Reset tous les états d'ajout
+      setShowAddCategory(false);
+      setShowAddCompteDepuis(false);
+      setShowAddCompteVers(false);
+      setShowAddMoyenPaiement(false);
+      setNewCategoryName('');
+      setNewCompteName('');
+      setNewMoyenPaiementName('');
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingTransaction]);
+  }, [isOpen, editingTransaction]);
 
   const currentTypeConfig = useMemo(() => 
     TYPE_CONFIG[formData.type] || TYPE_CONFIG['Dépenses'],
     [formData.type]
   );
+
+  // CORRECTION: Filtrer les types pour n'avoir que les 4 valides sans doublons
+  const filteredTypes = useMemo(() => {
+    // Utiliser les types valides définis, en vérifiant qu'ils existent dans types passé en props
+    return VALID_TYPES.filter(t => types.includes(t));
+  }, [types]);
 
   // ✅ Styles utilisant les COULEURS DU THÈME (exactement comme ObjectifFormModal)
   const modalBackgroundStyle = useMemo(() => ({ 
@@ -237,12 +258,11 @@ export default function TransactionForm({
 
   return (
     <div 
-      className="fixed inset-0 flex items-start justify-center z-50 p-4 overflow-y-auto"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-5 w-full max-w-md border mb-20 mt-16 shadow-2xl"
+        className="rounded-2xl p-5 w-full max-w-md border my-20 shadow-2xl"
         style={modalBackgroundStyle}
         onClick={(e) => e.stopPropagation()}
       >
@@ -279,13 +299,13 @@ export default function TransactionForm({
 
         {/* Content */}
         <div className="space-y-4">
-          {/* Type selector - Boutons visuels */}
+          {/* Type selector - CORRECTION: Utiliser filteredTypes au lieu de types */}
           <div>
             <label className="text-xs font-medium mb-2 block" style={textSecondaryStyle}>
               Type de transaction
             </label>
             <div className="grid grid-cols-4 gap-2">
-              {types.map(t => {
+              {filteredTypes.map(t => {
                 const config = TYPE_CONFIG[t] || TYPE_CONFIG['Dépenses'];
                 const Icon = config.icon;
                 const isSelected = formData.type === t;

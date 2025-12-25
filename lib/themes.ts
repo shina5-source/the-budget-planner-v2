@@ -77,53 +77,54 @@ export interface Theme {
   };
 }
 
-export const themes: Record<ThemeKey, Theme> = {
-  // ========== THÈME PAR DÉFAUT - BORDEAUX & OR ==========
-  'bordeaux-or': {
-    key: 'bordeaux-or',
-    name: 'Bordeaux & Or',
-    emoji: '🍷',
-    colors: {
-      light: {
-        primary: '#D4AF37',
-        primaryLight: '#E8C84B',
-        secondary: '#722F37',
-        secondaryLight: '#8B4557',
-        accent: '#D4AF37',
-        gradientFrom: '#D4AF37',
-        gradientTo: '#722F37',
-        backgroundGradientFrom: '#E8C4C4',
-        backgroundGradientTo: '#CFA0A5',
-        cardBackground: 'rgba(114, 47, 55, 0.3)',
-        cardBackgroundLight: 'rgba(114, 47, 55, 0.5)',
-        cardBorder: 'rgba(212, 175, 55, 0.4)',
-        textPrimary: '#D4AF37',
-        textSecondary: 'rgba(212, 175, 55, 0.7)',
-        textOnPrimary: '#722F37',
-        textOnSecondary: '#f0d78c',
-      },
-      dark: {
-        primary: '#f0d78c',
-        primaryLight: '#f8e6a8',
-        secondary: '#1a1a2e',
-        secondaryLight: '#2a2a4a',
-        accent: '#f0d78c',
-        gradientFrom: '#f0d78c',
-        gradientTo: '#1a1a2e',
-        backgroundGradientFrom: '#1a1a2e',
-        backgroundGradientTo: '#0f0f1a',
-        cardBackground: 'rgba(26, 26, 46, 0.8)',
-        cardBackgroundLight: 'rgba(26, 26, 46, 0.9)',
-        cardBorder: 'rgba(240, 215, 140, 0.3)',
-        textPrimary: '#f0d78c',
-        textSecondary: 'rgba(240, 215, 140, 0.7)',
-        textOnPrimary: '#1a1a2e',
-        textOnSecondary: '#f0d78c',
-      },
+export const themes: Record<ThemeKey, Theme> = { 
+ // Remplace uniquement la section 'bordeaux-or' dans ton fichier lib/themes.ts
+
+'bordeaux-or': {
+  key: 'bordeaux-or',
+  name: 'Bordeaux & Or',
+  emoji: '🍷',
+  colors: {
+    light: {
+      primary: '#D4AF37',
+      primaryLight: '#E8C84B',
+      secondary: '#722F37',
+      secondaryLight: '#8B4557',
+      accent: '#D4AF37',
+      gradientFrom: '#D4AF37',
+      gradientTo: '#722F37',
+      backgroundGradientFrom: '#E8D5D5',
+      backgroundGradientTo: '#D4B8B8',
+      // ✅ CARTES - Vraiment bordeaux (pas rose)
+      cardBackground: '#D4B5B8',
+      cardBackgroundLight: '#DDBFC2',
+      cardBorder: 'rgba(212, 175, 55, 0.5)',
+      textPrimary: '#4A1A1F',
+      textSecondary: 'rgba(74, 26, 31, 0.7)',
+      textOnPrimary: '#722F37',
+      textOnSecondary: '#D4AF37',
+    },
+    dark: {
+      primary: '#D4AF37',
+      primaryLight: '#E8C84B',
+      secondary: '#620023',
+      secondaryLight: '#6f0028',
+      accent: '#D4AF37',
+      gradientFrom: '#6f0028',
+      gradientTo: '#620023',
+      backgroundGradientFrom: '#1A0A0F',
+      backgroundGradientTo: '#2D0F18',
+      cardBackground: 'rgba(45, 15, 24, 0.9)',
+      cardBackgroundLight: 'rgba(62, 20, 32, 0.92)',
+      cardBorder: 'rgba(212, 175, 55, 0.3)',
+      textPrimary: '#D4AF37',
+      textSecondary: 'rgba(212, 175, 55, 0.7)',
+      textOnPrimary: '#1A0A0F',
+      textOnSecondary: '#D4AF37',
     },
   },
+},
 
-  // ========== THÈME ROSE + BLEU NUIT ==========
   'rose-bleu-nuit': {
     key: 'rose-bleu-nuit',
     name: 'Rose & Bleu Nuit',
@@ -167,7 +168,6 @@ export const themes: Record<ThemeKey, Theme> = {
       }
     },
   },
-
   // ========== NOUVEAU THÈME - SOFT PINK (Style Budget Chris) ==========
   'soft-pink': {
     key: 'soft-pink',
@@ -212,105 +212,105 @@ export const themes: Record<ThemeKey, Theme> = {
       }
     },
   },
-
-  // ========== NOUVEAU THÈME - EXCEL PRO (Style Tableur Pro) ==========
   'excel-teal': {
     key: 'excel-teal',
     name: 'Excel Pro',
     emoji: '📊',
     colors: {
       light: {
-        primary: '#8B7355',           // Taupe/Marron (boutons actifs Vue, Déc, etc.)
-        primaryLight: '#A08B70',      // Taupe clair
-        secondary: '#2D5A5A',         // Teal FONCÉ (header & bottom nav)
+        // === MODE CLAIR - STYLE EXCEL ===
+        // PRIMARY = Marron chocolat (texte sur fond beige, boutons)
+        primary: '#5D4037',           // Marron chocolat (Material Brown 700)
+        primaryLight: '#795548',      // Marron moyen (Material Brown 500)
+        // SECONDARY = Teal foncé (header, sidebar, bottomNav)
+        secondary: '#2D5A5A',         // Teal foncé
         secondaryLight: '#3D7A7A',    // Teal moyen
-        accent: '#2D5A5A',            // Teal (icônes dans cercles)
-        gradientFrom: '#EBE6DD',      // Beige chaud
-        gradientTo: '#DED8CC',        // Beige plus foncé
-        backgroundGradientFrom: '#E8E3D9',  // Fond beige
-        backgroundGradientTo: '#DED8CC',    // Fond beige foncé
-        cardBackground: 'rgba(250, 248, 244, 0.98)',  // Beige très clair
-        cardBackgroundLight: 'rgba(255, 253, 250, 1)', // Crème
-        cardBorder: 'rgba(139, 115, 85, 0.55)',  // Bordure marron bien visible
-        textPrimary: '#3D3225',       // Marron très foncé (titres)
-        textSecondary: '#5D4E3A',     // Marron moyen (sous-titres)
-        textOnPrimary: '#FFFFFF',     // Blanc sur taupe (boutons actifs)
-        textOnSecondary: '#FFFFFF',   // Blanc sur teal (header/nav)
-        // === COULEURS EXCEL SPÉCIFIQUES ===
-        negative: '#C0392B',          // Rouge/Orange pour montants négatifs (392,79 €)
-        positive: '#27AE60',          // Vert pour montants positifs
-        headerAlt: '#5D6D7E',         // Bleu-gris pour headers "DÉTAIL DES..."
-        headerTaupe: '#A89880',       // Taupe clair pour headers "MA TRÉSORERIE"
-        chartBar: '#C9A86C',          // Caramel pour barres graphiques
+        // ACCENT = Caramel/or
+        accent: '#C9A86C',            // Caramel doré
+        // FOND = Beige chaud
+        gradientFrom: '#F0EDE8',
+        gradientTo: '#E8E4DE',
+        backgroundGradientFrom: '#F5F3F0',
+        backgroundGradientTo: '#EBE8E3',
+        // CARTES
+        cardBackground: 'rgba(255, 255, 255, 0.95)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 1)',
+        cardBorder: 'rgba(93, 64, 55, 0.2)',
+        // TEXTE
+        textPrimary: '#3E2723',       // Marron très foncé (contenu principal)
+        textSecondary: '#5D4037',     // Marron foncé
+        textOnPrimary: '#FFFFFF',     // Blanc sur marron
+        textOnSecondary: '#F5F0E8',   // CRÈME/BEIGE CLAIR sur teal (sidebar, header)
       },
       dark: {
-        primary: '#D4B87A',           // Caramel clair
-        primaryLight: '#E5D4A8',      // Beige clair
-        secondary: '#1E3D3D',         // Teal très foncé
-        secondaryLight: '#2D5A5A',    // Teal foncé
-        accent: '#5DADE2',            // Teal clair
+        // === MODE SOMBRE - INCHANGÉ ===
+        primary: '#D4B87A',
+        primaryLight: '#E5D4A8',
+        secondary: '#1E3D3D',
+        secondaryLight: '#2D5A5A',
+        accent: '#C9A86C',
         gradientFrom: '#2A2520',
         gradientTo: '#1E1A16',
         backgroundGradientFrom: '#252019',
         backgroundGradientTo: '#1A1612',
         cardBackground: 'rgba(50, 45, 38, 0.9)',
         cardBackgroundLight: 'rgba(50, 45, 38, 0.95)',
-        cardBorder: 'rgba(212, 184, 122, 0.4)',
-        textPrimary: '#E8E0D5',       // Beige clair
-        textSecondary: 'rgba(232, 224, 213, 0.8)',
+        cardBorder: 'rgba(212, 184, 122, 0.35)',
+        textPrimary: '#E8E0D5',
+        textSecondary: 'rgba(232, 224, 213, 0.75)',
         textOnPrimary: '#1A1612',
         textOnSecondary: '#E8E0D5',
-        // === COULEURS EXCEL SPÉCIFIQUES (Dark) ===
-        negative: '#E74C3C',          // Rouge clair
-        positive: '#2ECC71',          // Vert clair
-        headerAlt: '#85929E',         // Bleu-gris clair
-        headerTaupe: '#C9B896',       // Taupe clair
-        chartBar: '#D4B87A',          // Caramel
       }
     },
   },
-
   // ========== THÈMES PASTELS ==========
-  'pastel-violet': {
+   'pastel-violet': {
     key: 'pastel-violet',
     name: 'Violet Pastel',
     emoji: '💜',
     colors: {
       light: {
-        primary: '#ede9fe',
-        primaryLight: '#c4b5fd',
-        secondary: '#7c3aed',
-        secondaryLight: '#8b5cf6',
-        accent: '#818cf8',
-        gradientFrom: '#a78bfa',
-        gradientTo: '#f472b6',
-        backgroundGradientFrom: '#ede9fe',
-        backgroundGradientTo: '#fbcfe8',
-        cardBackground: 'rgba(255, 255, 255, 0.6)',
-        cardBackgroundLight: 'rgba(237, 233, 254, 0.6)',
-        cardBorder: 'rgba(124, 58, 237, 0.2)',
-        textPrimary: '#5b21b6',
-        textSecondary: 'rgba(91, 33, 182, 0.75)',
-        textOnPrimary: '#5b21b6',
-        textOnSecondary: '#ede9fe',
+        // === MODE CLAIR - TEXTE PLUS FONCÉ ===
+        // PRIMARY = Violet TRÈS foncé (pour textes comme "Décembre")
+        primary: '#4A2A4A',           // Violet très foncé
+        primaryLight: '#6B4A6B',      // Violet foncé
+        // SECONDARY = Violet pastel (header)
+        secondary: '#B989D3',         // Violet pastel moyen
+        secondaryLight: '#CCA7C7',    // Violet pastel clair
+        accent: '#9D61A2',            // Violet saturé
+        // FOND = Violet très pâle/lavande
+        gradientFrom: '#F2E3E5',
+        gradientTo: '#E8D5E0',
+        backgroundGradientFrom: '#F8F0F5',
+        backgroundGradientTo: '#F2E3E5',
+        // CARTES
+        cardBackground: 'rgba(255, 255, 255, 0.95)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 1)',
+        cardBorder: 'rgba(185, 137, 211, 0.3)',
+        // TEXTE TRÈS FONCÉ (lisible!)
+        textPrimary: '#2D1A2D',       // Violet TRÈS foncé (quasi noir)
+        textSecondary: '#4A3A4A',     // Violet foncé
+        textOnPrimary: '#FFFFFF',
+        textOnSecondary: '#FFFFFF',
       },
       dark: {
-        primary: '#a78bfa',
-        primaryLight: '#c4b5fd',
-        secondary: '#1e1b4b',
-        secondaryLight: '#312e74',
-        accent: '#818cf8',
-        gradientFrom: '#a78bfa',
-        gradientTo: '#f472b6',
-        backgroundGradientFrom: '#1e1b4b',
-        backgroundGradientTo: '#1e1b4b',
-        cardBackground: 'rgba(50, 46, 116, 0.5)',
-        cardBackgroundLight: 'rgba(50, 46, 116, 0.7)',
-        cardBorder: 'rgba(167, 139, 250, 0.3)',
-        textPrimary: '#c4b5fd',
-        textSecondary: 'rgba(196, 181, 253, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#c4b5fd',
+        // === MODE SOMBRE - PARFAIT, ON NE TOUCHE PAS ===
+        primary: '#CCA7C7',
+        primaryLight: '#D4B3CF',
+        secondary: '#5C3A5C',
+        secondaryLight: '#6B4A6B',
+        accent: '#B989D3',
+        gradientFrom: '#6B4A6B',
+        gradientTo: '#5C3A5C',
+        backgroundGradientFrom: '#2D1F2D',
+        backgroundGradientTo: '#3A2A3A',
+        cardBackground: 'rgba(92, 58, 92, 0.8)',
+        cardBackgroundLight: 'rgba(107, 74, 107, 0.85)',
+        cardBorder: 'rgba(204, 167, 199, 0.3)',
+        textPrimary: '#E8D5E0',
+        textSecondary: 'rgba(232, 213, 224, 0.7)',
+        textOnPrimary: '#2D1F2D',
+        textOnSecondary: '#CCA7C7',
       }
     },
   },
@@ -320,40 +320,40 @@ export const themes: Record<ThemeKey, Theme> = {
     emoji: '💙',
     colors: {
       light: {
-        primary: '#dbeafe',
-        primaryLight: '#93c5fd',
-        secondary: '#2563eb',
-        secondaryLight: '#3b82f6',
-        accent: '#3b82f6',
-        gradientFrom: '#60a5fa',
-        gradientTo: '#38bdf8',
-        backgroundGradientFrom: '#dbeafe',
-        backgroundGradientTo: '#bae6fd',
-        cardBackground: 'rgba(255, 255, 255, 0.6)',
-        cardBackgroundLight: 'rgba(219, 234, 254, 0.6)',
-        cardBorder: 'rgba(59, 130, 246, 0.2)',
-        textPrimary: '#1e3a8a',
-        textSecondary: 'rgba(30, 58, 138, 0.75)',
-        textOnPrimary: '#1e3a8a',
-        textOnSecondary: '#dbeafe',
+        primary: '#2D4A5E',           // Bleu foncé (texte partout)
+        primaryLight: '#4a7a9e',      // Bleu moyen
+        secondary: '#87CEEB',         // Sky blue - bleu pastel doux
+        secondaryLight: '#87CEEB',    // Même couleur
+        accent: '#5B8DB8',            // Bleu pastel moyen
+        gradientFrom: '#E8F4FC',      // Bleu très pâle
+        gradientTo: '#D6EAF5',        // Bleu pâle
+        backgroundGradientFrom: '#F0F8FF',  // Alice blue - très pâle
+        backgroundGradientTo: '#E8F4FC',    // Bleu très pâle
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.96)',
+        cardBorder: 'rgba(45, 74, 94, 0.2)',
+        textPrimary: '#2D4A5E',       // Bleu foncé pour texte
+        textSecondary: 'rgba(45, 74, 94, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#2D4A5E',   // Bleu foncé sur header pastel
       },
       dark: {
-        primary: '#60a5fa',
-        primaryLight: '#93c5fd',
-        secondary: '#1e3a8a',
-        secondaryLight: '#1e40af',
-        accent: '#818cf8',
-        gradientFrom: '#60a5fa',
-        gradientTo: '#38bdf8',
-        backgroundGradientFrom: '#1e3a8a',
-        backgroundGradientTo: '#1e3a8a',
-        cardBackground: 'rgba(30, 58, 138, 0.5)',
-        cardBackgroundLight: 'rgba(30, 64, 175, 0.7)',
-        cardBorder: 'rgba(96, 165, 250, 0.3)',
-        textPrimary: '#93c5fd',
-        textSecondary: 'rgba(147, 197, 253, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#93c5fd',
+        primary: '#89C4E8',
+        primaryLight: '#A8D4F0',
+        secondary: '#1E3A4D',
+        secondaryLight: '#2A4D63',
+        accent: '#7EB5D6',
+        gradientFrom: '#2A4D63',
+        gradientTo: '#1E3A4D',
+        backgroundGradientFrom: '#152530',
+        backgroundGradientTo: '#1A2F3D',
+        cardBackground: 'rgba(30, 58, 77, 0.85)',
+        cardBackgroundLight: 'rgba(42, 77, 99, 0.9)',
+        cardBorder: 'rgba(137, 196, 232, 0.25)',
+        textPrimary: '#D6EAF5',
+        textSecondary: 'rgba(214, 234, 245, 0.7)',
+        textOnPrimary: '#152530',
+        textOnSecondary: '#D6EAF5',
       }
     },
   },
@@ -363,40 +363,41 @@ export const themes: Record<ThemeKey, Theme> = {
     emoji: '💚',
     colors: {
       light: {
-        primary: '#dcfce7',
-        primaryLight: '#86efac',
-        secondary: '#16a34a',
-        secondaryLight: '#22c55e',
-        accent: '#a3e635',
-        gradientFrom: '#4ade80',
-        gradientTo: '#2dd4bf',
-        backgroundGradientFrom: '#dcfce7',
-        backgroundGradientTo: '#ccfbf1',
-        cardBackground: 'rgba(255, 255, 255, 0.6)',
-        cardBackgroundLight: 'rgba(220, 252, 231, 0.6)',
-        cardBorder: 'rgba(34, 197, 94, 0.2)',
-        textPrimary: '#14532d',
-        textSecondary: 'rgba(20, 83, 45, 0.75)',
-        textOnPrimary: '#14532d',
-        textOnSecondary: '#dcfce7',
+        primary: '#2e5a3a',           // Vert foncé (texte sur contenu + header)
+        primaryLight: '#4a7c59',      // Vert sauge
+        // SECONDARY = fond header/nav → VERT PASTEL CLAIR
+        secondary: '#8fbc8f',         // Vert pastel doux (dark sea green)
+        secondaryLight: '#8fbc8f',    // Même couleur
+        accent: '#6b9b7a',            // Vert pastel moyen
+        gradientFrom: '#e8f5e9',      // Vert très pâle
+        gradientTo: '#c8e6c9',        // Vert pâle
+        backgroundGradientFrom: '#f1f8f2',  // Fond vert très très pâle
+        backgroundGradientTo: '#e8f5e9',    // Fond vert très pâle
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.96)',
+        cardBorder: 'rgba(46, 90, 58, 0.2)',
+        textPrimary: '#2e5a3a',       // Vert foncé pour texte sur cartes
+        textSecondary: 'rgba(46, 90, 58, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons verts
+        textOnSecondary: '#2e5a3a',   // Vert foncé sur header pastel
       },
       dark: {
-        primary: '#4ade80',
-        primaryLight: '#86efac',
-        secondary: '#14532d',
-        secondaryLight: '#166534',
-        accent: '#a3e635',
-        gradientFrom: '#4ade80',
-        gradientTo: '#2dd4bf',
-        backgroundGradientFrom: '#14532d',
-        backgroundGradientTo: '#14532d',
-        cardBackground: 'rgba(20, 83, 45, 0.5)',
-        cardBackgroundLight: 'rgba(22, 101, 52, 0.7)',
-        cardBorder: 'rgba(74, 222, 128, 0.3)',
-        textPrimary: '#86efac',
-        textSecondary: 'rgba(134, 239, 172, 0.7)',
-        textOnPrimary: '#000000',
-        textOnSecondary: '#86efac',
+        primary: '#a5d6a7',           // Vert pastel clair
+        primaryLight: '#c8e6c9',      // Vert très pâle
+        secondary: '#1b3d24',         // Vert très foncé (header)
+        secondaryLight: '#2e5a3a',    // Vert foncé
+        accent: '#81c784',            // Vert pastel
+        gradientFrom: '#2e5a3a',      // Vert foncé
+        gradientTo: '#1b3d24',        // Vert très foncé
+        backgroundGradientFrom: '#1a2e1f',  // Fond très sombre
+        backgroundGradientTo: '#1b3d24',    // Fond sombre
+        cardBackground: 'rgba(27, 61, 36, 0.85)',
+        cardBackgroundLight: 'rgba(46, 90, 58, 0.9)',
+        cardBorder: 'rgba(165, 214, 167, 0.25)',
+        textPrimary: '#c8e6c9',       // Vert pâle (texte)
+        textSecondary: 'rgba(200, 230, 201, 0.7)',
+        textOnPrimary: '#1b3d24',     // Vert foncé sur boutons
+        textOnSecondary: '#c8e6c9',   // Vert pâle sur header
       }
     },
   },
@@ -406,221 +407,234 @@ export const themes: Record<ThemeKey, Theme> = {
     emoji: '🧡',
     colors: {
       light: {
-        primary: '#ffedd5',
-        primaryLight: '#fdba74',
-        secondary: '#ea580c',
-        secondaryLight: '#f97316',
-        accent: '#facc15',
-        gradientFrom: '#fb923c',
-        gradientTo: '#f472b6',
-        backgroundGradientFrom: '#ffedd5',
-        backgroundGradientTo: '#fce7f3',
-        cardBackground: 'rgba(255, 255, 255, 0.6)',
-        cardBackgroundLight: 'rgba(255, 237, 213, 0.6)',
-        cardBorder: 'rgba(251, 146, 60, 0.2)',
-        textPrimary: '#9a3412',
-        textSecondary: 'rgba(154, 52, 18, 0.75)',
-        textOnPrimary: '#9a3412',
-        textOnSecondary: '#ffedd5',
+        primary: '#8B5A4A',
+        primaryLight: '#A67C6D',
+        secondary: '#F5B89A',
+        secondaryLight: '#F5B89A',
+        accent: '#E8A088',
+        gradientFrom: '#FDE8DC',
+        gradientTo: '#FCDCD0',
+        backgroundGradientFrom: '#FFF5F0',
+        backgroundGradientTo: '#FDE8DC',
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.96)',
+        cardBorder: 'rgba(139, 90, 74, 0.2)',
+        textPrimary: '#6B4A3A',
+        textSecondary: 'rgba(107, 74, 58, 0.7)',
+        textOnPrimary: '#FFFFFF',
+        textOnSecondary: '#6B4A3A',
       },
       dark: {
-        primary: '#fb923c',
-        primaryLight: '#fdba74',
-        secondary: '#7c2d12',
-        secondaryLight: '#9a3412',
-        accent: '#facc15',
-        gradientFrom: '#fb923c',
-        gradientTo: '#f472b6',
-        backgroundGradientFrom: '#7c2d12',
-        backgroundGradientTo: '#7c2d12',
-        cardBackground: 'rgba(124, 45, 18, 0.5)',
-        cardBackgroundLight: 'rgba(154, 52, 18, 0.7)',
-        cardBorder: 'rgba(251, 146, 60, 0.3)',
-        textPrimary: '#fdba74',
-        textSecondary: 'rgba(253, 186, 116, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#fdba74',
+        primary: '#F5B89A',           // Pêche pastel clair
+        primaryLight: '#FCDCD0',      // Pêche très pâle
+        // Header = corail/saumon foncé
+        secondary: '#5C3D3D',         // Corail foncé (plus rouge)
+        secondaryLight: '#6B4A4A',    // Corail moyen
+        accent: '#E8A088',            // Corail doux
+        gradientFrom: '#6B4A4A',      // Corail moyen
+        gradientTo: '#5C3D3D',        // Corail foncé
+        // Fond = rose/corail très foncé (PAS marron)
+        backgroundGradientFrom: '#3D2828',  // Rose foncé / bordeaux sombre
+        backgroundGradientTo: '#4A3333',    // Rose/corail foncé
+        cardBackground: 'rgba(92, 61, 61, 0.85)',  // Cartes corail foncé
+        cardBackgroundLight: 'rgba(107, 74, 74, 0.9)',
+        cardBorder: 'rgba(245, 184, 154, 0.25)',
+        textPrimary: '#FCDCD0',       // Pêche pâle (texte)
+        textSecondary: 'rgba(252, 220, 208, 0.7)',
+        textOnPrimary: '#3D2828',     // Foncé sur boutons
+        textOnSecondary: '#FCDCD0',   // Pêche pâle sur header
       }
     },
   },
-
   // ========== THÈMES NATURE ==========
-  'ocean': {
+   'ocean': {
     key: 'ocean',
     name: 'Océan',
     emoji: '🌊',
     colors: {
       light: {
-        primary: '#e0f2fe',
-        primaryLight: '#38bdf8',
-        secondary: '#0369a1',
-        secondaryLight: '#0284c7',
-        accent: '#6366f1',
-        gradientFrom: '#bae6fd',
-        gradientTo: '#7dd3fc',
-        backgroundGradientFrom: '#ecfeff',
-        backgroundGradientTo: '#f0f9ff',
-        cardBackground: 'rgba(2, 132, 199, 0.1)',
-        cardBackgroundLight: 'rgba(3, 105, 161, 0.2)',
-        cardBorder: 'rgba(14, 165, 233, 0.3)',
-        textPrimary: '#084c61',
-        textSecondary: 'rgba(8, 76, 97, 0.75)',
-        textOnPrimary: '#084c61',
-        textOnSecondary: '#e0f2fe',
+        // === MODE CLAIR - OCÉAN LISIBLE ===
+        // PRIMARY = Bleu océan foncé (texte visible sur fond clair)
+        primary: '#1A5276',           // Bleu océan foncé
+        primaryLight: '#2980B9',      // Bleu océan moyen
+        // SECONDARY = Turquoise/Teal (header, nav)
+        secondary: '#17A2B8',         // Turquoise
+        secondaryLight: '#20C5DB',    // Turquoise clair
+        accent: '#48C9B0',            // Vert d'eau
+        // FOND = Bleu très pâle
+        gradientFrom: '#E8F4F8',      // Bleu glacier très pâle
+        gradientTo: '#D4EBF2',        // Bleu ciel pâle
+        backgroundGradientFrom: '#F0F9FC',  // Fond bleu très pâle
+        backgroundGradientTo: '#E8F4F8',    // Fond bleu glacier
+        // CARTES
+        cardBackground: 'rgba(255, 255, 255, 0.95)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 1)',
+        cardBorder: 'rgba(26, 82, 118, 0.2)',
+        // TEXTE = BLEU OCÉAN FONCÉ (lisible!)
+        textPrimary: '#0E3D5A',       // Bleu océan très foncé
+        textSecondary: '#1A5276',     // Bleu océan foncé
+        textOnPrimary: '#FFFFFF',
+        textOnSecondary: '#FFFFFF',   // Blanc sur turquoise (header/nav)
       },
       dark: {
-        primary: '#38bdf8',
-        primaryLight: '#7dd3fc',
-        secondary: '#082f49',
-        secondaryLight: '#075985',
-        accent: '#6366f1',
-        gradientFrom: '#38bdf8',
-        gradientTo: '#06b6d4',
-        backgroundGradientFrom: '#082f49',
-        backgroundGradientTo: '#082f49',
-        cardBackground: 'rgba(7, 89, 133, 0.5)',
-        cardBackgroundLight: 'rgba(2, 132, 199, 0.7)',
-        cardBorder: 'rgba(56, 189, 248, 0.3)',
-        textPrimary: '#7dd3fc',
-        textSecondary: 'rgba(125, 211, 252, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#7dd3fc',
+        primary: '#5DADE2',           // Bleu clair
+        primaryLight: '#85C1E9',      // Bleu très clair
+        secondary: '#1B4F72',         // Bleu océan foncé
+        secondaryLight: '#21618C',    // Bleu océan moyen
+        accent: '#48C9B0',            // Vert d'eau
+        gradientFrom: '#1B4F72',
+        gradientTo: '#154360',
+        backgroundGradientFrom: '#0E2A47',  // Fond océan profond
+        backgroundGradientTo: '#1B4F72',
+        cardBackground: 'rgba(27, 79, 114, 0.8)',
+        cardBackgroundLight: 'rgba(33, 97, 140, 0.85)',
+        cardBorder: 'rgba(93, 173, 226, 0.3)',
+        textPrimary: '#D6EAF8',       // Bleu très clair
+        textSecondary: 'rgba(214, 234, 248, 0.7)',
+        textOnPrimary: '#0E2A47',
+        textOnSecondary: '#D6EAF8',
       }
     },
   },
-  'foret': {
+'foret': {
     key: 'foret',
     name: 'Forêt',
     emoji: '🌲',
     colors: {
+      // Mode clair
       light: {
-        primary: '#dcfce7',
-        primaryLight: '#4ade80',
-        secondary: '#15803d',
-        secondaryLight: '#16a34a',
-        accent: '#14b8a6',
-        gradientFrom: '#bbf7d0',
-        gradientTo: '#a7f3d0',
-        backgroundGradientFrom: '#f0fdf4',
-        backgroundGradientTo: '#f7fee7',
-        cardBackground: 'rgba(21, 128, 61, 0.1)',
-        cardBackgroundLight: 'rgba(21, 128, 61, 0.2)',
-        cardBorder: 'rgba(34, 197, 94, 0.3)',
-        textPrimary: '#14532d',
-        textSecondary: 'rgba(20, 83, 45, 0.75)',
-        textOnPrimary: '#14532d',
-        textOnSecondary: '#dcfce7',
+        primary: '#2D4A3E',           // Vert forêt FONCÉ (pour textes modal)
+        primaryLight: '#4A6B58',      // Vert mousse
+        secondary: '#3A5E4F',         // Vert forêt pour header/footer
+        secondaryLight: '#F5F0E8',    // Crème naturel pour modal
+        accent: '#C5E1B8',            // Vert sauge clair (accent)
+        gradientFrom: '#C5E1B8',      // Vert sauge clair
+        gradientTo: '#D4C4A8',        // Beige sable
+        backgroundGradientFrom: '#D5CEC3',
+        backgroundGradientTo: '#C9C2B7',
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.85)',
+        cardBorder: 'rgba(74, 107, 88, 0.3)',
+        textPrimary: '#2D4A3E',
+        textSecondary: 'rgba(45, 74, 62, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons verts foncés
+        textOnSecondary: '#C5E1B8',   // Vert sauge CLAIR sur header vert foncé
       },
-      dark: {
-        primary: '#4ade80',
-        primaryLight: '#86efac',
-        secondary: '#14532d',
-        secondaryLight: '#166534',
-        accent: '#14b8a6',
-        gradientFrom: '#4ade80',
-        gradientTo: '#84cc16',
-        backgroundGradientFrom: '#14532d',
-        backgroundGradientTo: '#14532d',
-        cardBackground: 'rgba(22, 101, 52, 0.5)',
-        cardBackgroundLight: 'rgba(21, 128, 61, 0.7)',
-        cardBorder: 'rgba(74, 222, 128, 0.3)',
-        textPrimary: '#86efac',
-        textSecondary: 'rgba(134, 239, 172, 0.7)',
-        textOnPrimary: '#000000',
-        textOnSecondary: '#86efac',
+        dark: {
+        primary: '#8BBB9A',
+        primaryLight: '#A4C89F',
+        secondary: '#1B3D2F',
+        secondaryLight: '#2D4A3E',
+        accent: '#C9A87D',
+        gradientFrom: '#6B9B7A',
+        gradientTo: '#4A6B58',
+        backgroundGradientFrom: '#1B3D2F',
+        backgroundGradientTo: '#152E24',
+        cardBackground: 'rgba(45, 74, 62, 0.6)',
+        cardBackgroundLight: 'rgba(58, 94, 79, 0.7)',
+        cardBorder: 'rgba(139, 187, 154, 0.3)',
+        textPrimary: '#C5E1B8',
+        textSecondary: 'rgba(197, 225, 184, 0.7)',
+        textOnPrimary: '#1B3D2F',
+        textOnSecondary: '#A4C89F',
       }
     },
   },
+// ========== 🌿 THÈME MENTHE FRAÎCHE ==========
   'menthe': {
     key: 'menthe',
     name: 'Menthe Fraîche',
     emoji: '🌿',
     colors: {
+      // Mode clair
       light: {
-        primary: '#ccfbf1',
-        primaryLight: '#2dd4bf',
-        secondary: '#0f766e',
-        secondaryLight: '#0d9488',
-        accent: '#06b6d4',
-        gradientFrom: '#99f6e4',
-        gradientTo: '#a7f3d0',
-        backgroundGradientFrom: '#f0fdfa',
-        backgroundGradientTo: '#ecfdf5',
-        cardBackground: 'rgba(15, 118, 110, 0.1)',
-        cardBackgroundLight: 'rgba(15, 118, 110, 0.2)',
-        cardBorder: 'rgba(20, 184, 166, 0.3)',
-        textPrimary: '#134e4a',
-        textSecondary: 'rgba(19, 78, 74, 0.75)',
-        textOnPrimary: '#134e4a',
-        textOnSecondary: '#ccfbf1',
+        primary: '#0D5C52',           // Vert menthe FONCÉ (pour textes modal)
+        primaryLight: '#14857A',      // Vert menthe moyen
+        secondary: '#0F766E',         // Vert menthe foncé pour header/footer
+        secondaryLight: '#F0FDFA',    // Menthe très clair pour modal
+        accent: '#2DD4BF',            // Turquoise vif (accent)
+        gradientFrom: '#99F6E4',      // Menthe clair
+        gradientTo: '#A7F3D0',        // Vert eau clair
+        backgroundGradientFrom: '#CCFBF1',  // Fond menthe pastel
+        backgroundGradientTo: '#D1FAE5',    // Fond vert eau pastel
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.85)',
+        cardBorder: 'rgba(15, 118, 110, 0.25)',
+        textPrimary: '#0D5C52',       // Vert menthe foncé pour texte
+        textSecondary: 'rgba(13, 92, 82, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#99F6E4',   // Menthe clair sur header foncé
       },
+      // Mode sombre
       dark: {
-        primary: '#2dd4bf',
-        primaryLight: '#5eead4',
-        secondary: '#134e4a',
-        secondaryLight: '#115e59',
-        accent: '#06b6d4',
-        gradientFrom: '#2dd4bf',
-        gradientTo: '#10b981',
-        backgroundGradientFrom: '#134e4a',
-        backgroundGradientTo: '#134e4a',
-        cardBackground: 'rgba(17, 94, 89, 0.5)',
-        cardBackgroundLight: 'rgba(19, 78, 74, 0.7)',
-        cardBorder: 'rgba(45, 212, 191, 0.3)',
-        textPrimary: '#5eead4',
-        textSecondary: 'rgba(94, 234, 212, 0.7)',
-        textOnPrimary: '#000000',
-        textOnSecondary: '#5eead4',
+        primary: '#5EEAD4',           // Turquoise lumineux
+        primaryLight: '#99F6E4',      // Menthe clair
+        secondary: '#134E4A',         // Vert menthe très profond
+        secondaryLight: '#1A5D57',    // Vert menthe profond
+        accent: '#2DD4BF',            // Turquoise vif
+        gradientFrom: '#2DD4BF',      // Turquoise
+        gradientTo: '#14B8A6',        // Teal
+        backgroundGradientFrom: '#134E4A',  // Fond sombre
+        backgroundGradientTo: '#0F3D3A',    // Fond encore plus sombre
+        cardBackground: 'rgba(20, 78, 74, 0.6)',
+        cardBackgroundLight: 'rgba(26, 93, 87, 0.7)',
+        cardBorder: 'rgba(94, 234, 212, 0.3)',
+        textPrimary: '#99F6E4',       // Menthe clair
+        textSecondary: 'rgba(153, 246, 228, 0.7)',
+        textOnPrimary: '#134E4A',     // Vert foncé sur boutons clairs
+        textOnSecondary: '#5EEAD4',   // Turquoise sur header
       }
     },
   },
 
-  // ========== THÈMES CHAUDS ==========
+  // ========== 🌅 THÈME COUCHER DE SOLEIL ==========
   'sunset': {
     key: 'sunset',
-    name: 'Coucher de soleil',
+    name: 'Coucher de Soleil',
     emoji: '🌅',
     colors: {
+      // Mode clair
       light: {
-        primary: '#ffe4e6',
-        primaryLight: '#fb7185',
-        secondary: '#be123c',
-        secondaryLight: '#e11d48',
-        accent: '#eab308',
-        gradientFrom: '#fecaca',
-        gradientTo: '#fed7aa',
-        backgroundGradientFrom: '#fff1f2',
-        backgroundGradientTo: '#fff7ed',
-        cardBackground: 'rgba(190, 18, 60, 0.1)',
-        cardBackgroundLight: 'rgba(190, 18, 60, 0.2)',
-        cardBorder: 'rgba(244, 63, 94, 0.3)',
-        textPrimary: '#881337',
-        textSecondary: 'rgba(136, 19, 55, 0.75)',
-        textOnPrimary: '#881337',
-        textOnSecondary: '#ffe4e6',
+        primary: '#DC2626',           // Rouge vif (boutons)
+        primaryLight: '#EF4444',      // Rouge clair
+        secondary: '#DC2626',         // Rouge vif pour header/footer
+        secondaryLight: '#FFF7ED',    // Crème orangé pour modal
+        accent: '#F59E0B',            // Jaune doré (accent)
+        gradientFrom: '#FDBA74',      // Orange clair
+        gradientTo: '#FCA5A5',        // Rose saumon
+        backgroundGradientFrom: '#FFEDD5',  // Fond pêche clair
+        backgroundGradientTo: '#FEE2E2',    // Fond rose très clair
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.85)',
+        cardBorder: 'rgba(220, 38, 38, 0.25)',
+        textPrimary: '#7C2D12',       // Brun orangé foncé pour texte
+        textSecondary: 'rgba(124, 45, 18, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons rouges
+        textOnSecondary: '#FFF7ED',   // Crème clair sur header rouge
       },
+      // Mode sombre
       dark: {
-        primary: '#fb7185',
-        primaryLight: '#fda4af',
-        secondary: '#881337',
-        secondaryLight: '#9f1239',
-        accent: '#eab308',
-        gradientFrom: '#fb7185',
-        gradientTo: '#f97316',
-        backgroundGradientFrom: '#881337',
-        backgroundGradientTo: '#881337',
-        cardBackground: 'rgba(159, 18, 57, 0.5)',
-        cardBackgroundLight: 'rgba(136, 19, 55, 0.7)',
-        cardBorder: 'rgba(251, 113, 133, 0.3)',
-        textPrimary: '#fda4af',
-        textSecondary: 'rgba(251, 113, 133, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#fb7185',
+        primary: '#FB923C',           // Orange lumineux
+        primaryLight: '#FDBA74',      // Orange clair
+        secondary: '#991B1B',         // Rouge foncé profond
+        secondaryLight: '#7C2D12',    // Brun orangé
+        accent: '#FBBF24',            // Jaune doré
+        gradientFrom: '#FB923C',      // Orange
+        gradientTo: '#F472B6',        // Rose
+        backgroundGradientFrom: '#7C2D12',  // Fond brun orangé
+        backgroundGradientTo: '#581C0C',    // Fond brun plus sombre
+        cardBackground: 'rgba(124, 45, 18, 0.6)',
+        cardBackgroundLight: 'rgba(154, 52, 18, 0.7)',
+        cardBorder: 'rgba(251, 146, 60, 0.3)',
+        textPrimary: '#FDBA74',       // Orange clair
+        textSecondary: 'rgba(253, 186, 116, 0.7)',
+        textOnPrimary: '#7C2D12',     // Brun foncé sur boutons orange
+        textOnSecondary: '#FDBA74',   // Orange clair sur header
       }
     },
   },
 
-  'cerise': {
+ 'cerise': {
     key: 'cerise',
     name: 'Cerise',
     emoji: '🍒',
@@ -631,13 +645,13 @@ export const themes: Record<ThemeKey, Theme> = {
         primaryLight: '#e11d48',      // Rouge cerise plus clair
         // SECONDARY = fond du header → TRÈS FONCÉ
         secondary: '#6b1530',         // Bordeaux très foncé (header)
-        // SECONDARYLIGHT = fond du bottomNav → AUSSI FONCÉ
-        secondaryLight: '#7f1d3d',    // Bordeaux foncé (bottomNav) - était rose pâle !
+        // SECONDARYLIGHT = fond du modal → CLAIR
+        secondaryLight: '#FFF1F2',    // Rose très clair (modal)
         accent: '#f472b6',            // Rose vif
-        gradientFrom: '#fecdd3',      // Rose pâle
-        gradientTo: '#fda4af',        // Rose saumon
-        backgroundGradientFrom: '#fdf2f8',  // Fond page rose très clair
-        backgroundGradientTo: '#fce7f3',    // Fond page rose pâle
+        gradientFrom: '#F5D0E0',      // Rose froid/mauve pâle
+        gradientTo: '#E8C2D4',        // Rose mauve
+        backgroundGradientFrom: '#FDF2F8',  // Fond page rose très clair (inchangé)
+        backgroundGradientTo: '#F8E8F0',    // Fond rose légèrement mauve
         cardBackground: 'rgba(255, 255, 255, 0.9)',  // Cartes blanches
         cardBackgroundLight: 'rgba(255, 255, 255, 0.95)',
         cardBorder: 'rgba(190, 18, 60, 0.25)',
@@ -667,220 +681,223 @@ export const themes: Record<ThemeKey, Theme> = {
       }
     },
   },
-  'chocolat': {
+ 'chocolat': {
     key: 'chocolat',
     name: 'Chocolat',
     emoji: '🍫',
     colors: {
       light: {
-        primary: '#fef9c3',
-        primaryLight: '#b45309',
-        secondary: '#78350f',
-        secondaryLight: '#92400e',
-        accent: '#d97706',
-        gradientFrom: '#fde68a',
-        gradientTo: '#fcd34d',
-        backgroundGradientFrom: '#fef3c7',
-        backgroundGradientTo: '#fde68a',
-        cardBackground: 'rgba(120, 53, 15, 0.1)',
-        cardBackgroundLight: 'rgba(120, 53, 15, 0.2)',
-        cardBorder: 'rgba(146, 64, 14, 0.3)',
-        textPrimary: '#451a03',
-        textSecondary: 'rgba(69, 26, 3, 0.75)',
-        textOnPrimary: '#451a03',
-        textOnSecondary: '#fef9c3',
+        primary: '#5D4037',           // Brun chocolat (boutons, textes modal)
+        primaryLight: '#795548',      // Brun moyen
+        secondary: '#4E342E',         // Brun foncé pour header/footer
+        secondaryLight: '#FFF8E7',    // Crème/vanille pour modal
+        accent: '#D7CCC8',            // Beige/taupe clair (accent)
+        gradientFrom: '#E8DCD0',      // Beige chaud
+        gradientTo: '#D4C4B0',        // Beige sable
+        backgroundGradientFrom: '#F5EFE6',  // Fond crème chaud
+        backgroundGradientTo: '#E8DCD0',    // Fond beige chaud
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.85)',
+        cardBorder: 'rgba(93, 64, 55, 0.25)',
+        textPrimary: '#3E2723',       // Brun très foncé pour texte
+        textSecondary: 'rgba(62, 39, 35, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#F5EFE6',   // Crème sur header brun
       },
       dark: {
-        primary: '#fde68a',
-        primaryLight: '#fef08a',
-        secondary: '#451a03',
-        secondaryLight: '#78350f',
-        accent: '#d97706',
-        gradientFrom: '#fde68a',
-        gradientTo: '#b45309',
-        backgroundGradientFrom: '#451a03',
-        backgroundGradientTo: '#451a03',
-        cardBackground: 'rgba(120, 53, 15, 0.5)',
-        cardBackgroundLight: 'rgba(120, 53, 15, 0.7)',
-        cardBorder: 'rgba(253, 230, 138, 0.3)',
-        textPrimary: '#fde68a',
-        textSecondary: 'rgba(254, 240, 138, 0.7)',
-        textOnPrimary: '#451a03',
-        textOnSecondary: '#fde68a',
+        primary: '#BCAAA4',           // Taupe clair (boutons)
+        primaryLight: '#D7CCC8',      // Beige clair
+        secondary: '#3E2723',         // Brun très foncé pour header
+        secondaryLight: '#4E342E',    // Brun foncé
+        accent: '#A1887F',            // Taupe moyen
+        gradientFrom: '#8D6E63',      // Brun moyen
+        gradientTo: '#6D4C41',        // Brun
+        backgroundGradientFrom: '#3E2723',  // Fond brun très foncé
+        backgroundGradientTo: '#2C1A15',    // Fond encore plus sombre
+        cardBackground: 'rgba(62, 39, 35, 0.6)',
+        cardBackgroundLight: 'rgba(78, 52, 46, 0.7)',
+        cardBorder: 'rgba(188, 170, 164, 0.3)',
+        textPrimary: '#D7CCC8',       // Beige clair
+        textSecondary: 'rgba(215, 204, 200, 0.7)',
+        textOnPrimary: '#3E2723',     // Brun foncé sur boutons clairs
+        textOnSecondary: '#D7CCC8',   // Beige sur header
       }
     },
   },
 
-  // ========== THÈMES ÉLÉGANTS ==========
+ // ========== THÈMES ÉLÉGANTS ==========
   'rose-gold': {
     key: 'rose-gold',
     name: 'Rose Gold',
-    emoji: '🌸',
+    emoji: '✨',
     colors: {
       light: {
-        primary: '#fce7f3',
-        primaryLight: '#f472b6',
-        secondary: '#be185d',
-        secondaryLight: '#db2777',
-        accent: '#d946ef',
-        gradientFrom: '#fbcfe8',
-        gradientTo: '#f9a8d4',
-        backgroundGradientFrom: '#fdf2f8',
-        backgroundGradientTo: '#fce7f3',
-        cardBackground: 'rgba(190, 24, 93, 0.1)',
-        cardBackgroundLight: 'rgba(190, 24, 93, 0.2)',
-        cardBorder: 'rgba(219, 39, 119, 0.3)',
-        textPrimary: '#831843',
-        textSecondary: 'rgba(131, 24, 67, 0.75)',
-        textOnPrimary: '#831843',
-        textOnSecondary: '#fce7f3',
+        primary: '#B76E79',           // Rose gold principal
+        primaryLight: '#C9939B',      // Rose gold clair
+        secondary: '#8E5D63',         // Rose gold foncé pour header/footer
+        secondaryLight: '#FDF5F6',    // Rose très pâle pour modal
+        accent: '#E8B4B8',            // Rose gold pâle (accent)
+        gradientFrom: '#EACFD0',      // Rose gold très clair
+        gradientTo: '#DEB8BA',        // Rose gold clair
+        backgroundGradientFrom: '#FDF5F6',  // Fond rose très pâle
+        backgroundGradientTo: '#F5E6E8',    // Fond rose pâle
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.85)',
+        cardBorder: 'rgba(183, 110, 121, 0.25)',
+        textPrimary: '#6B4449',       // Brun rosé foncé pour texte
+        textSecondary: 'rgba(107, 68, 73, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#FDF5F6',   // Rose pâle sur header
       },
       dark: {
-        primary: '#f472b6',
-        primaryLight: '#f9a8d4',
-        secondary: '#831843',
-        secondaryLight: '#9d174d',
-        accent: '#d946ef',
-        gradientFrom: '#f472b6',
-        gradientTo: '#c026d3',
-        backgroundGradientFrom: '#831843',
-        backgroundGradientTo: '#831843',
-        cardBackground: 'rgba(157, 23, 77, 0.5)',
-        cardBackgroundLight: 'rgba(131, 24, 67, 0.7)',
-        cardBorder: 'rgba(244, 114, 182, 0.3)',
-        textPrimary: '#f9a8d4',
-        textSecondary: 'rgba(249, 168, 212, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#f9a8d4',
+        primary: '#E8B4B8',           // Rose gold clair (boutons)
+        primaryLight: '#EACFD0',      // Rose gold très clair
+        secondary: '#5C3D40',         // Brun rosé foncé pour header
+        secondaryLight: '#6B4449',    // Brun rosé
+        accent: '#C9939B',            // Rose gold moyen
+        gradientFrom: '#B76E79',      // Rose gold
+        gradientTo: '#A15D67',        // Rose gold foncé
+        backgroundGradientFrom: '#5C3D40',  // Fond brun rosé foncé
+        backgroundGradientTo: '#4A3033',    // Fond encore plus sombre
+        cardBackground: 'rgba(92, 61, 64, 0.6)',
+        cardBackgroundLight: 'rgba(107, 68, 73, 0.7)',
+        cardBorder: 'rgba(232, 180, 184, 0.3)',
+        textPrimary: '#EACFD0',       // Rose gold très clair
+        textSecondary: 'rgba(234, 207, 208, 0.7)',
+        textOnPrimary: '#5C3D40',     // Brun rosé sur boutons clairs
+        textOnSecondary: '#E8B4B8',   // Rose gold sur header
       }
     },
   },
-  'lavande': {
+
+ 'lavande': {
     key: 'lavande',
     name: 'Lavande',
     emoji: '💐',
     colors: {
       light: {
-        primary: '#ede9fe',
-        primaryLight: '#a78bfa',
-        secondary: '#6d28d9',
-        secondaryLight: '#7c3aed',
-        accent: '#a855f7',
-        gradientFrom: '#ddd6fe',
-        gradientTo: '#c4b5fd',
-        backgroundGradientFrom: '#f5f3ff',
-        backgroundGradientTo: '#ede9fe',
-        cardBackground: 'rgba(109, 40, 217, 0.1)',
-        cardBackgroundLight: 'rgba(109, 40, 217, 0.2)',
-        cardBorder: 'rgba(124, 58, 237, 0.3)',
-        textPrimary: '#4c1d95',
-        textSecondary: 'rgba(76, 29, 149, 0.75)',
-        textOnPrimary: '#4c1d95',
-        textOnSecondary: '#ede9fe',
+        primary: '#7C6A9C',           // Violet lavande (boutons, textes modal)
+        primaryLight: '#9B8AB8',      // Lavande moyen
+        secondary: '#6B5B7E',         // Violet lavande foncé pour header/footer
+        secondaryLight: '#F8F5FC',    // Lavande très pâle pour modal
+        accent: '#C59EFB',            // Lavande vif (accent)
+        gradientFrom: '#E2D4F0',      // Lavande clair
+        gradientTo: '#D4C4E8',        // Lavande rosé
+        backgroundGradientFrom: '#F5F0FA',  // Fond lavande très pâle
+        backgroundGradientTo: '#EDE5F5',    // Fond lavande pâle
+        cardBackground: 'rgba(255, 255, 255, 0.92)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.85)',
+        cardBorder: 'rgba(124, 106, 156, 0.25)',
+        textPrimary: '#4A3D5C',       // Violet foncé pour texte
+        textSecondary: 'rgba(74, 61, 92, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#F5F0FA',   // Lavande pâle sur header
       },
       dark: {
-        primary: '#a78bfa',
-        primaryLight: '#c4b5fd',
-        secondary: '#4c1d95',
-        secondaryLight: '#5b21b6',
-        accent: '#a855f7',
-        gradientFrom: '#a78bfa',
-        gradientTo: '#8b5cf6',
-        backgroundGradientFrom: '#4c1d95',
-        backgroundGradientTo: '#4c1d95',
-        cardBackground: 'rgba(91, 33, 182, 0.5)',
-        cardBackgroundLight: 'rgba(109, 40, 217, 0.7)',
-        cardBorder: 'rgba(167, 139, 250, 0.3)',
-        textPrimary: '#c4b5fd',
-        textSecondary: 'rgba(196, 181, 253, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#c4b5fd',
+        primary: '#C59EFB',           // Lavande vif (boutons)
+        primaryLight: '#D4B8FC',      // Lavande clair
+        secondary: '#3D2E4F',         // Violet très foncé pour header
+        secondaryLight: '#4A3D5C',    // Violet foncé
+        accent: '#9B8AB8',            // Lavande moyen
+        gradientFrom: '#7C6A9C',      // Violet lavande
+        gradientTo: '#6B5B7E',        // Violet lavande foncé
+        backgroundGradientFrom: '#2D2139',  // Fond violet très foncé
+        backgroundGradientTo: '#231A2C',    // Fond encore plus sombre
+        cardBackground: 'rgba(61, 46, 79, 0.6)',
+        cardBackgroundLight: 'rgba(74, 61, 92, 0.7)',
+        cardBorder: 'rgba(197, 158, 251, 0.3)',
+        textPrimary: '#E2D4F0',       // Lavande clair
+        textSecondary: 'rgba(226, 212, 240, 0.7)',
+        textOnPrimary: '#2D2139',     // Violet foncé sur boutons clairs
+        textOnSecondary: '#D4B8FC',   // Lavande clair sur header
       }
     },
   },
-  'nuit-etoilee': {
+
+'nuit-etoilee': {
     key: 'nuit-etoilee',
     name: 'Nuit Étoilée',
     emoji: '✨',
     colors: {
       light: {
-        primary: '#e0e7ff',
-        primaryLight: '#818cf8',
-        secondary: '#4338ca',
-        secondaryLight: '#4f46e5',
-        accent: '#fbbf24',
-        gradientFrom: '#c7d2fe',
-        gradientTo: '#a5b4fc',
-        backgroundGradientFrom: '#e0e7ff',
-        backgroundGradientTo: '#c7d2fe',
-        cardBackground: 'rgba(67, 56, 202, 0.1)',
-        cardBackgroundLight: 'rgba(67, 56, 202, 0.2)',
-        cardBorder: 'rgba(99, 102, 241, 0.3)',
-        textPrimary: '#312e81',
-        textSecondary: 'rgba(49, 46, 129, 0.75)',
-        textOnPrimary: '#312e81',
-        textOnSecondary: '#e0e7ff',
+        primary: '#4F46E5',           // Indigo vif
+        primaryLight: '#6366F1',      // Indigo clair
+        secondary: '#1E1B4B',         // Indigo très foncé pour header/footer
+        secondaryLight: '#EEF2FF',    // Indigo très pâle pour modal
+        accent: '#FBBF24',            // Or étoile (accent)
+        gradientFrom: '#A5B4FC',      // Bleu lavande plus saturé
+        gradientTo: '#C4B5FD',        // Violet lavande
+        backgroundGradientFrom: '#C7D2FE',  // Fond bleu lavande (plus coloré)
+        backgroundGradientTo: '#DDD6FE',    // Fond violet lavande
+        cardBackground: 'rgba(255, 255, 255, 0.85)',
+        cardBackgroundLight: 'rgba(255, 255, 255, 0.80)',
+        cardBorder: 'rgba(79, 70, 229, 0.25)',
+        textPrimary: '#1E1B4B',       // Indigo très foncé pour texte
+        textSecondary: 'rgba(30, 27, 75, 0.7)',
+        textOnPrimary: '#FFFFFF',     // Blanc sur boutons
+        textOnSecondary: '#E0E7FF',   // Bleu lavande sur header
       },
       dark: {
-        primary: '#818cf8',
-        primaryLight: '#a5b4fc',
-        secondary: '#312e81',
-        secondaryLight: '#3730a3',
-        accent: '#fbbf24',
-        gradientFrom: '#818cf8',
-        gradientTo: '#6366f1',
-        backgroundGradientFrom: '#312e81',
-        backgroundGradientTo: '#312e81',
-        cardBackground: 'rgba(55, 48, 163, 0.5)',
-        cardBackgroundLight: 'rgba(67, 56, 202, 0.7)',
-        cardBorder: 'rgba(129, 140, 248, 0.3)',
-        textPrimary: '#a5b4fc',
-        textSecondary: 'rgba(165, 180, 252, 0.7)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#a5b4fc',
+        primary: '#60A5FA',           // Bleu lumineux (boutons)
+        primaryLight: '#93C5FD',      // Bleu clair
+        secondary: '#0C1929',         // Bleu nuit TRÈS profond pour header
+        secondaryLight: '#132742',    // Bleu nuit profond
+        accent: '#FBBF24',            // Or étoile
+        gradientFrom: '#6366F1',      // Indigo vif
+        gradientTo: '#8B5CF6',        // Violet vif
+        backgroundGradientFrom: '#050A18',  // COSMOS PROFOND
+        backgroundGradientTo: '#0C1929',    // Bleu nuit très profond
+        cardBackground: 'rgba(12, 25, 41, 0.9)',
+        cardBackgroundLight: 'rgba(19, 39, 66, 0.9)',
+        cardBorder: 'rgba(96, 165, 250, 0.3)',
+        textPrimary: '#E0F2FE',       // Bleu très clair
+        textSecondary: 'rgba(224, 242, 254, 0.7)',
+        textOnPrimary: '#050A18',     // Bleu cosmos sur boutons clairs
+        textOnSecondary: '#93C5FD',   // Bleu clair sur header
       }
     },
   },
-  'monochrome': {
+  
+'monochrome': {
     key: 'monochrome',
     name: 'Monochrome',
     emoji: '⚫',
     colors: {
       light: {
-        primary: '#374151',
-        primaryLight: '#4b5563',
-        secondary: '#f9fafb',
-        secondaryLight: '#f3f4f6',
+        primary: '#404040',
+        primaryLight: '#525252',
+        secondary: '#171717',
+        secondaryLight: '#FAFAFA',
         accent: '#000000',
-        gradientFrom: '#e5e7eb',
-        gradientTo: '#d1d5db',
-        backgroundGradientFrom: '#f9fafb',
-        backgroundGradientTo: '#f3f4f6',
-        cardBackground: 'rgba(255, 255, 255, 0.6)',
-        cardBackgroundLight: 'rgba(243, 244, 246, 0.8)',
-        cardBorder: 'rgba(107, 114, 128, 0.2)',
-        textPrimary: '#111827',
-        textSecondary: 'rgba(17, 24, 39, 0.75)',
-        textOnPrimary: '#ffffff',
-        textOnSecondary: '#111827',
+        gradientFrom: '#E5E5E5',
+        gradientTo: '#D4D4D4',
+        backgroundGradientFrom: '#FAFAFA',
+        backgroundGradientTo: '#F5F5F5',
+        cardBackground: 'rgba(255, 255, 255, 0.9)',
+        cardBackgroundLight: 'rgba(250, 250, 250, 0.9)',
+        cardBorder: 'rgba(64, 64, 64, 0.15)',
+        textPrimary: '#171717',
+        textSecondary: 'rgba(23, 23, 23, 0.7)',
+        textOnPrimary: '#FFFFFF',
+        textOnSecondary: '#FAFAFA',
       },
       dark: {
-        primary: '#9ca3af',
-        primaryLight: '#d1d5db',
-        secondary: '#111827',
-        secondaryLight: '#1f2937',
-        accent: '#f9fafb',
-        gradientFrom: '#9ca3af',
-        gradientTo: '#6b7280',
-        backgroundGradientFrom: '#111827',
-        backgroundGradientTo: '#111827',
-        cardBackground: 'rgba(31, 41, 55, 0.5)',
-        cardBackgroundLight: 'rgba(55, 65, 81, 0.7)',
-        cardBorder: 'rgba(156, 163, 175, 0.3)',
-        textPrimary: '#d1d5db',
-        textSecondary: 'rgba(209, 213, 219, 0.7)',
-        textOnPrimary: '#000000',
-        textOnSecondary: '#d1d5db',
+        primary: '#A3A3A3',
+        primaryLight: '#D4D4D4',
+        secondary: '#0A0A0A',
+        secondaryLight: '#171717',
+        accent: '#FFFFFF',
+        gradientFrom: '#525252',
+        gradientTo: '#404040',
+        backgroundGradientFrom: '#0A0A0A',
+        backgroundGradientTo: '#171717',
+        cardBackground: 'rgba(23, 23, 23, 0.8)',
+        cardBackgroundLight: 'rgba(38, 38, 38, 0.8)',
+        cardBorder: 'rgba(163, 163, 163, 0.2)',
+        textPrimary: '#E5E5E5',
+        textSecondary: 'rgba(229, 229, 229, 0.7)',
+        textOnPrimary: '#0A0A0A',
+        textOnSecondary: '#D4D4D4',
       }
     },
   },

@@ -18,13 +18,16 @@ const navItems = [
 
 export default function BottomNav({ currentPage, onNavigate }: BottomNavProps) {
   const { theme } = useTheme();
+  
+  // Couleur du texte sur fond secondary (bottomNav)
+  const navTextColor = theme.colors.textOnSecondary;
 
   return (
     <nav 
       className="fixed bottom-0 left-0 right-0 z-[50] border-t"
       style={{ 
         backgroundColor: theme.colors.secondary,
-        borderColor: `${theme.colors.primary}30`
+        borderColor: `${navTextColor}30`
       }}
     >
       <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">
@@ -39,7 +42,7 @@ export default function BottomNav({ currentPage, onNavigate }: BottomNavProps) {
               onClick={() => onNavigate(item.id)}
               className="flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-colors"
               style={{ 
-                color: isActive ? theme.colors.primary : `${theme.colors.primary}80`
+                color: isActive ? navTextColor : `${navTextColor}80`
               }}
             >
               <Icon className="w-5 h-5" strokeWidth={1.5} />

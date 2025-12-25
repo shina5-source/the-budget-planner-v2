@@ -45,12 +45,11 @@ export default function DeleteConfirmModal({
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-5 w-full max-w-sm border shadow-2xl animate-fadeInScale"
+        className="rounded-2xl p-5 w-full max-w-sm border my-20 shadow-2xl animate-fadeInScale"
         style={modalBackgroundStyle}
         onClick={(e) => e.stopPropagation()}
       >

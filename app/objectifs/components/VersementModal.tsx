@@ -44,7 +44,7 @@ export default function VersementModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
       <div 
-        className="rounded-2xl p-4 w-full max-w-sm border mt-20 shadow-2xl animate-slideUp"
+        className="rounded-2xl p-4 w-full max-w-sm border my-20 shadow-2xl animate-slideUp"
         style={modalStyle}
       >
         <div className="flex items-center justify-between mb-4">

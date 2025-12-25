@@ -147,9 +147,9 @@ export default function RecurringTransactions({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-y-auto">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col border my-20" style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}>
         <div className="px-4 py-3 border-b" style={{ borderColor: theme.colors.cardBorder, background: theme.colors.secondary }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3"><div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${theme.colors.primary}20` }}><RefreshCw className="w-4 h-4" style={textOnSecondary} /></div><div><h2 className="text-base font-semibold" style={textOnSecondary}>Transactions récurrentes</h2><p className="text-[10px]" style={textOnSecondary}>{recurringList.length} configurée{recurringList.length > 1 ? 's' : ''}</p></div></div>

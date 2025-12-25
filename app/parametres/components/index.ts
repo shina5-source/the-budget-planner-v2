@@ -7,19 +7,25 @@ export { default as ComptesSection } from './ComptesSection';
 export { default as DataSection } from './DataSection';
 export { default as CompteFormModal } from './CompteFormModal';
 export { default as PaieSection } from './PaieSection';
-export { joursOptions, nomsMois, nomsMoisCourts } from './constants';
 
 // Export types
 export type { 
   CompteBancaire, 
   ParametresData, 
   CompteFormData,
-  CategorieType
+  CategorieType,
+  ConfigurationPaie,
+  PaieMensuelle,
+  PeriodeBudget
 } from './types';
 
 // Export constants
 export { 
   defaultParametres,
+  defaultConfigurationPaie,
   devises,
+  joursOptions,
+  nomsMois,
+  nomsMoisCourts,
   animationStyles
 } from './constants';

@@ -55,11 +55,11 @@ export default function FullscreenChartModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-fadeIn" 
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto backdrop-blur-sm animate-fadeIn" 
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-6 w-full max-w-4xl h-[80vh] border shadow-2xl animate-fadeIn"
+        className="rounded-2xl p-6 w-full max-w-4xl h-[80vh] border shadow-2xl animate-fadeIn my-20"
         style={{ background: modalBg, borderColor: modalBorder, animationDelay: '100ms' }}
         onClick={e => e.stopPropagation()}
       >

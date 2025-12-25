@@ -5,6 +5,22 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '../contexts/theme-context';
 
+// Styles d'animation pour le cœur et le gradient
+const animationStyles = `
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.3); }
+    35% { transform: scale(1); }
+    45% { transform: scale(1.2); }
+    55% { transform: scale(1); }
+  }
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+`;
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -28,11 +44,16 @@ const menuItems = [
 
 export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: SidebarProps) {
   const { theme } = useTheme();
+  
+  // Couleur du texte sur fond secondary (sidebar)
+  const sidebarTextColor = theme.colors.textOnSecondary;
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[1000]">
+      <style>{animationStyles}</style>
+      
       {/* Overlay */}
       <div 
         className="absolute inset-0 bg-black/40"
@@ -47,12 +68,12 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
         {/* Header avec Logo */}
         <div 
           className="p-4 flex items-center justify-between border-b"
-          style={{ borderColor: `${theme.colors.primary}30` }}
+          style={{ borderColor: `${sidebarTextColor}30` }}
         >
           <div className="flex items-center gap-3">
             <div 
               className="w-10 h-10 rounded-xl overflow-hidden border shadow-md"
-              style={{ borderColor: `${theme.colors.primary}50` }}
+              style={{ borderColor: `${sidebarTextColor}50` }}
             >
               <Image 
                 src="/logo-shina5.png" 
@@ -64,13 +85,13 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
             </div>
             <span 
               className="font-semibold text-xs"
-              style={{ color: theme.colors.primary }}
+              style={{ color: sidebarTextColor }}
             >
               The Budget Planner
             </span>
           </div>
           <button onClick={onClose} className="p-2" type="button">
-            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
+            <X className="w-5 h-5" style={{ color: sidebarTextColor }} />
           </button>
         </div>
 
@@ -89,9 +110,9 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-colors border"
                 style={{
-                  backgroundColor: isActive ? `${theme.colors.primary}20` : 'transparent',
-                  color: isActive ? theme.colors.primary : `${theme.colors.primary}B0`,
-                  borderColor: isActive ? `${theme.colors.primary}50` : 'transparent'
+                  backgroundColor: isActive ? `${sidebarTextColor}20` : 'transparent',
+                  color: isActive ? sidebarTextColor : `${sidebarTextColor}B0`,
+                  borderColor: isActive ? `${sidebarTextColor}50` : 'transparent'
                 }}
               >
                 <Icon className="w-5 h-5" strokeWidth={1.5} />
@@ -110,9 +131,9 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
             }}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border"
             style={{
-              backgroundColor: theme.colors.secondaryLight,
-              borderColor: `${theme.colors.primary}50`,
-              color: theme.colors.primary
+              backgroundColor: theme.colors.primary,
+              borderColor: theme.colors.primary,
+              color: theme.colors.textOnPrimary
             }}
           >
             <LogOut className="w-4 h-4" />
@@ -121,10 +142,29 @@ export default function Sidebar({ isOpen, onClose, currentPage, onNavigate }: Si
           <div className="text-center">
             <p 
               className="text-[10px]"
-              style={{ color: `${theme.colors.primary}50` }}
+              style={{ color: `${sidebarTextColor}70` }}
             >
-              Créé avec ❤️ by Shina5
-              
+              Créé avec{' '}
+              <span 
+                className="text-red-400 text-sm inline-block"
+                style={{ animation: 'heartbeat 1.5s ease-in-out infinite' }}
+              >
+                ❤️
+              </span>
+              {' '}by{' '}
+              <span 
+                className="font-semibold"
+                style={{ 
+                  background: 'linear-gradient(90deg, #ec4899, #8b5cf6, #3b82f6, #ec4899)',
+                  backgroundSize: '300% 100%',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  animation: 'gradient-shift 3s ease infinite'
+                }}
+              >
+                Shina5
+              </span>
             </p>
           </div>
         </div>

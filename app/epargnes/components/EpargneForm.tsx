@@ -167,33 +167,30 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
     }, 300);
   };
 
-  const cardStyle = useMemo(() => ({ 
-    background: theme.colors.cardBackground, 
-    borderColor: theme.colors.cardBorder 
-  }), [theme.colors.cardBackground, theme.colors.cardBorder]);
-
   const inputStyle = useMemo(() => ({ 
-    background: theme.colors.cardBackgroundLight, 
-    borderColor: theme.colors.cardBorder, 
-    color: theme.colors.textPrimary 
-  }), [theme.colors.cardBackgroundLight, theme.colors.cardBorder, theme.colors.textPrimary]);
+    background: theme.colors.secondaryLight, 
+    borderColor: `${theme.colors.primary}30`, 
+    color: theme.colors.primary 
+  }), [theme.colors.secondaryLight, theme.colors.primary]);
 
   if (!isOpen) return null;
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
-      style={{ background: 'rgba(0,0,0,0.5)' }}
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div 
-        className="w-full max-w-md rounded-2xl shadow-2xl border animate-fadeIn mt-20 mb-20"
-        style={cardStyle}
+        className="w-full max-w-md rounded-2xl border my-20"
+        style={{ 
+          backgroundColor: theme.colors.secondaryLight,
+          borderColor: `${theme.colors.primary}40`
+        }}
       >
         {/* Header */}
         <div 
-          className="p-4 flex items-center justify-between rounded-t-2xl"
-          style={{ borderBottomWidth: 1, borderColor: theme.colors.cardBorder }}
+          className="p-4 flex items-center justify-between"
+          style={{ borderBottomWidth: 1, borderColor: `${theme.colors.primary}20` }}
         >
           <div className="flex items-center gap-3">
             <div 
@@ -206,20 +203,19 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
               />
             </div>
             <div>
-              <h2 className="text-base font-semibold" style={{ color: theme.colors.textPrimary }}>
+              <h2 className="text-base font-semibold" style={{ color: theme.colors.primary }}>
                 {editingTransaction ? 'Modifier' : 'Nouvelle'} {type === 'epargne' ? 'épargne' : 'reprise'}
               </h2>
-              <p className="text-[10px]" style={{ color: theme.colors.textSecondary }}>
+              <p className="text-[10px]" style={{ color: `${theme.colors.primary}60` }}>
                 {type === 'epargne' ? 'Ajoutez de l\'argent à votre épargne' : 'Retirez de votre épargne'}
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
-            style={{ background: `${theme.colors.primary}15` }}
+            className="p-1"
           >
-            <X className="w-5 h-5" style={{ color: theme.colors.textSecondary }} />
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
@@ -232,7 +228,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
               className={`p-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 border ${type === 'epargne' ? 'scale-[1.02]' : 'opacity-60'}`}
               style={{ 
                 background: type === 'epargne' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
-                borderColor: type === 'epargne' ? '#22c55e' : theme.colors.cardBorder
+                borderColor: type === 'epargne' ? '#22c55e' : `${theme.colors.primary}30`
               }}
             >
               <TrendingUp className="w-4 h-4 text-green-500" />
@@ -243,7 +239,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
               className={`p-3 rounded-xl flex items-center justify-center gap-2 transition-all duration-200 border ${type === 'reprise' ? 'scale-[1.02]' : 'opacity-60'}`}
               style={{ 
                 background: type === 'reprise' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
-                borderColor: type === 'reprise' ? '#ef4444' : theme.colors.cardBorder
+                borderColor: type === 'reprise' ? '#ef4444' : `${theme.colors.primary}30`
               }}
             >
               <TrendingDown className="w-4 h-4 text-red-500" />
@@ -253,7 +249,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
 
           {/* Montant */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.textSecondary }}>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
               Montant *
             </label>
             <div className="relative">
@@ -267,7 +263,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
               />
               <span 
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium"
-                style={{ color: theme.colors.textSecondary }}
+                style={{ color: `${theme.colors.primary}60` }}
               >
                 {parametres.devise}
               </span>
@@ -276,7 +272,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
 
           {/* Catégorie */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.textSecondary }}>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
               Catégorie
             </label>
             {showNewCategorie ? (
@@ -300,7 +296,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
                 <button
                   onClick={() => setShowNewCategorie(false)}
                   className="px-3 rounded-xl border"
-                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}
+                  style={{ borderColor: `${theme.colors.primary}40`, color: theme.colors.primary }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -314,7 +310,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
                     className="px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border"
                     style={categorie === cat 
                       ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, borderColor: theme.colors.primary }
-                      : { background: 'transparent', color: theme.colors.textPrimary, borderColor: theme.colors.cardBorder }
+                      : { background: 'transparent', color: theme.colors.primary, borderColor: `${theme.colors.primary}40` }
                     }
                   >
                     {cat}
@@ -334,7 +330,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
           {/* Compte source et destination */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.textSecondary }}>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
                 {type === 'epargne' ? 'Depuis' : 'Depuis (épargne)'}
               </label>
               <select
@@ -350,7 +346,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.textSecondary }}>
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
                 {type === 'epargne' ? 'Vers (épargne)' : 'Vers'}
               </label>
               <select
@@ -369,7 +365,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
 
           {/* Date */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.textSecondary }}>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
               Date
             </label>
             <input
@@ -383,7 +379,7 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
 
           {/* Notes */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.textSecondary }}>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
               Notes (optionnel)
             </label>
             <textarea
@@ -400,12 +396,12 @@ export default function EpargneForm({ isOpen, onClose, onSuccess, editingTransac
         {/* Footer */}
         <div 
           className="p-4 flex gap-3"
-          style={{ borderTopWidth: 1, borderColor: theme.colors.cardBorder }}
+          style={{ borderTopWidth: 1, borderColor: `${theme.colors.primary}20` }}
         >
           <button
             onClick={onClose}
             className="flex-1 py-3 rounded-xl font-medium border transition-all duration-200 hover:scale-[1.02]"
-            style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}
+            style={{ borderColor: theme.colors.primary, color: theme.colors.primary }}
           >
             Annuler
           </button>

@@ -17,37 +17,21 @@ export default function DeleteConfirmModal({
   enveloppeName
 }: DeleteConfirmModalProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme, isDarkMode } = useTheme() as any;
+  const { theme } = useTheme() as any;
 
   if (!isOpen) return null;
 
-  const modalBackgroundStyle = { 
-    background: isDarkMode ? theme.colors.cardBackground : theme.colors.secondary, 
-    borderColor: theme.colors.cardBorder 
-  };
-  
-  const textStyle = { 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
-  };
-  
-  const textSecondaryStyle = {
-    color: isDarkMode ? theme.colors.textSecondary : `${theme.colors.textOnSecondary}99`
-  };
-
-  const buttonOutlineStyle = { 
-    borderColor: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
-  };
-
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-5 w-full max-w-sm border shadow-2xl"
-        style={modalBackgroundStyle}
+        className="rounded-2xl p-4 w-full max-w-md border my-20"
+        style={{ 
+          backgroundColor: theme.colors.secondaryLight,
+          borderColor: `${theme.colors.primary}40`
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -60,10 +44,10 @@ export default function DeleteConfirmModal({
               <AlertTriangle className="w-6 h-6" style={{ color: '#ef4444' }} />
             </div>
             <div>
-              <h2 className="text-lg font-bold" style={textStyle}>
+              <h2 className="text-lg font-bold" style={{ color: theme.colors.primary }}>
                 Supprimer l&apos;enveloppe ?
               </h2>
-              <p className="text-xs" style={textSecondaryStyle}>
+              <p className="text-xs" style={{ color: `${theme.colors.primary}60` }}>
                 Cette action est irréversible
               </p>
             </div>
@@ -71,19 +55,21 @@ export default function DeleteConfirmModal({
           <button 
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
-            style={{ background: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+            className="p-1"
           >
-            <X className="w-5 h-5" style={textStyle} />
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
         {/* Content */}
         <div 
-          className="rounded-xl p-4 mb-5"
-          style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+          className="rounded-xl p-4 mb-5 border"
+          style={{ 
+            background: `${theme.colors.primary}10`,
+            borderColor: `${theme.colors.primary}20`
+          }}
         >
-          <p className="text-sm font-medium text-center" style={textStyle}>
+          <p className="text-sm font-medium text-center" style={{ color: theme.colors.primary }}>
             ✉️ {enveloppeName}
           </p>
         </div>
@@ -94,7 +80,10 @@ export default function DeleteConfirmModal({
             type="button"
             onClick={onClose} 
             className="flex-1 py-3 border rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-            style={buttonOutlineStyle}
+            style={{ 
+              borderColor: theme.colors.primary, 
+              color: theme.colors.primary 
+            }}
           >
             Annuler
           </button>

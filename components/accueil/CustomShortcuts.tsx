@@ -239,11 +239,11 @@ export default function CustomShortcuts({ onNavigate }: CustomShortcutsProps) {
       {/* Modal de gestion */}
       {showModal && (
         <div 
-          className="modal-backdrop fixed inset-0 z-[1001] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="modal-backdrop fixed inset-0 z-[1001] bg-black/50 flex items-start justify-center p-4 overflow-y-auto backdrop-blur-sm"
           onClick={closeModal}
         >
           <div 
-            className="modal-content w-full max-w-md rounded-2xl border shadow-xl max-h-[80vh] overflow-hidden"
+            className="modal-content w-full max-w-md rounded-2xl border shadow-xl max-h-[80vh] overflow-hidden my-20"
             style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}
             onClick={e => e.stopPropagation()}
           >
@@ -282,13 +282,11 @@ export default function CustomShortcuts({ onNavigate }: CustomShortcutsProps) {
                       key={item.id}
                       type="button"
                       onClick={() => toggleShortcut(item.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                        isSelected ? 'ring-2' : ''
-                      }`}
+                      className="flex items-center gap-3 p-3 rounded-xl border-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
                       style={{ 
                         background: isSelected ? `${item.glowColor}15` : theme.colors.cardBackgroundLight,
                         borderColor: isSelected ? item.glowColor : theme.colors.cardBorder,
-                        ringColor: isSelected ? `${item.glowColor}50` : 'transparent'
+                        boxShadow: isSelected ? `0 0 0 2px ${item.glowColor}50` : 'none'
                       }}
                     >
                       <div 

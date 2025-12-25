@@ -144,7 +144,7 @@ export function ThemeModal({ isOpen, onClose }: ThemeModalProps) {
               className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
               style={{ 
                 backgroundColor: theme.colors.primary,
-                color: theme.colors.secondary
+                color: theme.colors.textOnPrimary  // ← CORRECTION ICI
               }}
             >
               <Check className="w-5 h-5" />

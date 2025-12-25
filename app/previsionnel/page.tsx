@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { TrendingUp, PiggyBank, Home as HomeIcon, ShoppingBag } from 'lucide-react';
+import { TrendingUp, PiggyBank, Home as HomeIcon, ShoppingBag, Calendar } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { AppShell, SmartTips } from '@/components';
 import { Confetti } from '@/components/ui';
+import { useBudgetPeriod } from '@/hooks/useBudgetPeriod';
 import {
   PageHeader,
   MonthSelector,
@@ -47,6 +48,7 @@ interface ParametresData {
   categoriesFactures: string[];
   categoriesDepenses: string[];
   categoriesEpargnes: string[];
+  budgetAvantPremier?: boolean;
 }
 
 // Constantes
@@ -55,12 +57,21 @@ const defaultParametres: ParametresData = {
   categoriesRevenus: ['Salaire', 'Revenus Secondaires', 'Allocations', 'Autres Revenus'],
   categoriesFactures: ['Loyer', 'Électricité', 'Eau', 'Internet', 'Mobile', 'Assurance'],
   categoriesDepenses: ['Courses', 'Restaurant', 'Essence', 'Shopping', 'Autres Dépenses'],
-  categoriesEpargnes: ['Livret A', 'Épargne', 'Objectifs']
+  categoriesEpargnes: ['Livret A', 'Épargne', 'Objectifs'],
+  budgetAvantPremier: false
 };
 
 function PrevisionnelContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+  
+  // Hook pour la gestion des périodes de budget
+  const { 
+    configurationPaie, 
+    isLoaded: isPaieConfigLoaded,
+    getPeriodeBudget,
+    filtrerTransactionsPourPeriode
+  } = useBudgetPeriod();
   
   // State
   const [isLoading, setIsLoading] = useState(true);
@@ -126,11 +137,30 @@ function PrevisionnelContent() {
     return allPrevisions[key] || { revenus: [], factures: [], depenses: [], epargnes: [] };
   }, [allPrevisions, getMonthKey]);
 
-  // Filtered transactions (memoized)
-  const filteredTransactions = useMemo(() => 
-    transactions.filter(t => t.date?.startsWith(getMonthKey())),
-    [transactions, getMonthKey]
-  );
+  // ========== Période de budget personnalisée ==========
+  const periodeBudget = useMemo(() => {
+    return getPeriodeBudget(selectedMonth, selectedYear);
+  }, [getPeriodeBudget, selectedMonth, selectedYear]);
+
+  const periodeLabel = useMemo(() => {
+    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      return `${moisNoms[selectedMonth]} ${selectedYear}`;
+    }
+    return periodeBudget.label;
+  }, [parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+
+  // Filtered transactions avec période personnalisée
+  const filteredTransactions = useMemo(() => {
+    // Si toggle OFF ou jour de paie = 1, filtrage standard
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      return transactions.filter(t => t.date?.startsWith(getMonthKey()));
+    }
+    
+    // Sinon, filtrage par période personnalisée
+    return filtrerTransactionsPourPeriode(transactions, periodeBudget);
+  }, [transactions, getMonthKey, parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, filtrerTransactionsPourPeriode, periodeBudget]);
+  // =====================================================
 
   // Totaux réels (memoized)
   const totalsReel = useMemo(() => ({
@@ -292,7 +322,7 @@ function PrevisionnelContent() {
   ], [totalsPrevu, totalsReel]);
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || !isPaieConfigLoaded) {
     return <SkeletonPrevisionnel />;
   }
 
@@ -331,6 +361,17 @@ function PrevisionnelContent() {
       <div className="pb-4">
         {/* Header */}
         <PageHeader />
+
+        {/* Indicateur de période personnalisée */}
+        {parametres.budgetAvantPremier && configurationPaie.jourPaieDefaut !== 1 && (
+          <div 
+            className="flex items-center justify-center gap-2 mb-3 py-2 px-3 rounded-xl text-xs animate-fade-in"
+            style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+          >
+            <Calendar className="w-4 h-4 text-green-500" />
+            <span className="text-green-600">Période : {periodeLabel}</span>
+          </div>
+        )}
 
         {/* Month Selector */}
         <MonthSelector

@@ -216,30 +216,32 @@ function EpargnesContent() {
       {/* Modal de confirmation de suppression */}
       {showDeleteConfirm && transactionToDelete && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.7)' }}
+          className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div 
-            className="w-full max-w-sm rounded-2xl p-6 shadow-2xl border animate-fadeIn"
-            style={{ background: theme.colors.cardBackground, borderColor: theme.colors.cardBorder }}
+            className="w-full max-w-md rounded-2xl p-4 border my-20"
+            style={{ 
+              backgroundColor: theme.colors.secondaryLight,
+              borderColor: `${theme.colors.primary}40`
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center mb-4">
               <div 
                 className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ background: 'rgba(239, 68, 68, 0.2)' }}
+                style={{ background: 'rgba(239, 68, 68, 0.15)' }}
               >
                 <span className="text-3xl">🗑️</span>
               </div>
-              <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.textPrimary }}>
+              <h3 className="text-lg font-semibold mb-2" style={{ color: theme.colors.primary }}>
                 Supprimer cette épargne ?
               </h3>
-              <p className="text-sm" style={{ color: theme.colors.textSecondary }}>
+              <p className="text-sm" style={{ color: `${theme.colors.primary}80` }}>
                 {transactionToDelete.type === 'Épargnes' ? '+' : '-'}
                 {parseFloat(transactionToDelete.montant).toFixed(2)} {parametres.devise} - {transactionToDelete.categorie}
               </p>
-              <p className="text-xs mt-1" style={{ color: theme.colors.textSecondary }}>
+              <p className="text-xs mt-1" style={{ color: `${theme.colors.primary}60` }}>
                 Cette action est irréversible.
               </p>
             </div>
@@ -248,7 +250,7 @@ function EpargnesContent() {
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 py-3 rounded-xl font-medium border transition-all duration-200 hover:scale-[1.02]"
-                style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textSecondary }}
+                style={{ borderColor: theme.colors.primary, color: theme.colors.primary }}
               >
                 Annuler
               </button>

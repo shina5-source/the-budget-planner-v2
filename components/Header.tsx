@@ -10,6 +10,9 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
   const { theme, toggleDarkMode, isDarkMode } = useTheme();
+  
+  // Utiliser textOnSecondary pour le texte sur fond secondary (header)
+  const headerTextColor = theme.colors.textOnSecondary;
 
   return (
     <header 
@@ -23,13 +26,13 @@ export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
           className="p-2 relative z-[1000]"
           type="button"
         >
-          <Menu className="w-5 h-5" style={{ color: theme.colors.primary }} />
+          <Menu className="w-5 h-5" style={{ color: headerTextColor }} />
         </button>
 
         {/* Titre au centre (absolute pour être vraiment centré) */}
         <h1 
           className="text-sm font-medium absolute left-1/2 -translate-x-1/2"
-          style={{ color: theme.colors.primary }}
+          style={{ color: headerTextColor }}
         >
           The Budget Planner
         </h1>
@@ -42,7 +45,7 @@ export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
             style={{ 
               backgroundColor: 'transparent',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.primary}20`}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${headerTextColor}20`}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Changer le thème"
           >
@@ -56,14 +59,14 @@ export default function Header({ onMenuClick, onThemeClick }: HeaderProps) {
             style={{ 
               backgroundColor: 'transparent',
             }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${theme.colors.primary}20`}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${headerTextColor}20`}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             title="Basculer le mode sombre"
           >
             {isDarkMode ? (
-              <Sun className="w-5 h-5" style={{ color: theme.colors.primary }} />
+              <Sun className="w-5 h-5" style={{ color: headerTextColor }} />
             ) : (
-              <Moon className="w-5 h-5" style={{ color: theme.colors.primary }} />
+              <Moon className="w-5 h-5" style={{ color: headerTextColor }} />
             )}
           </button>
         </div>

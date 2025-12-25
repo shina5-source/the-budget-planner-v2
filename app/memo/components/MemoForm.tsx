@@ -63,12 +63,11 @@ export default function MemoForm({
 
   return (
     <div 
-      className="fixed inset-0 flex items-start justify-center z-50 p-4 overflow-y-auto"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-5 w-full max-w-md border mb-20 mt-16 shadow-2xl"
+        className="rounded-2xl p-5 w-full max-w-md border my-20 shadow-2xl"
         style={modalBackgroundStyle}
         onClick={(e) => e.stopPropagation()}
       >

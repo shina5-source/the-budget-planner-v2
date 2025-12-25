@@ -37,32 +37,14 @@ export default function EnveloppeForm({
   onAddCategory
 }: EnveloppeFormProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { theme, isDarkMode } = useTheme() as any;
+  const { theme } = useTheme() as any;
 
   if (!isOpen) return null;
 
-  const modalBackgroundStyle = { 
-    background: isDarkMode ? theme.colors.cardBackground : theme.colors.secondary, 
-    borderColor: theme.colors.cardBorder 
-  };
-  
   const inputStyle = { 
-    background: isDarkMode ? theme.colors.backgroundGradientFrom : theme.colors.secondaryLight, 
-    borderColor: theme.colors.cardBorder, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
-  };
-  
-  const textStyle = { 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
-  };
-  
-  const textSecondaryStyle = {
-    color: isDarkMode ? theme.colors.textSecondary : `${theme.colors.textOnSecondary}99`
-  };
-
-  const buttonOutlineStyle = { 
-    borderColor: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    background: theme.colors.secondaryLight, 
+    borderColor: `${theme.colors.primary}30`, 
+    color: theme.colors.primary 
   };
 
   const toggleCategorie = (cat: string) => {
@@ -76,17 +58,19 @@ export default function EnveloppeForm({
 
   return (
     <div 
-      className="fixed inset-0 flex items-start justify-center z-50 p-4 overflow-y-auto"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-5 w-full max-w-md border mb-20 mt-16 shadow-2xl"
-        style={modalBackgroundStyle}
+        className="rounded-2xl p-4 w-full max-w-md border my-20"
+        style={{ 
+          backgroundColor: theme.colors.secondaryLight,
+          borderColor: `${theme.colors.primary}40`
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div 
               className="w-12 h-12 rounded-xl flex items-center justify-center relative"
@@ -103,10 +87,10 @@ export default function EnveloppeForm({
               )}
             </div>
             <div>
-              <h2 className="text-lg font-bold" style={textStyle}>
+              <h2 className="text-lg font-bold" style={{ color: theme.colors.primary }}>
                 {isEditing ? 'Modifier' : 'Nouvelle'} enveloppe
               </h2>
-              <p className="text-xs" style={textSecondaryStyle}>
+              <p className="text-xs" style={{ color: `${theme.colors.primary}60` }}>
                 Budget par catégorie
               </p>
             </div>
@@ -114,10 +98,9 @@ export default function EnveloppeForm({
           <button 
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
-            style={{ background: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+            className="p-1"
           >
-            <X className="w-5 h-5" style={textStyle} />
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
@@ -125,7 +108,7 @@ export default function EnveloppeForm({
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
           {/* Nom */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
               Nom de l&apos;enveloppe *
             </label>
             <input 
@@ -140,7 +123,7 @@ export default function EnveloppeForm({
 
           {/* Budget */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>
               Budget mensuel ({parametres.devise}) *
             </label>
             <input 
@@ -158,11 +141,11 @@ export default function EnveloppeForm({
             {/* Favorite */}
             <div 
               className="flex items-center justify-between p-3 rounded-xl"
-              style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+              style={{ background: `${theme.colors.primary}10` }}
             >
               <div className="flex items-center gap-2">
-                <Star className="w-4 h-4" style={{ color: formData.favorite ? '#facc15' : textSecondaryStyle.color }} />
-                <span className="text-xs" style={textStyle}>Favorite</span>
+                <Star className="w-4 h-4" style={{ color: formData.favorite ? '#facc15' : `${theme.colors.primary}60` }} />
+                <span className="text-xs" style={{ color: theme.colors.primary }}>Favorite</span>
               </div>
               <button 
                 type="button"
@@ -176,11 +159,11 @@ export default function EnveloppeForm({
             {/* Locked */}
             <div 
               className="flex items-center justify-between p-3 rounded-xl"
-              style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+              style={{ background: `${theme.colors.primary}10` }}
             >
               <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4" style={{ color: formData.locked ? '#ef4444' : textSecondaryStyle.color }} />
-                <span className="text-xs" style={textStyle}>Verrouillable à 100%</span>
+                <Lock className="w-4 h-4" style={{ color: formData.locked ? '#ef4444' : `${theme.colors.primary}60` }} />
+                <span className="text-xs" style={{ color: theme.colors.primary }}>Verrouillable à 100%</span>
               </div>
               <button 
                 type="button"
@@ -194,11 +177,11 @@ export default function EnveloppeForm({
             {/* Report reste */}
             <div 
               className="flex items-center justify-between p-3 rounded-xl"
-              style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+              style={{ background: `${theme.colors.primary}10` }}
             >
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" style={{ color: formData.reportReste ? '#22c55e' : textSecondaryStyle.color }} />
-                <span className="text-xs" style={textStyle}>Reporter le reste</span>
+                <TrendingUp className="w-4 h-4" style={{ color: formData.reportReste ? '#22c55e' : `${theme.colors.primary}60` }} />
+                <span className="text-xs" style={{ color: theme.colors.primary }}>Reporter le reste</span>
               </div>
               <button 
                 type="button"
@@ -212,11 +195,11 @@ export default function EnveloppeForm({
             {/* Budget variable */}
             <div 
               className="flex items-center justify-between p-3 rounded-xl"
-              style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+              style={{ background: `${theme.colors.primary}10` }}
             >
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" style={{ color: formData.budgetVariable ? '#3b82f6' : textSecondaryStyle.color }} />
-                <span className="text-xs" style={textStyle}>Budget variable par mois</span>
+                <Calendar className="w-4 h-4" style={{ color: formData.budgetVariable ? '#3b82f6' : `${theme.colors.primary}60` }} />
+                <span className="text-xs" style={{ color: theme.colors.primary }}>Budget variable par mois</span>
               </div>
               <button 
                 type="button"
@@ -232,9 +215,9 @@ export default function EnveloppeForm({
           {formData.budgetVariable && (
             <div 
               className="p-3 rounded-xl border"
-              style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: theme.colors.cardBorder }}
+              style={{ background: `${theme.colors.primary}10`, borderColor: `${theme.colors.primary}20` }}
             >
-              <p className="text-[10px] mb-2" style={textSecondaryStyle}>
+              <p className="text-[10px] mb-2" style={{ color: `${theme.colors.primary}60` }}>
                 Budget par mois (laissez vide pour le budget par défaut)
               </p>
               <div className="grid grid-cols-3 gap-2">
@@ -242,7 +225,7 @@ export default function EnveloppeForm({
                   const key = `${selectedYear}-${(i + 1).toString().padStart(2, '0')}`;
                   return (
                     <div key={i}>
-                      <label className="text-[9px]" style={textSecondaryStyle}>{m}</label>
+                      <label className="text-[9px]" style={{ color: `${theme.colors.primary}60` }}>{m}</label>
                       <input 
                         type="number" 
                         placeholder={formData.budget || '0'} 
@@ -263,7 +246,7 @@ export default function EnveloppeForm({
 
           {/* Couleur */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>Couleur</label>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>Couleur</label>
             <div className="grid grid-cols-6 gap-2">
               {couleursDisponibles.map((couleur) => (
                 <button 
@@ -282,7 +265,7 @@ export default function EnveloppeForm({
 
           {/* Icône */}
           <div>
-            <label className="text-xs font-medium mb-1.5 block" style={textSecondaryStyle}>Icône</label>
+            <label className="text-xs font-medium mb-1.5 block" style={{ color: theme.colors.primary }}>Icône</label>
             <div className="grid grid-cols-8 gap-1">
               {iconesDisponibles.map((icone) => {
                 const IconComp = icone.icon;
@@ -294,7 +277,7 @@ export default function EnveloppeForm({
                     className="h-8 rounded-lg flex items-center justify-center border transition-all duration-200 hover:scale-110"
                     style={formData.icone === icone.id 
                       ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
-                      : { background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: theme.colors.cardBorder, ...textStyle }
+                      : { background: `${theme.colors.primary}10`, borderColor: `${theme.colors.primary}20`, color: theme.colors.primary }
                     }
                   >
                     <IconComp className="w-4 h-4" />
@@ -307,7 +290,7 @@ export default function EnveloppeForm({
           {/* Catégories */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-medium" style={textSecondaryStyle}>
+              <label className="text-xs font-medium" style={{ color: theme.colors.primary }}>
                 Catégories liées ({formData.categories.length})
               </label>
             </div>
@@ -317,7 +300,7 @@ export default function EnveloppeForm({
                 type="button"
                 onClick={() => setShowAddCategory(true)} 
                 className="w-full mb-2 flex items-center justify-center gap-1 py-2 rounded-lg border border-dashed text-xs transition-all duration-200 hover:scale-[1.02]"
-                style={{ borderColor: theme.colors.cardBorder, ...textSecondaryStyle }}
+                style={{ borderColor: `${theme.colors.primary}40`, color: `${theme.colors.primary}60` }}
               >
                 <Plus className="w-3 h-3" /> Ajouter une catégorie
               </button>
@@ -344,7 +327,7 @@ export default function EnveloppeForm({
                   type="button"
                   onClick={() => { setShowAddCategory(false); setNewCategoryName(''); }} 
                   className="px-3 py-2 rounded-lg border transition-all duration-200 hover:scale-105"
-                  style={{ borderColor: theme.colors.cardBorder, ...textSecondaryStyle }}
+                  style={{ borderColor: `${theme.colors.primary}40`, color: theme.colors.primary }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -353,7 +336,7 @@ export default function EnveloppeForm({
             
             <div 
               className="max-h-40 overflow-y-auto rounded-xl p-2 space-y-1"
-              style={{ background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }}
+              style={{ background: `${theme.colors.primary}10` }}
             >
               {parametres.categoriesDepenses.map((cat) => (
                 <button 
@@ -363,7 +346,7 @@ export default function EnveloppeForm({
                   className="w-full text-left px-3 py-2 rounded-lg text-xs transition-all duration-200 hover:scale-[1.01]"
                   style={formData.categories.includes(cat) 
                     ? { background: theme.colors.primary, color: theme.colors.textOnPrimary, fontWeight: 500 } 
-                    : textStyle
+                    : { color: theme.colors.primary }
                   }
                 >
                   {cat}
@@ -374,12 +357,12 @@ export default function EnveloppeForm({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 pt-6">
+        <div className="flex gap-3 pt-4">
           <button 
             type="button"
             onClick={onClose} 
             className="flex-1 py-3 border rounded-xl font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-            style={buttonOutlineStyle}
+            style={{ borderColor: theme.colors.primary, color: theme.colors.primary }}
           >
             Annuler
           </button>

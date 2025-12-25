@@ -141,19 +141,22 @@ export default function CreditForm({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div 
-        className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20"
-        style={{ background: theme.colors.secondary, borderColor: theme.colors.cardBorder }}
+        className="rounded-2xl p-4 w-full max-w-md border my-20"
+        style={{ 
+          backgroundColor: theme.colors.secondaryLight,
+          borderColor: `${theme.colors.primary}40`
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium" style={{ color: theme.colors.textOnSecondary }}>
+          <h2 className="text-lg font-medium" style={{ color: theme.colors.primary }}>
             {editingCredit ? 'Modifier le' : 'Nouveau'} crédit
           </h2>
           <button 
             onClick={onClose} 
             className="p-1"
           >
-            <X className="w-5 h-5" style={{ color: theme.colors.textOnSecondary }} />
+            <X className="w-5 h-5" style={{ color: theme.colors.primary }} />
           </button>
         </div>
 
@@ -161,7 +164,7 @@ export default function CreditForm({
         <div className="space-y-4">
           {/* Nom du crédit */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
               Nom du crédit
             </label>
             <input 
@@ -177,7 +180,7 @@ export default function CreditForm({
           {/* Capital et Taux */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
                 Capital emprunté ({devise})
               </label>
               <input 
@@ -191,7 +194,7 @@ export default function CreditForm({
             </div>
 
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
                 Taux d&apos;intérêt (%)
               </label>
               <input 
@@ -209,7 +212,7 @@ export default function CreditForm({
           {/* Durée et Date début */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
                 Durée (mois)
               </label>
               <input 
@@ -223,7 +226,7 @@ export default function CreditForm({
             </div>
 
             <div>
-              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+              <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
                 Date de début
               </label>
               <input 
@@ -242,7 +245,7 @@ export default function CreditForm({
               className="p-3 rounded-xl border"
               style={{ background: theme.colors.secondaryLight, borderColor: theme.colors.cardBorder }}
             >
-              <p className="text-[10px] text-center mb-1" style={{ color: theme.colors.textOnSecondary }}>
+              <p className="text-[10px] text-center mb-1" style={{ color: theme.colors.primary }}>
                 💳 Mensualité calculée
               </p>
               <p className="text-xl font-bold text-center" style={{ color: theme.colors.primary }}>
@@ -253,7 +256,7 @@ export default function CreditForm({
 
           {/* Compte prélevé */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
               Compte prélevé
             </label>
             {!showAddCompte ? (
@@ -297,7 +300,7 @@ export default function CreditForm({
                 <button 
                   onClick={() => { setShowAddCompte(false); setNewCompteName(''); }}
                   className="px-3 py-2 rounded-xl border"
-                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.textOnSecondary }}
+                  style={{ borderColor: theme.colors.cardBorder, color: theme.colors.primary }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -307,7 +310,7 @@ export default function CreditForm({
 
           {/* Memo */}
           <div>
-            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.textOnSecondary }}>
+            <label className="text-xs font-medium mb-1 block" style={{ color: theme.colors.primary }}>
               Description
             </label>
             <textarea 
@@ -325,7 +328,7 @@ export default function CreditForm({
             <button 
               onClick={onClose} 
               className="flex-1 py-3 rounded-xl font-medium border"
-              style={{ borderColor: theme.colors.textOnSecondary, color: theme.colors.textOnSecondary }}
+              style={{ borderColor: theme.colors.primary, color: theme.colors.primary }}
             >
               Annuler
             </button>

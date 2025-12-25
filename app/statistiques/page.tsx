@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Calendar } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { AppShell, PageTitle } from '@/components';
+import { useBudgetPeriod } from '@/hooks/useBudgetPeriod';
 
 import {
   ResumeTab,
@@ -22,10 +24,6 @@ import {
   TabType,
   COLORS_TYPE,
   calculateTotals,
-  calculatePrevTotals,
-  calculateYearAverages,
-  calculateEvolutionData,
-  filterTransactionsByPeriod,
   calculateVariation,
   getN1Totals
 } from './components';
@@ -35,6 +33,14 @@ function StatistiquesContent() {
   const { theme, isDarkMode } = useTheme() as any;
   const statsRef = useRef<HTMLDivElement>(null);
 
+  // Hook pour la gestion des périodes de budget
+  const { 
+    configurationPaie, 
+    isLoaded: isPaieConfigLoaded,
+    getPeriodeBudget,
+    filtrerTransactionsPourPeriode
+  } = useBudgetPeriod();
+
   // États
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,6 +48,7 @@ function StatistiquesContent() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
   const [activeTab, setActiveTab] = useState<TabType>('resume');
   const [objectifsBudget, setObjectifsBudget] = useState<ObjectifBudget[]>([]);
+  const [budgetAvantPremier, setBudgetAvantPremier] = useState(false);
   
   // Filtres
   const [showFilters, setShowFilters] = useState(false);
@@ -64,6 +71,13 @@ function StatistiquesContent() {
         if (storedObjectifs) {
           setObjectifsBudget(JSON.parse(storedObjectifs));
         }
+        
+        // Charger le paramètre budgetAvantPremier
+        const savedParametres = localStorage.getItem('budget-parametres');
+        if (savedParametres) {
+          const parametres = JSON.parse(savedParametres);
+          setBudgetAvantPremier(parametres.budgetAvantPremier || false);
+        }
       } catch (error) {
         console.error('Erreur chargement données:', error);
       } finally {
@@ -81,18 +95,113 @@ function StatistiquesContent() {
     }
   }, [objectifsBudget]);
 
-  // Calculs mémorisés
+  // ========== Période de budget personnalisée ==========
+  const periodeBudget = useMemo(() => {
+    if (selectedMonth === null) return null;
+    return getPeriodeBudget(selectedMonth, selectedYear);
+  }, [getPeriodeBudget, selectedMonth, selectedYear]);
+
+  const periodeLabel = useMemo(() => {
+    if (selectedMonth === null) return `Année ${selectedYear}`;
+    if (!budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+      return `${moisNoms[selectedMonth]} ${selectedYear}`;
+    }
+    return periodeBudget?.label || '';
+  }, [budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+
+  // Helper pour filtrer les transactions selon le mode
+  const filterTransactionsForPeriod = useCallback((txList: Transaction[], month: number | null, year: number) => {
+    if (month === null) {
+      // Vue annuelle - pas de changement
+      return txList.filter(t => t.date && new Date(t.date).getFullYear() === year);
+    }
+    
+    // Si toggle OFF ou jour de paie = 1, filtrage standard
+    if (!budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      const monthKey = `${year}-${(month + 1).toString().padStart(2, '0')}`;
+      return txList.filter(t => t.date?.startsWith(monthKey));
+    }
+    
+    // Sinon, filtrage par période personnalisée
+    const periode = getPeriodeBudget(month, year);
+    return filtrerTransactionsPourPeriode(txList, periode);
+  }, [budgetAvantPremier, configurationPaie.jourPaieDefaut, getPeriodeBudget, filtrerTransactionsPourPeriode]);
+  // =====================================================
+
+  // Calculs mémorisés avec période personnalisée
   const filteredTransactions = useMemo(() => {
-    return filterTransactionsByPeriod(transactions, selectedMonth, selectedYear, {
-      compte: compteFilter,
-      moyenPaiement: moyenPaiementFilter
-    });
-  }, [transactions, selectedMonth, selectedYear, compteFilter, moyenPaiementFilter]);
+    let txList = filterTransactionsForPeriod(transactions, selectedMonth, selectedYear);
+    
+    // Appliquer les filtres de compte et moyen de paiement
+    if (compteFilter !== 'all') {
+      txList = txList.filter(t => t.depuis === compteFilter || t.vers === compteFilter);
+    }
+    if (moyenPaiementFilter !== 'all') {
+      txList = txList.filter(t => t.moyenPaiement === moyenPaiementFilter);
+    }
+    
+    return txList;
+  }, [transactions, selectedMonth, selectedYear, compteFilter, moyenPaiementFilter, filterTransactionsForPeriod]);
 
   const totals = useMemo(() => calculateTotals(filteredTransactions), [filteredTransactions]);
-  const prevTotals = useMemo(() => calculatePrevTotals(transactions, selectedMonth, selectedYear), [transactions, selectedMonth, selectedYear]);
-  const moyennes = useMemo(() => calculateYearAverages(transactions, selectedYear), [transactions, selectedYear]);
-  const evolutionData = useMemo(() => calculateEvolutionData(transactions, selectedYear), [transactions, selectedYear]);
+  
+  const prevTotals = useMemo(() => {
+    if (selectedMonth === null) return { revenus: 0, factures: 0, depenses: 0, epargnes: 0, solde: 0, hasData: false };
+    
+    let prevMonth = selectedMonth - 1;
+    let prevYear = selectedYear;
+    if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+    
+    const prevFiltered = filterTransactionsForPeriod(transactions, prevMonth, prevYear);
+    const prev = calculateTotals(prevFiltered);
+    
+    return {
+      revenus: prev.revenus,
+      factures: prev.factures,
+      depenses: prev.depenses,
+      epargnes: prev.epargnes,
+      solde: prev.solde,
+      hasData: prevFiltered.length > 0
+    };
+  }, [transactions, selectedMonth, selectedYear, filterTransactionsForPeriod]);
+  
+  const moyennes = useMemo(() => {
+    const yearTx = transactions.filter(t => t.date && new Date(t.date).getFullYear() === selectedYear);
+    const monthsWithData = new Set(yearTx.map(t => t.date?.substring(0, 7))).size || 1;
+    
+    const totalsYear = calculateTotals(yearTx);
+    
+    return {
+      revenus: totalsYear.revenus / monthsWithData,
+      factures: totalsYear.factures / monthsWithData,
+      depenses: totalsYear.depenses / monthsWithData,
+      epargnes: totalsYear.epargnes / monthsWithData,
+      monthsWithData
+    };
+  }, [transactions, selectedYear]);
+  
+  const evolutionData = useMemo(() => {
+    // Calculer l'évolution avec les périodes personnalisées
+    const data = [];
+    const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    
+    for (let m = 0; m < 12; m++) {
+      const monthTx = filterTransactionsForPeriod(transactions, m, selectedYear);
+      const monthTotals = calculateTotals(monthTx);
+      
+      data.push({
+        name: monthsShort[m],
+        revenus: monthTotals.revenus,
+        factures: monthTotals.factures,
+        depenses: monthTotals.depenses,
+        epargnes: monthTotals.epargnes,
+        solde: monthTotals.solde
+      });
+    }
+    
+    return data;
+  }, [transactions, selectedYear, filterTransactionsForPeriod]);
 
   const hasMoyennes = useMemo(() => {
     const monthsWithData = new Set<string>();
@@ -256,7 +365,7 @@ function StatistiquesContent() {
   const hasActiveFilters = compteFilter !== 'all' || moyenPaiementFilter !== 'all';
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || !isPaieConfigLoaded) {
     return <StatsSkeletonLoader />;
   }
 
@@ -265,6 +374,17 @@ function StatistiquesContent() {
       <div className="pb-4">
         {/* Header */}
         <PageTitle page="statistiques" />
+
+        {/* Indicateur de période personnalisée */}
+        {budgetAvantPremier && configurationPaie.jourPaieDefaut !== 1 && selectedMonth !== null && (
+          <div 
+            className="flex items-center justify-center gap-2 mb-3 py-2 px-3 rounded-xl text-xs animate-fade-in"
+            style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+          >
+            <Calendar className="w-4 h-4 text-green-500" />
+            <span className="text-green-600">Période : {periodeLabel}</span>
+          </div>
+        )}
 
         {/* MonthSelector */}
         <MonthSelector
