@@ -123,10 +123,12 @@ function AccueilContent() {
     configurationPaie, 
     isLoaded: isPaieConfigLoaded,
     getPeriodeBudget,
-    filtrerTransactionsPourPeriode
+    getPeriodeActuelle,
+    filtrerTransactionsPourPeriode,
+    estPaieFinDeMois
   } = useBudgetPeriod();
   
-  // États
+  // États - Le mois/année représente le BUDGET (pas le mois calendaire)
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -141,6 +143,7 @@ function AccueilContent() {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
+  const [initialMonthSet, setInitialMonthSet] = useState(false);
 
   // Styles
   const textPrimary = { color: theme.colors.textPrimary };
@@ -177,6 +180,30 @@ function AccueilContent() {
     loadData();
   }, []);
 
+  // ========== INITIALISATION DU MOIS DE BUDGET CORRECT ==========
+  // Quand la config de paie est chargée, on détermine le bon mois de budget à afficher
+  useEffect(() => {
+    if (!isPaieConfigLoaded || !dataLoaded || initialMonthSet) return;
+    
+    const jourPaie = configurationPaie.jourPaieDefaut;
+    
+    // Si jour de paie = 1, utiliser le mois calendaire actuel
+    if (jourPaie === 1) {
+      setSelectedMonth(new Date().getMonth());
+      setSelectedYear(new Date().getFullYear());
+      setInitialMonthSet(true);
+      return;
+    }
+    
+    // Sinon, déterminer le bon mois de budget basé sur la période actuelle
+    const periodeActuelle = getPeriodeActuelle();
+    setSelectedMonth(periodeActuelle.moisReference);
+    setSelectedYear(periodeActuelle.anneeReference);
+    setInitialMonthSet(true);
+    
+  }, [isPaieConfigLoaded, dataLoaded, initialMonthSet, configurationPaie.jourPaieDefaut, getPeriodeActuelle]);
+  // ================================================================
+
   // Handlers
   const saveName = useCallback(() => {
     if (tempName.trim()) {
@@ -204,34 +231,45 @@ function AccueilContent() {
     return getPeriodeBudget(selectedMonth, selectedYear);
   }, [getPeriodeBudget, selectedMonth, selectedYear]);
 
+  // Label de la période (ex: "29 Déc → 28 Jan 2025/2026")
   const periodeLabel = useMemo(() => {
     const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+    
+    // Si jour de paie = 1, affichage standard
+    if (configurationPaie.jourPaieDefaut === 1) {
       return `${moisNoms[selectedMonth]} ${selectedYear}`;
     }
+    
+    // Sinon, afficher la période complète
     return periodeBudget.label;
-  }, [parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+  }, [configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+
+  // Nom du mois de budget (pour le sélecteur)
+  const moisBudgetNom = useMemo(() => {
+    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    return moisNoms[selectedMonth];
+  }, [selectedMonth]);
 
   // Helper pour filtrer les transactions
   const getMonthKey = (year: number, month: number) => `${year}-${(month + 1).toString().padStart(2, '0')}`;
 
   const filteredTransactions = useMemo(() => {
-    // Si toggle OFF ou jour de paie = 1, filtrage standard
-    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+    // Si jour de paie = 1, filtrage standard par mois calendaire
+    if (configurationPaie.jourPaieDefaut === 1) {
       const currentMonthKey = getMonthKey(selectedYear, selectedMonth);
       return transactions.filter(t => t.date?.startsWith(currentMonthKey));
     }
     
     // Sinon, filtrage par période personnalisée
     return filtrerTransactionsPourPeriode(transactions, periodeBudget);
-  }, [transactions, selectedYear, selectedMonth, parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, filtrerTransactionsPourPeriode, periodeBudget]);
+  }, [transactions, selectedYear, selectedMonth, configurationPaie.jourPaieDefaut, filtrerTransactionsPourPeriode, periodeBudget]);
 
   const prevMonthTransactions = useMemo(() => {
     let m = selectedMonth - 1, y = selectedYear;
     if (m < 0) { m = 11; y--; }
     
-    // Si toggle OFF ou jour de paie = 1, filtrage standard
-    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+    // Si jour de paie = 1, filtrage standard
+    if (configurationPaie.jourPaieDefaut === 1) {
       const prevMonthKey = getMonthKey(y, m);
       return transactions.filter(t => t.date?.startsWith(prevMonthKey));
     }
@@ -239,7 +277,7 @@ function AccueilContent() {
     // Sinon, filtrage par période personnalisée
     const prevPeriode = getPeriodeBudget(m, y);
     return filtrerTransactionsPourPeriode(transactions, prevPeriode);
-  }, [transactions, selectedYear, selectedMonth, parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, getPeriodeBudget, filtrerTransactionsPourPeriode]);
+  }, [transactions, selectedYear, selectedMonth, configurationPaie.jourPaieDefaut, getPeriodeBudget, filtrerTransactionsPourPeriode]);
   // =====================================================
 
   const totals = useMemo(() => {
@@ -348,11 +386,22 @@ function AccueilContent() {
     };
   }, [transactions]);
 
+  // Calcul des jours restants basé sur la période de budget
+  const joursRestants = useMemo(() => {
+    const today = new Date();
+    const finPeriode = periodeBudget.fin;
+    const diffTime = finPeriode.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  }, [periodeBudget]);
+
+  const budgetParJour = useMemo(() => {
+    return joursRestants > 0 ? Math.max(0, totals.soldeReel) / joursRestants : 0;
+  }, [joursRestants, totals.soldeReel]);
+
   const today = new Date();
   const currentDay = today.getDate();
   const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-  const joursRestants = daysInMonth - currentDay;
-  const budgetParJour = joursRestants > 0 ? Math.max(0, totals.soldeReel) / joursRestants : 0;
 
   const facturesAVenir = useMemo(() => 
     recurring.filter(r => r.actif && r.type === 'facture')
@@ -416,7 +465,7 @@ function AccueilContent() {
   }, [filteredTransactions, totals, financialData, weekData, parametres.devise]);
 
   // === SKELETON ===
-  if (!dataLoaded || !isPaieConfigLoaded) {
+  if (!dataLoaded || !isPaieConfigLoaded || !initialMonthSet) {
     return (
       <div className="pb-4 space-y-3">
         <style>{animationStyles}</style>
@@ -479,14 +528,16 @@ function AccueilContent() {
         )}
       </div>
 
-      {/* Indicateur de période personnalisée */}
-      {parametres.budgetAvantPremier && configurationPaie.jourPaieDefaut !== 1 && (
+      {/* Indicateur de période personnalisée - TOUJOURS AFFICHÉ si jour de paie ≠ 1 */}
+      {configurationPaie.jourPaieDefaut !== 1 && (
         <div 
           className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs animate-fade-in-up stagger-2 opacity-0"
           style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', animationFillMode: 'forwards' }}
         >
           <Calendar className="w-4 h-4 text-green-500" />
-          <span className="text-green-600">Période : {periodeLabel}</span>
+          <span className="text-green-600">
+            Budget {moisBudgetNom} : {periodeLabel}
+          </span>
         </div>
       )}
 

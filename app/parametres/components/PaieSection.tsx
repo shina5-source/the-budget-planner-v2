@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calendar, ChevronDown, Zap, Info, Check, RotateCcw } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { ParametresData, ConfigurationPaie, PaieMensuelle } from './types';
-import { nomsMois, joursOptions, defaultConfigurationPaie } from './constants';
+import { nomsMois, joursOptions, defaultConfigurationPaie, nomsMoisCourts } from './constants';
 
 interface PaieSectionProps {
   parametres: ParametresData;
@@ -38,6 +38,13 @@ export default function PaieSection({
     background: theme.colors.cardBackgroundLight, 
     borderColor: theme.colors.cardBorder, 
     color: theme.colors.textPrimary 
+  };
+  
+  // ✅ Style pour les select avec fond VISIBLE
+  const selectStyle = {
+    background: isDarkMode ? theme.colors.cardBackground : '#FFFFFF',
+    borderColor: theme.colors.cardBorder,
+    color: theme.colors.textPrimary
   };
 
   // Toggle couleur visible en mode clair
@@ -90,6 +97,43 @@ export default function PaieSection({
     return config.paiesPersonnalisees?.some(
       p => p.mois === mois && p.annee === selectedYear && p.estPersonnalise
     ) || false;
+  };
+
+  // ✅ Calculer l'aperçu de la période pour un mois
+  const getApercuPeriode = (mois: number): string => {
+    const jourPaie = config.jourPaieDefaut;
+    
+    if (jourPaie === 1) {
+      return `1 - fin ${nomsMoisCourts[mois]}`;
+    }
+    
+    // Mois précédent pour le début
+    let moisPrecedent = mois - 1;
+    let anneePrecedente = selectedYear;
+    if (moisPrecedent < 0) {
+      moisPrecedent = 11;
+      anneePrecedente = selectedYear - 1;
+    }
+    
+    // Jour de paie du mois précédent
+    const jourPaiePrecedent = getJourPaiePourMois(moisPrecedent);
+    
+    // Jour de paie du mois courant
+    const jourPaieCourant = getJourPaiePourMois(mois);
+    
+    // Obtenir le jour effectif (gère les mois courts)
+    const getJourEffectif = (jour: number, m: number, a: number): number => {
+      const dernierJour = new Date(a, m + 1, 0).getDate();
+      return Math.min(jour, dernierJour);
+    };
+    
+    const jourDebut = getJourEffectif(jourPaiePrecedent, moisPrecedent, anneePrecedente);
+    const jourFin = getJourEffectif(jourPaieCourant, mois, selectedYear) - 1;
+    
+    const labelDebut = `${jourDebut} ${nomsMoisCourts[moisPrecedent]}`;
+    const labelFin = jourFin > 0 ? `${jourFin} ${nomsMoisCourts[mois]}` : `fin ${nomsMoisCourts[mois - 1] || 'déc'}`;
+    
+    return `${labelDebut} → ${labelFin}`;
   };
 
   // Mettre à jour la paie pour un mois spécifique
@@ -220,7 +264,7 @@ export default function PaieSection({
                   value={config.jourPaieDefaut}
                   onChange={(e) => handleJourDefautChange(parseInt(e.target.value))}
                   className="flex-1 rounded-xl px-3 py-2 text-sm border focus:outline-none cursor-pointer transition-all duration-200"
-                  style={inputStyle}
+                  style={selectStyle}
                 >
                   {joursOptions.map((jour) => (
                     <option key={jour.value} value={jour.value}>
@@ -273,18 +317,19 @@ export default function PaieSection({
                     </button>
                   </div>
                   
-                  {/* Grille des mois */}
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Grille des mois - 4 colonnes pour inclure tous les mois */}
+                  <div className="grid grid-cols-4 gap-2">
                     {nomsMois.map((mois, index) => {
                       const jourActuel = getJourPaiePourMois(index);
                       const isPerso = estPersonnalise(index);
+                      const apercu = config.jourPaieDefaut !== 1 ? getApercuPeriode(index) : null;
                       
                       return (
                         <div 
                           key={mois}
                           className="p-2 rounded-lg border transition-all duration-200"
                           style={{ 
-                            background: isPerso ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+                            background: isPerso ? 'rgba(34, 197, 94, 0.1)' : (isDarkMode ? theme.colors.cardBackground : '#FFFFFF'),
                             borderColor: isPerso ? '#22C55E' : theme.colors.cardBorder
                           }}
                         >
@@ -302,14 +347,12 @@ export default function PaieSection({
                               </button>
                             )}
                           </div>
+                          {/* ✅ Select avec fond VISIBLE */}
                           <select
                             value={jourActuel}
                             onChange={(e) => handleJourMoisChange(index, parseInt(e.target.value))}
-                            className="w-full text-[10px] px-1 py-0.5 rounded border bg-transparent focus:outline-none cursor-pointer"
-                            style={{ 
-                              borderColor: theme.colors.cardBorder,
-                              color: theme.colors.textPrimary
-                            }}
+                            className="w-full text-[11px] px-2 py-1 rounded-lg border focus:outline-none cursor-pointer"
+                            style={selectStyle}
                           >
                             {joursOptions.map((jour) => (
                               <option key={jour.value} value={jour.value}>
@@ -317,13 +360,19 @@ export default function PaieSection({
                               </option>
                             ))}
                           </select>
+                          {/* ✅ Aperçu de la période */}
+                          {apercu && (
+                            <p className="text-[8px] mt-1 text-center truncate" style={{ color: '#22C55E' }}>
+                              {apercu}
+                            </p>
+                          )}
                         </div>
                       );
                     })}
                   </div>
                   
                   <p className="text-[9px] text-center" style={textSecondary}>
-                    Les mois en vert ont une date personnalisée
+                    Les mois en vert ont une date personnalisée • L'aperçu montre la période de budget
                   </p>
                 </div>
               )}
@@ -372,7 +421,7 @@ export default function PaieSection({
                         value={config.montantMinimumDetection}
                         onChange={(e) => handleMontantMinChange(parseInt(e.target.value) || 0)}
                         className="w-24 rounded-lg px-2 py-1 text-xs border focus:outline-none"
-                        style={inputStyle}
+                        style={selectStyle}
                       />
                       <span className="text-xs" style={textSecondary}>{parametres.devise}</span>
                     </div>
@@ -396,7 +445,7 @@ export default function PaieSection({
               <p className="text-[10px]" style={textSecondary}>
                 {config.jourPaieDefaut === 1 
                   ? "Budget standard : du 1er au dernier jour de chaque mois"
-                  : `Budget personnalisé : du ${config.jourPaieDefaut} au ${config.jourPaieDefaut - 1 || 'dernier jour'} du mois suivant`
+                  : `Budget personnalisé : du ${config.jourPaieDefaut} du mois précédent au ${config.jourPaieDefaut - 1 || 'dernier jour'} du mois courant`
                 }
                 {(config.paiesPersonnalisees?.length || 0) > 0 && (
                   <span className="block mt-1">
