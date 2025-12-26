@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus, BarChart3, Eye } from 'lucide-react';
+import { Plus, BarChart3, Eye, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/contexts/theme-context';
+import { useBudgetPeriod } from '@/hooks/useBudgetPeriod';
 import { AppShell, SmartTips, PageTitle } from '@/components';
 import confetti from 'canvas-confetti';
 
@@ -39,6 +40,14 @@ const initialFormData: EnveloppeFormData = {
 function EnveloppesContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+  
+  // Hook pour la gestion des périodes de budget
+  const { 
+    configurationPaie, 
+    isLoaded: isPaieConfigLoaded,
+    getPeriodeBudget,
+    filtrerTransactionsPourPeriode
+  } = useBudgetPeriod();
   
   // États
   const [enveloppes, setEnveloppes] = useState<Enveloppe[]>([]);
@@ -89,6 +98,37 @@ function EnveloppesContent() {
     loadData();
   }, []);
 
+  // ========== Période de budget personnalisée ==========
+  const periodeBudget = useMemo(() => {
+    return getPeriodeBudget(selectedMonth, selectedYear);
+  }, [getPeriodeBudget, selectedMonth, selectedYear]);
+
+  const periodeLabel = useMemo(() => {
+    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      return `${moisNoms[selectedMonth]} ${selectedYear}`;
+    }
+    return periodeBudget.label;
+  }, [parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+
+  // Helper pour filtrer les transactions selon la période
+  const filterTransactionsForPeriod = useCallback((txList: Transaction[], monthKey?: string) => {
+    // Si on demande un mois spécifique (pour historique), utiliser le filtrage standard
+    if (monthKey) {
+      return txList.filter(t => t.date?.startsWith(monthKey));
+    }
+    
+    // Si toggle OFF ou jour de paie = 1, filtrage standard
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      const mk = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
+      return txList.filter(t => t.date?.startsWith(mk));
+    }
+    
+    // Sinon, filtrage par période personnalisée
+    return filtrerTransactionsPourPeriode(txList, periodeBudget);
+  }, [parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedYear, selectedMonth, filtrerTransactionsPourPeriode, periodeBudget]);
+  // =====================================================
+
   // Helpers mémoïsés
   const getMonthKey = useCallback((year?: number, month?: number) => {
     const y = year ?? selectedYear;
@@ -108,19 +148,28 @@ function EnveloppesContent() {
 
   const getCurrentDay = useCallback(() => new Date().getDate(), []);
 
-  // Calculs pour une enveloppe
+  // Calculs pour une enveloppe - avec support période personnalisée
   const getDepensesEnveloppe = useCallback((enveloppe: Enveloppe, monthKey?: string) => {
-    const mk = monthKey || getMonthKey();
-    return transactions
-      .filter(t => t.type === 'Dépenses' && t.date?.startsWith(mk) && enveloppe.categories.includes(t.categorie))
+    // Si monthKey fourni, filtrage standard (pour historique)
+    if (monthKey) {
+      return transactions
+        .filter(t => t.type === 'Dépenses' && t.date?.startsWith(monthKey) && enveloppe.categories.includes(t.categorie))
+        .reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
+    }
+    
+    // Sinon, utiliser le filtrage selon la période (standard ou personnalisée)
+    const filteredTx = filterTransactionsForPeriod(transactions);
+    return filteredTx
+      .filter(t => t.type === 'Dépenses' && enveloppe.categories.includes(t.categorie))
       .reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
-  }, [transactions, getMonthKey]);
+  }, [transactions, filterTransactionsForPeriod]);
 
   const getTransactionsEnveloppe = useCallback((enveloppe: Enveloppe) => {
-    return transactions
-      .filter(t => t.type === 'Dépenses' && t.date?.startsWith(getMonthKey()) && enveloppe.categories.includes(t.categorie))
+    const filteredTx = filterTransactionsForPeriod(transactions);
+    return filteredTx
+      .filter(t => t.type === 'Dépenses' && enveloppe.categories.includes(t.categorie))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, getMonthKey]);
+  }, [transactions, filterTransactionsForPeriod]);
 
   const getBudgetEnveloppe = useCallback((enveloppe: Enveloppe, monthKey?: string) => {
     const mk = monthKey || getMonthKey();
@@ -331,7 +380,7 @@ function EnveloppesContent() {
   }, [resetForm]);
 
   // Loading
-  if (isLoading) {
+  if (isLoading || !isPaieConfigLoaded) {
     return (
       <div className="pb-4">
         <style>{animationStyles}</style>
@@ -347,6 +396,17 @@ function EnveloppesContent() {
       
       <div className="pb-4">
         <PageTitle page="enveloppes" />
+
+        {/* Indicateur de période personnalisée */}
+        {parametres.budgetAvantPremier && configurationPaie.jourPaieDefaut !== 1 && (
+          <div 
+            className="flex items-center justify-center gap-2 mb-3 py-2 px-3 rounded-xl text-xs animate-fade-in"
+            style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+          >
+            <Calendar className="w-4 h-4 text-green-500" />
+            <span className="text-green-600">Période : {periodeLabel}</span>
+          </div>
+        )}
 
         {/* Month Selector */}
         <MonthSelector

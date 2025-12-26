@@ -29,6 +29,7 @@ export interface ParametresData {
   categoriesFactures: string[];
   categoriesEpargnes: string[];
   comptesBancaires: { id: number; nom: string }[];
+  budgetAvantPremier?: boolean; // ✅ Ajouté pour la période personnalisée
 }
 
 export interface EnveloppeFormData {
