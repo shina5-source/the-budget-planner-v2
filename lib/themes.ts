@@ -123,49 +123,56 @@ export const themes: Record<ThemeKey, Theme> = {
   },
 
   // ========== ROSE & BLEU NUIT ==========
-  'rose-bleu-nuit': {
+ 'rose-bleu-nuit': {
     key: 'rose-bleu-nuit',
     name: 'Rose & Bleu Nuit',
     emoji: '🌙',
     colors: {
       light: {
-        primary: '#D4AF37',
-        primaryLight: '#E8C84B',
-        secondary: '#1e293b',
-        secondaryLight: '#F8F5F5',
-        accent: '#D4AF37',
-        gradientFrom: '#D4AF37',
-        gradientTo: '#1e293b',
-        backgroundGradientFrom: '#E8C4C4',
-        backgroundGradientTo: '#CFA0A5',
-        cardBackground: '#FFFFFF',
-        cardBackgroundLight: '#F8F5F5',
-        cardBorder: 'rgba(212, 175, 55, 0.3)',
-        textPrimary: '#1e293b',
-        textSecondary: 'rgba(30, 41, 59, 0.7)',
-        textOnPrimary: '#1e293b',
-        textOnSecondary: '#f9a8d4',
+        // MODE CLAIR : Fond rose poudré + Cartes bleu nuit + Texte doré
+        primary: '#D4AF37',           // Doré (accents, "Bonjour", titres)
+        primaryLight: '#E8C84B',      // Doré clair
+        secondary: '#1e293b',         // Bleu nuit (header, nav, cartes)
+        secondaryLight: '#334155',    // Bleu nuit clair
+        accent: '#D4AF37',            // Doré
+        gradientFrom: '#D4AF37',      // Doré (pour gradients décoratifs)
+        gradientTo: '#1e293b',        // Bleu nuit
+        backgroundGradientFrom: '#E8C4C4',  // Rose poudré (fond principal)
+        backgroundGradientTo: '#D4A5A5',    // Rose poudré foncé
+        // CARTES = BLEU NUIT (comme sur tes captures)
+        cardBackground: '#1e293b',    // Bleu nuit SOLIDE
+        cardBackgroundLight: '#334155', // Bleu nuit clair
+        cardBorder: 'rgba(212, 175, 55, 0.3)', // Bordure dorée subtile
+        // TEXTE = DORÉ (sur fond bleu nuit)
+        textPrimary: '#D4AF37',       // Doré
+        textSecondary: 'rgba(212, 175, 55, 0.7)', // Doré semi-transparent
+        textOnPrimary: '#1e293b',     // Bleu nuit (sur boutons dorés)
+        textOnSecondary: '#D4AF37',   // Doré
       },
       dark: {
-        primary: '#f472b6',
-        primaryLight: '#f9a8d4',
-        secondary: '#0f172a',
-        secondaryLight: '#1e293b',
-        accent: '#f472b6',
-        gradientFrom: '#f472b6',
-        gradientTo: '#1e293b',
-        backgroundGradientFrom: '#334155',
-        backgroundGradientTo: '#1e293b',
-        cardBackground: '#0f172a',
-        cardBackgroundLight: '#1e293b',
-        cardBorder: 'rgba(244, 114, 182, 0.3)',
-        textPrimary: '#f9a8d4',
-        textSecondary: 'rgba(249, 168, 212, 0.7)',
-        textOnPrimary: '#0f172a',
-        textOnSecondary: '#f9a8d4',
+        // MODE SOMBRE : ON NE TOUCHE PAS - C'est parfait comme ça !
+        primary: '#f472b6',           // Rose (comme tu l'aimes)
+        primaryLight: '#f9a8d4',      // Rose clair
+        secondary: '#0f172a',         // Bleu nuit très foncé
+        secondaryLight: '#1e293b',    // Bleu nuit
+        accent: '#f472b6',            // Rose
+        gradientFrom: '#f472b6',      // Rose
+        gradientTo: '#1e293b',        // Bleu nuit
+        backgroundGradientFrom: '#334155',  // Bleu gris
+        backgroundGradientTo: '#1e293b',    // Bleu nuit
+        // CARTES = BLEU NUIT FONCÉ
+        cardBackground: '#0f172a',    // Bleu nuit très foncé
+        cardBackgroundLight: '#1e293b', // Bleu nuit
+        cardBorder: 'rgba(244, 114, 182, 0.3)', // Bordure rose
+        // TEXTE = ROSE
+        textPrimary: '#f9a8d4',       // Rose clair
+        textSecondary: 'rgba(249, 168, 212, 0.7)', // Rose semi-transparent
+        textOnPrimary: '#0f172a',     // Bleu nuit foncé
+        textOnSecondary: '#f9a8d4',   // Rose
       }
     },
   },
+
 
   // ========== SOFT PINK ==========
   'soft-pink': {
