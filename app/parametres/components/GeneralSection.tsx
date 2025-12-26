@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Calendar, Info, AlertCircle } from 'lucide-react';
+import { Settings, Calendar, Info, AlertCircle, Rocket } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { ParametresData } from './types';
 import { devises } from './constants';
@@ -15,8 +15,9 @@ export default function GeneralSection({ parametres, onSave }: GeneralSectionPro
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme, isDarkMode } = useTheme() as any;
   
-  // État pour afficher l'info-bulle
-  const [showTooltip, setShowTooltip] = useState(false);
+  // État pour afficher les info-bulles
+  const [showTooltipBudget, setShowTooltipBudget] = useState(false);
+  const [showTooltipDate, setShowTooltipDate] = useState(false);
 
   const cardStyle = { 
     background: theme.colors.cardBackground, 
@@ -39,19 +40,51 @@ export default function GeneralSection({ parametres, onSave }: GeneralSectionPro
   const jourPaieDefaut = parametres.configurationPaie?.jourPaieDefaut || 1;
   const isPaieConfiguree = jourPaieDefaut !== 1;
 
+  // Calculer l'aperçu de la première période basée sur la date de départ
+  const getApercuPremierePeriode = () => {
+    if (!parametres.dateDepart || jourPaieDefaut === 1) return null;
+    
+    const dateDepart = new Date(parametres.dateDepart);
+    const moisNoms = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+    
+    // Calculer le premier budget
+    const jourDepart = dateDepart.getDate();
+    const moisDepart = dateDepart.getMonth();
+    const anneeDepart = dateDepart.getFullYear();
+    
+    // Si paie en fin de mois (> 15), le budget du mois suivant commence à cette date
+    if (jourPaieDefaut > 15) {
+      // Le premier budget sera celui du mois suivant
+      let moisBudget = moisDepart + 1;
+      let anneeBudget = anneeDepart;
+      if (moisBudget > 11) {
+        moisBudget = 0;
+        anneeBudget++;
+      }
+      
+      const moisBudgetNom = moisNoms[moisBudget];
+      return `Premier budget : ${moisBudgetNom} ${anneeBudget} (à partir du ${jourDepart} ${moisNoms[moisDepart]})`;
+    } else {
+      // Paie en début de mois, le budget commence ce mois-ci
+      const moisBudgetNom = moisNoms[moisDepart];
+      return `Premier budget : ${moisBudgetNom} ${anneeDepart} (à partir du ${jourDepart} ${moisNoms[moisDepart]})`;
+    }
+  };
+
   // Handler pour le toggle avec vérification
   const handleToggleBudgetAvantPremier = () => {
     const newValue = !parametres.budgetAvantPremier;
     
     // Si on active le toggle mais que le jour de paie n'est pas configuré
     if (newValue && !isPaieConfiguree) {
-      setShowTooltip(true);
-      setTimeout(() => setShowTooltip(false), 4000);
-      // On active quand même le toggle, mais on informe l'utilisateur
+      setShowTooltipBudget(true);
+      setTimeout(() => setShowTooltipBudget(false), 4000);
     }
     
     onSave({ ...parametres, budgetAvantPremier: newValue });
   };
+
+  const apercuPeriode = getApercuPremierePeriode();
 
   return (
     <>
@@ -115,11 +148,21 @@ export default function GeneralSection({ parametres, onSave }: GeneralSectionPro
             </select>
           </div>
 
-          {/* Date de départ */}
-          <div>
-            <label className="text-xs font-medium mb-1 block" style={textPrimary}>
-              Date de départ
-            </label>
+          {/* Date de départ - Amélioré */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium" style={textPrimary}>
+                Date de départ
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowTooltipDate(!showTooltipDate)}
+                className="p-0.5 rounded-full hover:bg-white/10 transition-colors"
+              >
+                <Info className="w-3.5 h-3.5" style={textSecondary} />
+              </button>
+            </div>
+            
             <input 
               type="date" 
               value={parametres.dateDepart} 
@@ -127,6 +170,49 @@ export default function GeneralSection({ parametres, onSave }: GeneralSectionPro
               className="w-full rounded-xl px-3 py-2 text-sm border focus:outline-none transition-all duration-200"
               style={inputStyle} 
             />
+
+            {/* Info-bulle explicative pour Date de départ */}
+            {showTooltipDate && (
+              <div 
+                className="p-3 rounded-xl text-xs animate-fade-in-down"
+                style={{ 
+                  background: `${theme.colors.primary}15`,
+                  border: `1px solid ${theme.colors.primary}30`
+                }}
+              >
+                <p style={textSecondary}>
+                  <strong style={textPrimary}>À quoi sert cette date ?</strong>
+                </p>
+                <ul className="mt-2 space-y-1.5" style={textSecondary}>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span><strong>Date de premier salaire :</strong> Définit quand commence votre première période de budget</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span><strong>Début du suivi :</strong> L&apos;historique et les statistiques commencent à partir de cette date</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">✓</span>
+                    <span><strong>Navigation limitée :</strong> Vous ne pourrez pas naviguer vers des mois antérieurs à cette date</span>
+                  </li>
+                </ul>
+              </div>
+            )}
+
+            {/* Aperçu de la première période */}
+            {parametres.dateDepart && apercuPeriode && (
+              <div 
+                className="flex items-center gap-2 p-2.5 rounded-xl text-xs animate-fade-in-down"
+                style={{ 
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)'
+                }}
+              >
+                <Rocket className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <span className="text-blue-600">{apercuPeriode}</span>
+              </div>
+            )}
           </div>
 
           {/* Budget avant le 1er - Toggle avec liaison */}
@@ -138,7 +224,7 @@ export default function GeneralSection({ parametres, onSave }: GeneralSectionPro
                 </label>
                 <button
                   type="button"
-                  onClick={() => setShowTooltip(!showTooltip)}
+                  onClick={() => setShowTooltipBudget(!showTooltipBudget)}
                   className="p-0.5 rounded-full hover:bg-white/10 transition-colors"
                 >
                   <Info className="w-3.5 h-3.5" style={textSecondary} />
@@ -165,7 +251,7 @@ export default function GeneralSection({ parametres, onSave }: GeneralSectionPro
             </div>
 
             {/* Info-bulle explicative */}
-            {showTooltip && (
+            {showTooltipBudget && (
               <div 
                 className="p-3 rounded-xl text-xs animate-fade-in-down"
                 style={{ 

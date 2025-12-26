@@ -21,19 +21,16 @@ interface TransactionDetection {
  * - Si jour de paie ≤ 15 (début de mois) : paie du mois M → budget du mois M
  * - Si jour de paie > 15 (fin de mois) : paie du mois M → budget du mois M+1
  * 
- * EXEMPLES :
- * - Paie le 3 janvier → Budget Janvier = 3 jan → 2 fév
- * - Paie le 29 décembre → Budget Janvier = 29 déc → 28 jan
- * - Paie le 31 janvier → Budget Février = 31 jan → 27 fév
- * 
- * AJUSTEMENTS :
- * - Support des jours de paie variables par mois (avant-dernier jour ouvré, etc.)
- * - Gestion des mois avec moins de jours (février)
+ * DATE DE DÉPART :
+ * - Définit la date du premier salaire / début du suivi
+ * - Les périodes avant cette date ne sont pas accessibles
+ * - Les transactions avant cette date ne sont pas comptées dans les stats
  */
 export function useBudgetPeriod() {
   const [configurationPaie, setConfigurationPaie] = useState<ConfigurationPaie>(defaultConfigurationPaie);
   const [isLoaded, setIsLoaded] = useState(false);
   const [budgetAvantPremier, setBudgetAvantPremier] = useState(false);
+  const [dateDepart, setDateDepart] = useState<string | null>(null);
 
   // Charger la configuration depuis localStorage
   useEffect(() => {
@@ -47,6 +44,9 @@ export function useBudgetPeriod() {
         if (parsed.budgetAvantPremier !== undefined) {
           setBudgetAvantPremier(parsed.budgetAvantPremier);
         }
+        if (parsed.dateDepart) {
+          setDateDepart(parsed.dateDepart);
+        }
       }
     } catch (error) {
       console.error('Erreur chargement configuration paie:', error);
@@ -57,10 +57,8 @@ export function useBudgetPeriod() {
 
   /**
    * Obtient le jour de paie pour un mois/année donné
-   * Vérifie d'abord les paies personnalisées, sinon utilise le défaut
    */
   const getJourPaie = useCallback((mois: number, annee: number): number => {
-    // Chercher une paie personnalisée pour ce mois
     const paiePerso = configurationPaie.paiesPersonnalisees.find(
       p => p.mois === mois && p.annee === annee
     );
@@ -69,13 +67,11 @@ export function useBudgetPeriod() {
       return paiePerso.jourPaie;
     }
     
-    // Sinon retourner le jour par défaut
     return configurationPaie.jourPaieDefaut;
   }, [configurationPaie]);
 
   /**
    * Obtient le jour effectif (gère les mois avec moins de jours)
-   * Ex: 31 février n'existe pas → retourne 28 ou 29
    */
   const getJourEffectif = useCallback((jour: number, mois: number, annee: number): number => {
     const dernierJourDuMois = new Date(annee, mois + 1, 0).getDate();
@@ -91,25 +87,14 @@ export function useBudgetPeriod() {
 
   /**
    * Calcule la période de budget pour un mois donné
-   * 
-   * LOGIQUE :
-   * - Si jour de paie = 1 → Période standard (1er au dernier jour)
-   * - Si jour de paie ≤ 15 → Budget M commence à la paie du mois M
-   * - Si jour de paie > 15 → Budget M commence à la paie du mois M-1
-   * 
-   * EXEMPLE avec paie le 29 (fin de mois) :
-   * - Budget JANVIER 2026 = paie de décembre (29 déc) → veille paie janvier (28 jan)
-   * 
-   * EXEMPLE avec paie le 3 (début de mois) :
-   * - Budget JANVIER 2026 = paie de janvier (3 jan) → veille paie février (2 fév)
    */
   const getPeriodeBudget = useCallback((mois: number, annee: number): PeriodeBudget => {
     const jourPaieDefaut = configurationPaie.jourPaieDefaut;
     
-    // CAS 1: Si le jour de paie est le 1er, comportement classique (1er au dernier jour)
+    // CAS 1: Si le jour de paie est le 1er, comportement classique
     if (jourPaieDefaut === 1) {
       const debut = new Date(annee, mois, 1);
-      const fin = new Date(annee, mois + 1, 0); // Dernier jour du mois
+      const fin = new Date(annee, mois + 1, 0);
       
       return {
         debut,
@@ -126,11 +111,7 @@ export function useBudgetPeriod() {
     let fin: Date;
     
     if (paieFinDeMois) {
-      // ========== PAIE EN FIN DE MOIS (> 15) ==========
-      // La paie du mois M-1 finance le budget du mois M
-      // Ex: Paie le 29 déc → Budget Janvier = 29 déc → 28 jan
-      
-      // Mois de la paie = mois précédent
+      // PAIE EN FIN DE MOIS (> 15)
       let moisPaie = mois - 1;
       let anneePaie = annee;
       if (moisPaie < 0) {
@@ -138,38 +119,27 @@ export function useBudgetPeriod() {
         anneePaie = annee - 1;
       }
       
-      // Jour de paie du mois de la paie (peut être personnalisé)
       const jourPaieMoisPaie = getJourPaie(moisPaie, anneePaie);
       const jourDebutEffectif = getJourEffectif(jourPaieMoisPaie, moisPaie, anneePaie);
       
-      // DÉBUT = jour de paie du mois précédent
       debut = new Date(anneePaie, moisPaie, jourDebutEffectif);
       
-      // Jour de paie du mois courant (pour calculer la fin)
       const jourPaieMoisCourant = getJourPaie(mois, annee);
       const jourFinEffectif = getJourEffectif(jourPaieMoisCourant, mois, annee);
       
-      // FIN = veille du jour de paie du mois courant
       if (jourFinEffectif <= 1) {
-        // Si la paie est le 1er, fin = dernier jour du mois précédent
         fin = new Date(annee, mois, 0);
       } else {
         fin = new Date(annee, mois, jourFinEffectif - 1);
       }
       
     } else {
-      // ========== PAIE EN DÉBUT DE MOIS (≤ 15) ==========
-      // La paie du mois M finance le budget du mois M
-      // Ex: Paie le 3 jan → Budget Janvier = 3 jan → 2 fév
-      
-      // Jour de paie du mois courant
+      // PAIE EN DÉBUT DE MOIS (≤ 15)
       const jourPaieMoisCourant = getJourPaie(mois, annee);
       const jourDebutEffectif = getJourEffectif(jourPaieMoisCourant, mois, annee);
       
-      // DÉBUT = jour de paie du mois courant
       debut = new Date(annee, mois, jourDebutEffectif);
       
-      // Mois suivant pour calculer la fin
       let moisSuivant = mois + 1;
       let anneeSuivante = annee;
       if (moisSuivant > 11) {
@@ -177,11 +147,9 @@ export function useBudgetPeriod() {
         anneeSuivante = annee + 1;
       }
       
-      // Jour de paie du mois suivant
       const jourPaieMoisSuivant = getJourPaie(moisSuivant, anneeSuivante);
       const jourFinEffectif = getJourEffectif(jourPaieMoisSuivant, moisSuivant, anneeSuivante);
       
-      // FIN = veille du jour de paie du mois suivant
       if (jourFinEffectif <= 1) {
         fin = new Date(anneeSuivante, moisSuivant, 0);
       } else {
@@ -193,7 +161,6 @@ export function useBudgetPeriod() {
     const labelDebut = `${debut.getDate()} ${nomsMoisCourts[debut.getMonth()]}`;
     const labelFin = `${fin.getDate()} ${nomsMoisCourts[fin.getMonth()]}`;
     
-    // Afficher les années si elles sont différentes
     let labelAnnees = '';
     if (debut.getFullYear() !== fin.getFullYear()) {
       labelAnnees = `${debut.getFullYear()}/${fin.getFullYear()}`;
@@ -222,8 +189,51 @@ export function useBudgetPeriod() {
   }, []);
 
   /**
+   * Vérifie si une période est accessible (après la date de départ)
+   */
+  const estPeriodeAccessible = useCallback((mois: number, annee: number): boolean => {
+    if (!dateDepart) return true;
+    
+    const dateD = new Date(dateDepart);
+    const periode = getPeriodeBudget(mois, annee);
+    
+    // La période est accessible si sa date de fin est >= date de départ
+    return periode.fin >= dateD;
+  }, [dateDepart, getPeriodeBudget]);
+
+  /**
+   * Obtient le premier mois/année accessible (basé sur la date de départ)
+   */
+  const getPremierMoisAccessible = useCallback((): { mois: number; annee: number } | null => {
+    if (!dateDepart) return null;
+    
+    const dateD = new Date(dateDepart);
+    const mois = dateD.getMonth();
+    const annee = dateD.getFullYear();
+    const jourPaie = configurationPaie.jourPaieDefaut;
+    
+    // Si jour de paie = 1, le premier mois est celui de la date de départ
+    if (jourPaie === 1) {
+      return { mois, annee };
+    }
+    
+    // Si paie en fin de mois (> 15), le premier budget est celui du mois suivant
+    if (jourPaie > 15) {
+      let premierMois = mois + 1;
+      let premiereAnnee = annee;
+      if (premierMois > 11) {
+        premierMois = 0;
+        premiereAnnee++;
+      }
+      return { mois: premierMois, annee: premiereAnnee };
+    }
+    
+    // Sinon, le premier budget est celui du mois de la date de départ
+    return { mois, annee };
+  }, [dateDepart, configurationPaie.jourPaieDefaut]);
+
+  /**
    * Obtient la période actuelle (basée sur aujourd'hui)
-   * Détermine dans quel budget on se trouve actuellement
    */
   const getPeriodeActuelle = useCallback((): PeriodeBudget => {
     const aujourdhui = new Date();
@@ -260,29 +270,48 @@ export function useBudgetPeriod() {
       return periodeMoisPrecedent;
     }
     
-    // Par défaut, retourner le mois actuel
     return periodeMoisActuel;
   }, [getPeriodeBudget, estDansPeriode]);
 
   /**
    * Filtre les transactions pour une période donnée
+   * Prend en compte la date de départ (exclut les transactions avant)
    */
   const filtrerTransactionsPourPeriode = useCallback(<T extends { date?: string }>(transactions: T[], periode: PeriodeBudget): T[] => {
     return transactions.filter(t => {
       if (!t.date) return false;
       const dateTransaction = new Date(t.date);
+      
+      // Exclure les transactions avant la date de départ
+      if (dateDepart) {
+        const dateD = new Date(dateDepart);
+        if (dateTransaction < dateD) return false;
+      }
+      
       return estDansPeriode(dateTransaction, periode);
     });
-  }, [estDansPeriode]);
+  }, [estDansPeriode, dateDepart]);
+
+  /**
+   * Filtre les transactions pour les statistiques (après la date de départ uniquement)
+   */
+  const filtrerTransactionsApresDateDepart = useCallback(<T extends { date?: string }>(transactions: T[]): T[] => {
+    if (!dateDepart) return transactions;
+    
+    const dateD = new Date(dateDepart);
+    return transactions.filter(t => {
+      if (!t.date) return false;
+      const dateTransaction = new Date(t.date);
+      return dateTransaction >= dateD;
+    });
+  }, [dateDepart]);
 
   /**
    * Détecte automatiquement la date de paie basée sur les transactions de revenus
-   * Retourne le jour le plus fréquent pour les transactions de type revenus
    */
   const detecterDatePaie = useCallback((transactions: TransactionDetection[], mois: number, annee: number): number | null => {
     if (!configurationPaie.detectionAutoActive) return null;
     
-    // Filtrer les transactions de revenus pour le mois donné
     const revenusduMois = transactions.filter(t => {
       if (!t.date) return false;
       const date = new Date(t.date);
@@ -295,7 +324,6 @@ export function useBudgetPeriod() {
     
     if (revenusduMois.length === 0) return null;
     
-    // Trouver le jour le plus fréquent (ou le premier si égalité)
     const joursCompteur: Record<number, number> = {};
     revenusduMois.forEach(t => {
       const jour = new Date(t.date!).getDate();
@@ -334,12 +362,11 @@ export function useBudgetPeriod() {
       paiesPersonnalisees: [...paiesExistantes, nouvellePaie]
     };
     
-    // Sauvegarder
     sauvegarderConfiguration(nouvelleConfig);
   }, [configurationPaie]);
 
   /**
-   * Supprime une paie personnalisée (revient au défaut)
+   * Supprime une paie personnalisée
    */
   const supprimerJourPaiePersonnalise = useCallback((mois: number, annee: number) => {
     const nouvelleConfig: ConfigurationPaie = {
@@ -413,7 +440,7 @@ export function useBudgetPeriod() {
   }, [getPeriodeBudget]);
 
   /**
-   * Obtient un aperçu de la période pour un mois donné (pour l'affichage dans les paramètres)
+   * Obtient un aperçu de la période pour un mois donné
    */
   const getApercuPeriode = useCallback((mois: number, annee: number): string => {
     const periode = getPeriodeBudget(mois, annee);
@@ -425,6 +452,7 @@ export function useBudgetPeriod() {
     configurationPaie,
     isLoaded,
     budgetAvantPremier,
+    dateDepart,
     
     // Getters
     getJourPaie,
@@ -432,10 +460,13 @@ export function useBudgetPeriod() {
     getPeriodeActuelle,
     getPeriodesAnnee,
     getApercuPeriode,
+    getPremierMoisAccessible,
     
     // Utilitaires
     estDansPeriode,
+    estPeriodeAccessible,
     filtrerTransactionsPourPeriode,
+    filtrerTransactionsApresDateDepart,
     detecterDatePaie,
     getJourEffectif,
     estPaieFinDeMois,

@@ -108,6 +108,7 @@ interface Objectif {
 interface ParametresData {
   devise: string;
   budgetAvantPremier?: boolean;
+  dateDepart?: string;
 }
 
 const defaultParametres: ParametresData = { devise: '€', budgetAvantPremier: false };
@@ -122,10 +123,11 @@ function AccueilContent() {
   const { 
     configurationPaie, 
     isLoaded: isPaieConfigLoaded,
+    dateDepart,
     getPeriodeBudget,
     getPeriodeActuelle,
-    filtrerTransactionsPourPeriode,
-    estPaieFinDeMois
+    getPremierMoisAccessible,
+    filtrerTransactionsPourPeriode
   } = useBudgetPeriod();
   
   // États - Le mois/année représente le BUDGET (pas le mois calendaire)
@@ -181,7 +183,6 @@ function AccueilContent() {
   }, []);
 
   // ========== INITIALISATION DU MOIS DE BUDGET CORRECT ==========
-  // Quand la config de paie est chargée, on détermine le bon mois de budget à afficher
   useEffect(() => {
     if (!isPaieConfigLoaded || !dataLoaded || initialMonthSet) return;
     
@@ -202,7 +203,11 @@ function AccueilContent() {
     setInitialMonthSet(true);
     
   }, [isPaieConfigLoaded, dataLoaded, initialMonthSet, configurationPaie.jourPaieDefaut, getPeriodeActuelle]);
-  // ================================================================
+
+  // ========== CALCUL DU PREMIER MOIS ACCESSIBLE ==========
+  const premierMoisAccessible = useMemo(() => {
+    return getPremierMoisAccessible();
+  }, [getPremierMoisAccessible]);
 
   // Handlers
   const saveName = useCallback(() => {
@@ -231,20 +236,18 @@ function AccueilContent() {
     return getPeriodeBudget(selectedMonth, selectedYear);
   }, [getPeriodeBudget, selectedMonth, selectedYear]);
 
-  // Label de la période (ex: "29 Déc → 28 Jan 2025/2026")
+  // Label de la période
   const periodeLabel = useMemo(() => {
     const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     
-    // Si jour de paie = 1, affichage standard
     if (configurationPaie.jourPaieDefaut === 1) {
       return `${moisNoms[selectedMonth]} ${selectedYear}`;
     }
     
-    // Sinon, afficher la période complète
     return periodeBudget.label;
   }, [configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
 
-  // Nom du mois de budget (pour le sélecteur)
+  // Nom du mois de budget
   const moisBudgetNom = useMemo(() => {
     const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
     return moisNoms[selectedMonth];
@@ -254,13 +257,11 @@ function AccueilContent() {
   const getMonthKey = (year: number, month: number) => `${year}-${(month + 1).toString().padStart(2, '0')}`;
 
   const filteredTransactions = useMemo(() => {
-    // Si jour de paie = 1, filtrage standard par mois calendaire
     if (configurationPaie.jourPaieDefaut === 1) {
       const currentMonthKey = getMonthKey(selectedYear, selectedMonth);
       return transactions.filter(t => t.date?.startsWith(currentMonthKey));
     }
     
-    // Sinon, filtrage par période personnalisée
     return filtrerTransactionsPourPeriode(transactions, periodeBudget);
   }, [transactions, selectedYear, selectedMonth, configurationPaie.jourPaieDefaut, filtrerTransactionsPourPeriode, periodeBudget]);
 
@@ -268,17 +269,14 @@ function AccueilContent() {
     let m = selectedMonth - 1, y = selectedYear;
     if (m < 0) { m = 11; y--; }
     
-    // Si jour de paie = 1, filtrage standard
     if (configurationPaie.jourPaieDefaut === 1) {
       const prevMonthKey = getMonthKey(y, m);
       return transactions.filter(t => t.date?.startsWith(prevMonthKey));
     }
     
-    // Sinon, filtrage par période personnalisée
     const prevPeriode = getPeriodeBudget(m, y);
     return filtrerTransactionsPourPeriode(transactions, prevPeriode);
   }, [transactions, selectedYear, selectedMonth, configurationPaie.jourPaieDefaut, getPeriodeBudget, filtrerTransactionsPourPeriode]);
-  // =====================================================
 
   const totals = useMemo(() => {
     const totalRevenus = filteredTransactions.filter(t => t.type === 'Revenus').reduce((sum, t) => sum + parseFloat(t.montant || '0'), 0);
@@ -547,7 +545,15 @@ function AccueilContent() {
       ) : (
         <>
           <HeroCard totals={totals} prevTotals={prevTotals} financialData={financialData} animatedScore={animatedScore} epargneStreak={epargneStreak} budgetParJour={budgetParJour} joursRestants={joursRestants} devise={parametres.devise} />
-          <MonthSelector selectedYear={selectedYear} selectedMonth={selectedMonth} setSelectedYear={setSelectedYear} setSelectedMonth={setSelectedMonth} isCompactMode={isCompactMode} />
+          <MonthSelector 
+            selectedYear={selectedYear} 
+            selectedMonth={selectedMonth} 
+            setSelectedYear={setSelectedYear} 
+            setSelectedMonth={setSelectedMonth} 
+            isCompactMode={isCompactMode}
+            minMonth={premierMoisAccessible?.mois}
+            minYear={premierMoisAccessible?.annee}
+          />
           <AlertCards facturesAVenir={facturesAVenir} nextPayday={nextPayday} currentDay={currentDay} devise={parametres.devise} />
           <WeekSummary weekData={weekData} depensesAujourdhui={depensesAujourdhui} devise={parametres.devise} />
           {!isCompactMode && <SummaryCards totals={totals} prevTotals={prevTotals} devise={parametres.devise} />}

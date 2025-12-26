@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Lock } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 
 interface MonthSelectorProps {
@@ -9,6 +9,9 @@ interface MonthSelectorProps {
   setSelectedYear: (year: number) => void;
   setSelectedMonth: (month: number) => void;
   isCompactMode: boolean;
+  // Nouvelles props pour la date de départ
+  minMonth?: number;
+  minYear?: number;
 }
 
 const monthsShort = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
@@ -20,7 +23,9 @@ export default function MonthSelector({
   selectedMonth,
   setSelectedYear,
   setSelectedMonth,
-  isCompactMode
+  isCompactMode,
+  minMonth,
+  minYear
 }: MonthSelectorProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
@@ -30,9 +35,47 @@ export default function MonthSelector({
     borderColor: theme.colors.cardBorder 
   };
 
+  /**
+   * Vérifie si un mois/année est accessible (après la date de départ)
+   */
+  const estMoisAccessible = (mois: number, annee: number): boolean => {
+    // Si pas de limite définie, tout est accessible
+    if (minMonth === undefined || minYear === undefined) return true;
+    
+    // Comparer année puis mois
+    if (annee > minYear) return true;
+    if (annee < minYear) return false;
+    // Même année, comparer les mois
+    return mois >= minMonth;
+  };
+
+  /**
+   * Vérifie si on peut aller au mois précédent
+   */
+  const peutAllerMoisPrecedent = (): boolean => {
+    let prevMonth = selectedMonth - 1;
+    let prevYear = selectedYear;
+    if (prevMonth < 0) {
+      prevMonth = 11;
+      prevYear--;
+    }
+    return estMoisAccessible(prevMonth, prevYear);
+  };
+
+  /**
+   * Filtre les années accessibles
+   */
+  const anneesAccessibles = years.filter(year => {
+    if (minYear === undefined) return true;
+    return year >= minYear;
+  });
+
   const handlePrevMonth = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!peutAllerMoisPrecedent()) return;
+    
     if (selectedMonth === 0) {
       setSelectedMonth(11);
       setSelectedYear(selectedYear - 1);
@@ -55,13 +98,26 @@ export default function MonthSelector({
   const handleSelectMonth = (e: React.MouseEvent, index: number) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Vérifier si le mois est accessible
+    if (!estMoisAccessible(index, selectedYear)) return;
+    
     setSelectedMonth(index);
   };
 
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     e.stopPropagation();
-    setSelectedYear(parseInt(e.target.value));
+    const newYear = parseInt(e.target.value);
+    setSelectedYear(newYear);
+    
+    // Si le mois sélectionné n'est plus accessible avec la nouvelle année, 
+    // aller au premier mois accessible
+    if (!estMoisAccessible(selectedMonth, newYear) && minMonth !== undefined) {
+      setSelectedMonth(minMonth);
+    }
   };
+
+  const canGoPrev = peutAllerMoisPrecedent();
 
   return (
     <div 
@@ -73,10 +129,16 @@ export default function MonthSelector({
         <button 
           type="button"
           onClick={handlePrevMonth}
-          className="p-2 transition-all hover:scale-110 active:scale-95 rounded-lg"
+          disabled={!canGoPrev}
+          className={`p-2 transition-all rounded-lg ${canGoPrev ? 'hover:scale-110 active:scale-95' : 'opacity-30 cursor-not-allowed'}`}
           style={{ color: theme.colors.textSecondary }}
+          title={!canGoPrev ? 'Date de départ atteinte' : 'Mois précédent'}
         >
-          <ChevronLeft className="w-5 h-5" />
+          {canGoPrev ? (
+            <ChevronLeft className="w-5 h-5" />
+          ) : (
+            <Lock className="w-4 h-4" />
+          )}
         </button>
         
         <div className="flex items-center gap-2">
@@ -98,7 +160,7 @@ export default function MonthSelector({
               color: theme.colors.textPrimary 
             }}
           >
-            {years.map(year => (
+            {anneesAccessibles.map(year => (
               <option key={year} value={year}>{year}</option>
             ))}
           </select>
@@ -117,29 +179,38 @@ export default function MonthSelector({
       {/* Boutons mois */}
       {!isCompactMode && (
         <div className="flex flex-wrap gap-2 justify-center mt-3">
-          {monthsShort.map((month, index) => (
-            <button 
-              type="button"
-              key={index} 
-              onClick={(e) => handleSelectMonth(e, index)}
-              className="px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:scale-105 active:scale-95 border" 
-              style={selectedMonth === index 
-                ? { 
-                    background: theme.colors.primary, 
-                    color: theme.colors.textOnPrimary || '#ffffff', 
-                    borderColor: theme.colors.primary,
-                    boxShadow: `0 2px 8px ${theme.colors.primary}40`
-                  } 
-                : { 
-                    background: 'transparent', 
-                    color: theme.colors.textPrimary, 
-                    borderColor: theme.colors.cardBorder 
-                  }
-              }
-            >
-              {month}
-            </button>
-          ))}
+          {monthsShort.map((month, index) => {
+            const accessible = estMoisAccessible(index, selectedYear);
+            const isSelected = selectedMonth === index;
+            
+            return (
+              <button 
+                type="button"
+                key={index} 
+                onClick={(e) => handleSelectMonth(e, index)}
+                disabled={!accessible}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all border ${
+                  accessible ? 'hover:scale-105 active:scale-95' : 'opacity-30 cursor-not-allowed'
+                }`}
+                style={isSelected 
+                  ? { 
+                      background: theme.colors.primary, 
+                      color: theme.colors.textOnPrimary || '#ffffff', 
+                      borderColor: theme.colors.primary,
+                      boxShadow: `0 2px 8px ${theme.colors.primary}40`
+                    } 
+                  : { 
+                      background: 'transparent', 
+                      color: accessible ? theme.colors.textPrimary : theme.colors.textSecondary, 
+                      borderColor: theme.colors.cardBorder 
+                    }
+                }
+                title={!accessible ? 'Avant la date de départ' : monthsFull[index]}
+              >
+                {month}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
