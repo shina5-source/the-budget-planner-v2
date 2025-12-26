@@ -63,33 +63,34 @@ export default function ObjectifFormModal({
   devise,
   couleursDisponibles
 }: ObjectifFormModalProps) {
-  const { theme, isDarkMode } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme, isDarkMode } = useTheme() as any;
 
   if (!isOpen) return null;
 
-  // ✅ Styles utilisant les COULEURS DU THÈME (pas de couleurs fixes)
-  const modalBackgroundStyle = { 
-    background: isDarkMode ? theme.colors.cardBackground : theme.colors.secondary, 
-    borderColor: theme.colors.cardBorder 
+  // ✅ PATTERN VALIDÉ - Même style que tous les autres modals
+  const modalStyle = { 
+    background: theme.colors.secondaryLight, 
+    borderColor: `${theme.colors.primary}40`
   };
   
   const inputStyle = { 
-    background: isDarkMode ? theme.colors.backgroundGradientFrom : theme.colors.secondaryLight, 
-    borderColor: theme.colors.cardBorder, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    background: theme.colors.cardBackground, 
+    borderColor: `${theme.colors.primary}30`, 
+    color: theme.colors.textPrimary
   };
   
   const textStyle = { 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    color: theme.colors.primary 
   };
   
   const textSecondaryStyle = {
-    color: isDarkMode ? theme.colors.textSecondary : `${theme.colors.textOnSecondary}99`
+    color: `${theme.colors.primary}99`
   };
 
   const buttonOutlineStyle = { 
-    borderColor: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    borderColor: theme.colors.primary, 
+    color: theme.colors.primary 
   };
 
   return (
@@ -98,20 +99,19 @@ export default function ObjectifFormModal({
       onClick={onClose}
     >
       <div 
-        className="rounded-2xl p-5 w-full max-w-md border my-20 shadow-2xl"
-        style={modalBackgroundStyle}
+        className="rounded-2xl p-4 w-full max-w-md border mb-20 mt-20"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold" style={textStyle}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium" style={textStyle}>
             {isEditing ? 'Modifier' : 'Nouvel'} objectif
           </h2>
           <button 
             type="button"
             onClick={onClose} 
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110"
-            style={{ background: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }}
+            className="p-1"
           >
             <X className="w-5 h-5" style={textStyle} />
           </button>
@@ -129,7 +129,7 @@ export default function ObjectifFormModal({
               placeholder="Ex: Voyage Japon, iPhone..." 
               value={formData.nom} 
               onChange={(e) => onFormChange({ nom: e.target.value })} 
-              className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none focus:ring-2 transition-all duration-200"
+              className="w-full rounded-xl px-4 py-2 text-sm border focus:outline-none"
               style={inputStyle}
             />
           </div>
@@ -145,7 +145,7 @@ export default function ObjectifFormModal({
                 placeholder="0" 
                 value={formData.montantCible} 
                 onChange={(e) => onFormChange({ montantCible: e.target.value })} 
-                className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
+                className="w-full rounded-xl px-4 py-2 text-sm border focus:outline-none"
                 style={inputStyle} 
               />
             </div>
@@ -158,7 +158,7 @@ export default function ObjectifFormModal({
                 placeholder="0" 
                 value={formData.montantActuel} 
                 onChange={(e) => onFormChange({ montantActuel: e.target.value })} 
-                className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
+                className="w-full rounded-xl px-4 py-2 text-sm border focus:outline-none"
                 style={inputStyle} 
               />
             </div>
@@ -173,7 +173,7 @@ export default function ObjectifFormModal({
               type="date" 
               value={formData.dateEcheance} 
               onChange={(e) => onFormChange({ dateEcheance: e.target.value })} 
-              className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
+              className="w-full rounded-xl px-4 py-2 text-sm border focus:outline-none"
               style={inputStyle} 
             />
           </div>
@@ -189,7 +189,7 @@ export default function ObjectifFormModal({
                   key={t}
                   type="button"
                   onClick={() => onFormChange({ type: t })} 
-                  className="py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 hover:scale-[1.02]"
+                  className="py-2 rounded-xl text-sm font-medium border transition-all duration-200 hover:scale-[1.02]"
                   style={formData.type === t 
                     ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                     : inputStyle
@@ -212,7 +212,7 @@ export default function ObjectifFormModal({
                   key={p}
                   type="button"
                   onClick={() => onFormChange({ priorite: p })} 
-                  className="py-2.5 rounded-xl text-xs font-medium border transition-all duration-200 hover:scale-[1.02]"
+                  className="py-2 rounded-xl text-xs font-medium border transition-all duration-200 hover:scale-[1.02]"
                   style={formData.priorite === p 
                     ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                     : inputStyle
@@ -238,7 +238,7 @@ export default function ObjectifFormModal({
                     key={couleurOption.id}
                     type="button"
                     onClick={() => onFormChange({ couleur: couleurOption.id })} 
-                    className="h-12 rounded-xl border-2 transition-all duration-200 hover:scale-105"
+                    className="h-10 rounded-xl border-2 transition-all duration-200 hover:scale-105"
                     style={{ 
                       backgroundColor: displayColor.bg,
                       borderColor: isSelected ? theme.colors.primary : displayColor.border,
@@ -264,7 +264,7 @@ export default function ObjectifFormModal({
                     key={icone.id}
                     type="button"
                     onClick={() => onFormChange({ icone: icone.id })} 
-                    className="h-11 rounded-xl flex items-center justify-center border transition-all duration-200 hover:scale-105"
+                    className="h-10 rounded-xl flex items-center justify-center border transition-all duration-200 hover:scale-105"
                     style={isSelected 
                       ? { background: theme.colors.primary, borderColor: theme.colors.primary, color: theme.colors.textOnPrimary } 
                       : inputStyle
@@ -279,10 +279,10 @@ export default function ObjectifFormModal({
 
           {/* Récurrence */}
           <div 
-            className="p-4 rounded-xl border transition-all duration-200" 
+            className="p-3 rounded-xl border" 
             style={formData.recurrenceActif 
               ? { borderColor: theme.colors.primary, background: `${theme.colors.primary}15` } 
-              : { ...inputStyle, background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }
+              : { ...inputStyle, background: `${theme.colors.primary}05` }
             }
           >
             <div className="flex items-center justify-between mb-3">
@@ -335,7 +335,7 @@ export default function ObjectifFormModal({
                       placeholder="0" 
                       value={formData.recurrenceMontant} 
                       onChange={(e) => onFormChange({ recurrenceMontant: e.target.value })} 
-                      className="w-full rounded-xl px-3 py-2.5 text-xs border focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none"
                       style={inputStyle} 
                     />
                   </div>
@@ -346,7 +346,7 @@ export default function ObjectifFormModal({
                     <select 
                       value={formData.recurrenceJour} 
                       onChange={(e) => onFormChange({ recurrenceJour: e.target.value })} 
-                      className="w-full rounded-xl px-3 py-2.5 text-xs border focus:outline-none transition-all duration-200"
+                      className="w-full rounded-xl px-3 py-2 text-xs border focus:outline-none"
                       style={inputStyle}
                     >
                       {formData.recurrenceFrequence === 'hebdomadaire' 
@@ -361,7 +361,7 @@ export default function ObjectifFormModal({
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-3">
+          <div className="flex gap-3 pt-2">
             <button 
               type="button"
               onClick={onClose} 
@@ -373,11 +373,10 @@ export default function ObjectifFormModal({
             <button 
               type="button"
               onClick={onSubmit} 
-              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{ 
                 background: theme.colors.primary, 
-                color: theme.colors.textOnPrimary,
-                boxShadow: `0 4px 15px ${theme.colors.primary}40`
+                color: theme.colors.textOnPrimary
               }}
             >
               <Check className="w-5 h-5" />

@@ -20,38 +20,47 @@ export default function VersementModal({
   onMontantChange,
   devise
 }: VersementModalProps) {
-  const { theme, isDarkMode } = useTheme();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { theme } = useTheme() as any;
 
   if (!isOpen) return null;
 
+  // ✅ PATTERN VALIDÉ - Même style que tous les autres modals
   const modalStyle = { 
-    background: isDarkMode ? theme.colors.cardBackground : theme.colors.secondary, 
-    borderColor: theme.colors.cardBorder 
+    background: theme.colors.secondaryLight, 
+    borderColor: `${theme.colors.primary}40`
   };
+  
   const inputStyle = { 
-    background: isDarkMode ? theme.colors.backgroundGradientFrom : theme.colors.secondaryLight, 
-    borderColor: theme.colors.cardBorder, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    background: theme.colors.cardBackground, 
+    borderColor: `${theme.colors.primary}30`, 
+    color: theme.colors.textPrimary
   };
+  
   const textStyle = { 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    color: theme.colors.primary 
   };
+
   const buttonOutlineStyle = { 
-    borderColor: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary, 
-    color: isDarkMode ? theme.colors.textPrimary : theme.colors.textOnSecondary 
+    borderColor: theme.colors.primary, 
+    color: theme.colors.primary 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto animate-fadeIn">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      onClick={onClose}
+    >
       <div 
-        className="rounded-2xl p-4 w-full max-w-sm border my-20 shadow-2xl animate-slideUp"
+        className="rounded-2xl p-4 w-full max-w-sm border"
         style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold" style={textStyle}>Ajouter un versement</h2>
+          <h2 className="text-lg font-medium" style={textStyle}>Ajouter un versement</h2>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/10"
+            className="p-1"
           >
             <X className="w-5 h-5" style={textStyle} />
           </button>
@@ -59,7 +68,7 @@ export default function VersementModal({
         
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-medium mb-2 block" style={textStyle}>
+            <label className="text-xs font-medium mb-2 block" style={{ color: `${theme.colors.primary}99` }}>
               Montant ({devise})
             </label>
             <input 
@@ -67,7 +76,7 @@ export default function VersementModal({
               placeholder="0" 
               value={montant} 
               onChange={(e) => onMontantChange(e.target.value)} 
-              className="w-full rounded-xl px-4 py-3 text-sm border focus:outline-none transition-all duration-200"
+              className="w-full rounded-xl px-4 py-2 text-sm border focus:outline-none"
               style={inputStyle}
               autoFocus 
             />
@@ -83,11 +92,10 @@ export default function VersementModal({
             </button>
             <button 
               onClick={onSubmit} 
-              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="flex-1 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               style={{ 
                 background: theme.colors.primary, 
-                color: theme.colors.textOnPrimary,
-                boxShadow: `0 4px 15px ${theme.colors.primary}40`
+                color: theme.colors.textOnPrimary
               }}
             >
               <Plus className="w-5 h-5" />Ajouter

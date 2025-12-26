@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { Calendar } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
+import { useBudgetPeriod } from '@/hooks/useBudgetPeriod';
 import { AppShell, SmartTips, PageTitle } from '@/components';
 import MonthSelector from './components/MonthSelector';
 import TabsNavigation from './components/TabsNavigation';
@@ -29,18 +31,28 @@ interface Transaction {
 interface ParametresData {
   devise: string;
   comptesBancaires: { id: number; nom: string; soldeDepart: number; isEpargne: boolean }[];
+  budgetAvantPremier?: boolean;
 }
 
 type TabType = 'resume' | 'mensuel' | 'analyse' | 'historique';
 
 const defaultParametres: ParametresData = {
   devise: '€',
-  comptesBancaires: []
+  comptesBancaires: [],
+  budgetAvantPremier: false
 };
 
 function EpargnesContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { theme } = useTheme() as any;
+  
+  // Hook pour la gestion des périodes de budget
+  const { 
+    configurationPaie, 
+    isLoaded: isPaieConfigLoaded,
+    getPeriodeBudget,
+    filtrerTransactionsPourPeriode
+  } = useBudgetPeriod();
   
   // États
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -76,6 +88,39 @@ function EpargnesContent() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // ========== Période de budget personnalisée ==========
+  const periodeBudget = useMemo(() => {
+    return getPeriodeBudget(selectedMonth, selectedYear);
+  }, [getPeriodeBudget, selectedMonth, selectedYear]);
+
+  const periodeLabel = useMemo(() => {
+    const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      return `${moisNoms[selectedMonth]} ${selectedYear}`;
+    }
+    return periodeBudget.label;
+  }, [parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, selectedMonth, selectedYear, periodeBudget]);
+
+  // Helper pour obtenir la clé du mois
+  const getMonthKey = useCallback(() => {
+    return `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}`;
+  }, [selectedYear, selectedMonth]);
+
+  // Transactions filtrées selon la période
+  const filteredTransactions = useMemo(() => {
+    // Filtrer uniquement les épargnes
+    const epargneTransactions = transactions.filter(t => t.type === 'Épargnes');
+    
+    // Si toggle OFF ou jour de paie = 1, filtrage standard
+    if (!parametres.budgetAvantPremier || configurationPaie.jourPaieDefaut === 1) {
+      return epargneTransactions.filter(t => t.date?.startsWith(getMonthKey()));
+    }
+    
+    // Sinon, filtrage par période personnalisée
+    return filtrerTransactionsPourPeriode(epargneTransactions, periodeBudget);
+  }, [transactions, getMonthKey, parametres.budgetAvantPremier, configurationPaie.jourPaieDefaut, filtrerTransactionsPourPeriode, periodeBudget]);
+  // =====================================================
 
   // Handlers mémorisés
   const handleYearChange = useCallback((year: number) => {
@@ -128,7 +173,7 @@ function EpargnesContent() {
 
   // Rendu conditionnel basé sur l'onglet actif
   const renderTabContent = useCallback(() => {
-    if (isLoading) {
+    if (isLoading || !isPaieConfigLoaded) {
       return <SkeletonLoader />;
     }
 
@@ -136,7 +181,7 @@ function EpargnesContent() {
       case 'resume':
         return (
           <ResumeTab 
-            transactions={transactions}
+            transactions={filteredTransactions}
             selectedYear={selectedYear}
             selectedMonth={selectedMonth}
             devise={parametres.devise}
@@ -146,7 +191,7 @@ function EpargnesContent() {
       case 'mensuel':
         return (
           <MensuelTab 
-            transactions={transactions}
+            transactions={filteredTransactions}
             selectedYear={selectedYear}
             selectedMonth={selectedMonth}
             devise={parametres.devise}
@@ -158,7 +203,7 @@ function EpargnesContent() {
       case 'analyse':
         return (
           <AnalyseTab 
-            transactions={transactions}
+            transactions={transactions.filter(t => t.type === 'Épargnes')}
             selectedYear={selectedYear}
             devise={parametres.devise}
           />
@@ -166,7 +211,7 @@ function EpargnesContent() {
       case 'historique':
         return (
           <HistoriqueTab 
-            transactions={transactions}
+            transactions={transactions.filter(t => t.type === 'Épargnes')}
             selectedYear={selectedYear}
             devise={parametres.devise}
           />
@@ -174,12 +219,23 @@ function EpargnesContent() {
       default:
         return null;
     }
-  }, [activeTab, isLoading, transactions, selectedYear, selectedMonth, parametres.devise, handleAddClick, handleEditClick, handleDeleteClick]);
+  }, [activeTab, isLoading, isPaieConfigLoaded, filteredTransactions, transactions, selectedYear, selectedMonth, parametres.devise, handleAddClick, handleEditClick, handleDeleteClick]);
 
   return (
     <div className="pb-4">
       {/* Header avec icône */}
       <PageTitle page="epargnes" />
+
+      {/* Indicateur de période personnalisée */}
+      {parametres.budgetAvantPremier && configurationPaie.jourPaieDefaut !== 1 && (
+        <div 
+          className="flex items-center justify-center gap-2 mb-3 py-2 px-3 rounded-xl text-xs animate-fade-in"
+          style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}
+        >
+          <Calendar className="w-4 h-4 text-green-500" />
+          <span className="text-green-600">Période : {periodeLabel}</span>
+        </div>
+      )}
 
       {/* Sélecteur de mois */}
       <MonthSelector 
